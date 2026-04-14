@@ -1,6 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const { checkDbConnection, checkAdmin } = require("./db/db.config");
+const { checkDbConnection, checkAdmin } = require("./config/db.config");
 const router = require("./routes/index");
 const cors = require("cors");
 const app = express();
@@ -24,7 +24,7 @@ app.use("/api", router);
 (async () => {
   const isConnected = await checkDbConnection();
   if (!isConnected) {
-    console.error("Database connection failed. Server not started.");
+    console.error("Database connection failed.");
     process.exit(1);
   }
 
