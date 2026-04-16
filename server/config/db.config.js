@@ -1,22 +1,25 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+import env from "../utils/env.js";
 
 const checkDbConnection = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("MongoDB connected");
+    console.log("Checking env.mongoUri:", env.mongoUri);
+    const uri = env.mongoUri;
+    console.log("connecting to mongodb with url:", uri);
+    await mongoose.connect(uri);
+    console.log("MongoDB successfully connected ");
     return true;
   } catch (error) {
-    console.error("MongoDB connection error:", error);
+    console.error("MongoDB connection error:", error.message);
     return false;
   }
 };
 
 const checkAdmin = async () => {
   console.log("Checking admin...");
-  // your admin creation logic here
 };
 
-module.exports = {
+export {
   checkDbConnection,
-  checkAdmin,
+  checkAdmin
 };
