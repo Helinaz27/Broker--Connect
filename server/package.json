@@ -25,8 +25,13 @@
   },
   "author": "Netsanet",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/netsanetabuhay/FINAL_YEAR_PROJECT/issues"
-  },
-  "homepage": "https://github.com/netsanetabuhay/FINAL_YEAR_PROJECT#readme"
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "mongoose": "^9.4.1",
+    "prisma": "^6.19.3"
+  }
 }
