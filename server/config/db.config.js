@@ -76,7 +76,7 @@ async function checkAdmin() {
   }
 }
 
-module.exports = {
+export {
   checkDbConnection,
   checkAdmin,
   prisma
