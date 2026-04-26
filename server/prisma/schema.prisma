@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+
+// ============ COLLECTIONS ============
+
+// 2.1 Users Collection
+model User {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  firstName        String
+  lastName         String
+  phone            String
+  email            String    @unique
+  passwordHash     String
+  roles            Role[]
+  coins            Int       @default(0)
+  isActive         Boolean   @default(true)
+  isEmailVerified  Boolean   @default(false)
+  profileImage     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("users")
+}
+
+// 2.2 KYC Requests Collection
+model KYCRequest {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String         @db.ObjectId
+  documentType     DocumentType
+  documentNumber   String
+  documentImageUrl String
+  status           KYCStatus      @default(pending)
+  reviewedBy       String?        @db.ObjectId
+  reviewNote       String?
+  reviewedAt       DateTime?
+  createdAt        DateTime       @default(now())
+
+  @@map("kyc_requests")
+}
+
+// 2.3 House Listings Collection
+model HouseListing {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String         @db.ObjectId
+  title            String
+  description      String
+  houseType        HouseType
+  images           String[]
+  price            Float
+  location         LocationData
+  contactCoinLimit Int
+  postingFeeId     String?        @db.ObjectId
+  paidUntil        DateTime?
+  status           ListingStatus  @default(active)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("house_listings")
+}
+
+// 2.4 Car Listings Collection
+model CarListing {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String         @db.ObjectId
+  title            String
+  description      String
+  carType          CarType
+  brand            String
+  model            String
+  year             Int
+  images           String[]
+  rentPrice        Float
+  location         LocationData
+  contactCoinLimit Int
+  postingFeeId     String?        @db.ObjectId
+  paidUntil        DateTime?
+  status           ListingStatus  @default(active)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("car_listings")
+}
+
+// 2.5 Service Listings Collection
+model ServiceListing {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String         @db.ObjectId
+  serviceType      ServiceType
+  title            String
+  description      String
+  images           String[]
+  price            Float
+  location         LocationData
+  contactCoinLimit Int
+  postingFeeId     String?        @db.ObjectId
+  paidUntil        DateTime?
+  status           ListingStatus  @default(active)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("service_listings")
+}
+
+// 2.6 Posting Fees Collection
+model PostingFee {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  category        ListingCategory
+  durationDays    Int
+  price           Float
+  description     String?
+  isActive        Boolean        @default(true)
+  createdBy       String         @db.ObjectId
+  createdAt       DateTime       @default(now())
+
+  @@map("posting_fees")
+}
+
+// 2.7 Payments Collection
+model Payment {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String         @db.ObjectId
+  amountBirr      Float
+  coinsReceived   Int
+  paymentMethod   PaymentMethod
+  transactionId   String         @unique
+  purpose         PaymentPurpose @default(buy_coins)
+  status          PaymentStatus  @default(pending)
+  createdAt       DateTime       @default(now())
+  completedAt     DateTime?
+
+  @@map("payments")
+}
+
+// 2.8 Coin Transactions Collection
+model CoinTransaction {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String         @db.ObjectId
+  type            TransactionType
+  amount          Int
+  Reason          CoinReason
+  description     String?
+  createdAt       DateTime       @default(now())
+
+  @@map("coin_transactions")
+}
+
+// 2.9 Chat Rooms Collection
+model ChatRoom {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  participants    String[]       @db.ObjectId
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("chat_rooms")
+}
+
+// 2.10 Messages Collection
+model Message {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  roomId          String         @db.ObjectId
+  senderId        String         @db.ObjectId
+  messageType     MessageType    @default(text)
+  content         String
+  readBy          ReadReceipt[]
+  createdAt       DateTime       @default(now())
+
+  @@map("messages")
+}
+
+// 2.11 Notifications Collection
+model Notification {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String         @db.ObjectId
+  Type            NotificationType
+  title           String
+  body            String
+  data            NotificationData?
+  isRead          Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+
+  @@map("notifications")
+}
+
+// 2.12 Contact Access Collection
+model ContactAccess {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  viewerId        String         @db.ObjectId
+  ownerId         String         @db.ObjectId
+  listingId       String         @db.ObjectId
+  listingType     ListingCategory
+  coinsPaid       Int
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+
+  @@map("contact_accesses")
+}
+
+
+// ============ ENUMS ============
+enum Role {
+  user
+  admin
+  super_admin
+}
+
+enum DocumentType {
+  national_id
+  passport
+}
+
+enum KYCStatus {
+  pending
+  approved
+  rejected
+}
+
+enum HouseType {
+  condominium
+  villa
+  business
+  apartment
+  others
+}
+
+enum CarType {
+  sedan
+  suv
+  hatchback
+  truck
+  bus
+  others
+}
+
+enum ServiceType {
+  electrician
+  plumber
+  catering
+  house_worker
+  other
+}
+
+enum ListingStatus {
+  active
+  inactive
+  occupied
+}
+
+enum ListingCategory {
+  house
+  car
+  service
+}
+
+enum PaymentMethod {
+  telebirr
+}
+
+enum PaymentPurpose {
+  buy_coins
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+}
+
+enum TransactionType {
+  credit
+  debit
+}
+
+enum CoinReason {
+  kyc_bonus
+  purchase
+  posting_fee
+  contact_access
+  refund
+}
+
+enum MessageType {
+  text
+  image
+  file
+}
+
+enum NotificationType {
+  message
+  payment_success
+  kyc_approved
+  kyc_rejected
+  post_expired
+  insufficient_coins
+  new_contact
+  system
+}
+
+// ============ EMBEDDED TYPES ============
+type Coordinates {
+  lat Float
+  lng Float
+}
+
+type LocationData {
+  city        String
+  subCity     String?
+  placeName   String?
+  coordinates Coordinates?
+}
+
+type ReadReceipt {
+  userId  String @db.ObjectId
+  readAt  DateTime
+}
+
+type NotificationData {
+  path        String?
+  referenceId String? @db.ObjectId
+}
