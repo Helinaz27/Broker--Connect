@@ -1,31 +1,34 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 
-// Hash password
-export const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
-};
+// register service
 
-// Compare password
-export const comparePassword = async (password, hashedPassword) => {
-  return await bcrypt.compare(password, hashedPassword);
-};
 
-// Check if user exists by email
-export const checkUserExistsByEmail = async (email) => {
-  return await User.findOne({ email });
-};
+// // Hash password
+// export const hashPassword = async (password) => {
+//   const salt = await bcrypt.genSalt(10);
+//   return await bcrypt.hash(password, salt);
+// };
 
-// Check if username exists
-export const checkUsernameExists = async (username) => {
-  return await User.findOne({ username });
-};
+// // Compare password
+// export const comparePassword = async (password, hashedPassword) => {
+//   return await bcrypt.compare(password, hashedPassword);
+// };
 
-// Get user by ID (without password)
-export const getUserById = async (id) => {
-  return await User.findById(id).select('-passwordHash');
-};
+// // Check if user exists by email
+// export const checkUserExistsByEmail = async (email) => {
+//   return await User.findOne({ email });
+// };
+
+// // Check if username exists
+// export const checkUsernameExists = async (username) => {
+//   return await User.findOne({ username });
+// };
+
+// // Get user by ID (without password)
+// export const getUserById = async (id) => {
+//   return await User.findById(id).select('-passwordHash');
+// };
 
 // Get user by username
 export const getUserByUsername = async (username) => {

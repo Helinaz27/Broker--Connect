@@ -282,9 +282,11 @@ enum TransactionType {
 
 enum CoinReason {
   kyc_bonus
+  welcome_bonus
   purchase
   posting_fee
   contact_access
+  user_transfer
   refund
 }
 

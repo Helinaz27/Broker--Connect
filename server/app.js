@@ -1,10 +1,11 @@
+//import third party packages
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+
+//import local modules
 import env from "./utils/env.js";
-
-const router = require("./routes/index");
-
+import router from "./routes/index.js";
 const app = express();
 
 // Middleware
