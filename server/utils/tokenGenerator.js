@@ -17,6 +17,8 @@ export const setTokenCookie = (res, token) => {
   });
 };
 
+
+
 // Clear token cookie
 export const clearTokenCookie = (res) => {
   res.clearCookie('token', {
@@ -25,5 +27,6 @@ secure: process.env.NODE_ENV === 'production' ? true : false,
     sameSite: 'strict'
   });
 };
+
 
 export default generateToken;
