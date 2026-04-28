@@ -1,192 +1,378 @@
-import * as serviceService from '../services/serviceService.js';
-import {
-    createServiceListingValidation,
-    updateServiceListingValidation,
-    statusUpdateValidation,
-    renewListingValidation
-} from '../validations/serviceValidation.js';
-import { COIN_RULES } from '../utils/constants.js';
+import { prisma } from '../config/db.config.js';
+import cloudinary from '../config/cloudinary.config.js';
+import { successResponse, errorResponse } from '../utils/helpers.js';
 
-export const createListing = async (req, res) => {
-    try {
-        const { error, value } = createServiceListingValidation.validate(req.body);
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
+//  HELPER FUNCTIONS 
+
+const uploadImagesToCloudinary = async (files) => {
+  const uploadPromises = files.map((file) => {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'service_listings', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result.secure_url);
         }
-
-        const listing = await serviceService.createServiceListing(req.user.id, value);
-
-        res.status(201).json({
-            success: true,
-            message: 'Service listing created successfully',
-            data: listing
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+      );
+      uploadStream.end(file.buffer);
+    });
+  });
+  return await Promise.all(uploadPromises);
 };
 
-export const getAllListings = async (req, res) => {
-    try {
-        const result = await serviceService.getAllServices(req.query);
+//  USER SERVICE CONTROLLERS 
 
-        res.status(200).json({
-            success: true,
-            message: 'Service listings retrieved successfully',
-            data: result.listings,
-            pagination: result.pagination
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+export const createService = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { title, description, serviceType, price, location, contactCoinLimit } = req.body;
+
+    const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
+
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = await uploadImagesToCloudinary(req.files);
     }
+
+    const serviceData = {
+      ownerId: userId,
+      title,
+      description,
+      serviceType,
+      price: parseFloat(price),
+      images: imageUrls,
+      location: parsedLocation,
+      contactCoinLimit: contactCoinLimit || 0,
+      status: 'active'
+    };
+
+    const service = await prisma.serviceListing.create({
+      data: serviceData
+    });
+
+    return successResponse(res, 'Service listing created successfully', { service }, 201);
+  } catch (error) {
+    console.error('Create service error:', error);
+    return errorResponse(res, 'Server error', error.message);
+  }
 };
 
-export const getListingById = async (req, res) => {
-    try {
-        const listing = await serviceService.getServiceById(req.params.id);
+export const getMyServices = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-        res.status(200).json({
-            success: true,
-            message: 'Service listing retrieved successfully',
-            data: listing
-        });
-    } catch (error) {
-        res.status(404).json({
-            success: false,
-            message: error.message
-        });
-    }
+    const services = await prisma.serviceListing.findMany({
+      where: { ownerId: userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return successResponse(res, `Retrieved ${services.length} services`, { services });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
 };
 
-export const updateListing = async (req, res) => {
-    try {
-        const { error, value } = updateServiceListingValidation.validate(req.body);
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
+export const getServiceById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const service = await prisma.serviceListing.findUnique({
+      where: { id }
+    });
+
+    if (!service) {
+      return errorResponse(res, 'Service listing not found', null, 404);
+    }
+
+    return successResponse(res, 'Service retrieved successfully', { service });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const updateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { title, description, serviceType, price, location, contactCoinLimit, status } = req.body;
+
+    const existingService = await prisma.serviceListing.findFirst({
+      where: { id, ownerId: userId }
+    });
+
+    if (!existingService) {
+      return errorResponse(res, 'Service not found or unauthorized', null, 404);
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (serviceType !== undefined) updateData.serviceType = serviceType;
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (location !== undefined) {
+      const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
+      updateData.location = parsedLocation;
+    }
+    if (contactCoinLimit !== undefined) updateData.contactCoinLimit = contactCoinLimit;
+    if (status !== undefined) updateData.status = status;
+
+    if (req.files && req.files.length > 0) {
+      const newImageUrls = await uploadImagesToCloudinary(req.files);
+      updateData.images = [...existingService.images, ...newImageUrls];
+    }
+
+    const updatedService = await prisma.serviceListing.update({
+      where: { id },
+      data: updateData
+    });
+
+    return successResponse(res, 'Service updated successfully', { service: updatedService });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const deleteService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const existingService = await prisma.serviceListing.findFirst({
+      where: { id, ownerId: userId }
+    });
+
+    if (!existingService) {
+      return errorResponse(res, 'Service not found or unauthorized', null, 404);
+    }
+
+    await prisma.serviceListing.delete({ where: { id } });
+
+    return successResponse(res, 'Service deleted successfully');
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const updateServiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { status } = req.body;
+
+    const existingService = await prisma.serviceListing.findFirst({
+      where: { id, ownerId: userId }
+    });
+
+    if (!existingService) {
+      return errorResponse(res, 'Service not found or unauthorized', null, 404);
+    }
+
+    const updatedService = await prisma.serviceListing.update({
+      where: { id },
+      data: { status }
+    });
+
+    return successResponse(res, 'Service status updated', { service: updatedService });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  PUBLIC SERVICE CONTROLLERS 
+
+export const getAllServices = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, serviceType, minPrice, maxPrice } = req.query;
+    const skip = (page - 1) * limit;
+
+    const where = { status: 'active' };
+    if (serviceType) where.serviceType = serviceType;
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
+
+    const [services, total] = await Promise.all([
+      prisma.serviceListing.findMany({
+        where,
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.serviceListing.count({ where })
+    ]);
+
+    return successResponse(res, `Retrieved ${services.length} services`, {
+      services,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const searchServicesByCity = async (req, res) => {
+  try {
+    const { city } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const [services, total] = await Promise.all([
+      prisma.serviceListing.findMany({
+        where: {
+          status: 'active',
+          location: {
+            path: 'city',
+            equals: city
+          }
+        },
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.serviceListing.count({
+        where: {
+          status: 'active',
+          location: {
+            path: 'city',
+            equals: city
+          }
         }
+      })
+    ]);
 
-        const listing = await serviceService.updateServiceListing(
-            req.params.id,
-            req.user.id,
-            value
-        );
-
-        res.status(200).json({
-            success: true,
-            message: 'Service listing updated successfully',
-            data: listing
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+    return successResponse(res, `Found ${services.length} services in ${city}`, {
+      services,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
 };
 
-export const deleteListing = async (req, res) => {
-    try {
-        await serviceService.deleteServiceListing(req.params.id, req.user.id);
+export const getServicesByType = async (req, res) => {
+  try {
+    const { serviceType } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
 
-        res.status(200).json({
-            success: true,
-            message: 'Service listing deleted successfully'
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-export const updateStatus = async (req, res) => {
-    try {
-        const { error, value } = statusUpdateValidation.validate(req.body);
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
+    const [services, total] = await Promise.all([
+      prisma.serviceListing.findMany({
+        where: {
+          status: 'active',
+          serviceType: serviceType
+        },
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.serviceListing.count({
+        where: {
+          status: 'active',
+          serviceType: serviceType
         }
+      })
+    ]);
 
-        const listing = await serviceService.updateListingStatus(
-            req.params.id,
-            req.user.id,
-            value.status
-        );
-
-        res.status(200).json({
-            success: true,
-            message: 'Service listing status updated successfully',
-            data: listing
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+    return successResponse(res, `Found ${services.length} ${serviceType} services`, {
+      services,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
 };
 
-export const requestContact = async (req, res) => {
-    try {
-        const result = await serviceService.requestContactInfo(
-            req.user.id,
-            req.params.id
-        );
+//  ADMIN SERVICE CONTROLLERS 
 
-        res.status(200).json({
-            success: true,
-            message: result.alreadyPaid ? 'Contact info retrieved (already paid)' : 'Contact info retrieved successfully',
-            data: result.contactInfo,
-            totalCost: result.totalCost
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const adminGetAllServices = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const skip = (page - 1) * limit;
+
+    const where = {};
+    if (status) where.status = status;
+
+    const [services, total] = await Promise.all([
+      prisma.serviceListing.findMany({
+        where,
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.serviceListing.count({ where })
+    ]);
+
+    return successResponse(res, `Retrieved ${services.length} services`, {
+      services,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
 };
 
-export const renewListing = async (req, res) => {
-    try {
-        const { error, value } = renewListingValidation.validate(req.body);
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
-        }
+export const adminUpdateServiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-        const listing = await serviceService.renewListing(
-            req.params.id,
-            req.user.id,
-            value
-        );
+    const existingService = await prisma.serviceListing.findUnique({
+      where: { id }
+    });
 
-        res.status(200).json({
-            success: true,
-            message: 'Service listing renewed successfully',
-            data: listing
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+    if (!existingService) {
+      return errorResponse(res, 'Service not found', null, 404);
     }
+
+    const updatedService = await prisma.serviceListing.update({
+      where: { id },
+      data: { status }
+    });
+
+    return successResponse(res, 'Service status updated by admin', { service: updatedService });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const adminDeleteService = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existingService = await prisma.serviceListing.findUnique({
+      where: { id }
+    });
+
+    if (!existingService) {
+      return errorResponse(res, 'Service not found', null, 404);
+    }
+
+    await prisma.serviceListing.delete({ where: { id } });
+
+    return successResponse(res, 'Service deleted by admin successfully');
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
 };

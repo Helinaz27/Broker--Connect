@@ -1,110 +1,112 @@
-import Joi from 'joi';
-import { COIN_RULES } from '../utils/constants.js';
+import { body, validationResult } from 'express-validator';
 
-export const createServiceListingValidation = Joi.object({
-    serviceType: Joi.string().valid('electrician', 'plumber', 'catering', 'house_worker', 'other').required().messages({
-        'any.only': 'Service type must be one of: electrician, plumber, catering, house_worker, other',
-        'any.required': 'Service type is required'
-    }),
-    title: Joi.string().required().min(5).max(100).messages({
-        'string.empty': 'Title is required',
-        'string.min': 'Title must be at least 5 characters',
-        'string.max': 'Title cannot exceed 100 characters'
-    }),
-    description: Joi.string().required().min(20).max(1000).messages({
-        'string.empty': 'Description is required',
-        'string.min': 'Description must be at least 20 characters',
-        'string.max': 'Description cannot exceed 1000 characters'
-    }),
-    images: Joi.array().items(Joi.string().uri()).max(COIN_RULES.MAX_IMAGES_PER_LISTING).min(1).required().messages({
-        'array.min': 'At least one image is required',
-        'array.max': `Maximum ${COIN_RULES.MAX_IMAGES_PER_LISTING} images allowed`,
-        'any.required': 'Images are required'
-    }),
-    priceRange: Joi.object({
-        min: Joi.number().positive().required().messages({
-            'number.positive': 'Minimum price must be positive',
-            'any.required': 'Minimum price is required'
-        }),
-        max: Joi.number().positive().greater(Joi.ref('min')).required().messages({
-            'number.positive': 'Maximum price must be positive',
-            'number.greater': 'Maximum price must be greater than minimum price',
-            'any.required': 'Maximum price is required'
-        })
-    }).required().messages({
-        'any.required': 'Price range is required'
-    }),
-    location: Joi.object({
-        city: Joi.string().required().messages({
-            'string.empty': 'City is required'
-        }),
-        subCity: Joi.string().required().messages({
-            'string.empty': 'Sub city is required'
-        }),
-        placeName: Joi.string().required().messages({
-            'string.empty': 'Place name is required'
-        }),
-        coordinates: Joi.object({
-            lat: Joi.number().required().messages({
-                'number.base': 'Latitude must be a number',
-                'any.required': 'Latitude is required'
-            }),
-            lng: Joi.number().required().messages({
-                'number.base': 'Longitude must be a number',
-                'any.required': 'Longitude is required'
-            })
-        }).required().messages({
-            'any.required': 'Coordinates are required'
-        })
-    }).required().messages({
-        'any.required': 'Location information is required'
-    }),
-    contactCoinLimit: Joi.number().min(0).required().messages({
-        'number.min': 'Contact coin limit cannot be negative',
-        'any.required': 'Contact coin limit is required'
-    }),
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const firstError = errors.array()[0];
+    return res.status(400).json({
+      success: false,
+      message: firstError.msg
+    });
+  }
+  next();
+};
 
-    paidUntil: Joi.date().greater('now').required().messages({
-        'date.greater': 'Paid until date must be in the future',
-        'any.required': 'Paid until date is required'
-    }),
-    status: Joi.string().valid('active', 'inactive', 'occupied').default('active')
-});
+//  CREATE SERVICE VALIDATOR 
+export const createServiceValidator = [
+  body('title')
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Title must be 5-200 characters')
+    .trim(),
 
-export const updateServiceListingValidation = Joi.object({
-    serviceType: Joi.string().valid('electrician', 'plumber', 'catering', 'house_worker', 'other'),
-    title: Joi.string().min(5).max(100),
-    description: Joi.string().min(20).max(1000),
-    images: Joi.array().items(Joi.string().uri()).max(COIN_RULES.MAX_IMAGES_PER_LISTING).min(1),
-    priceRange: Joi.object({
-        min: Joi.number().positive(),
-        max: Joi.number().positive().greater(Joi.ref('min'))
-    }),
-    location: Joi.object({
-        city: Joi.string(),
-        subCity: Joi.string(),
-        placeName: Joi.string(),
-        coordinates: Joi.object({
-            lat: Joi.number(),
-            lng: Joi.number()
-        })
-    }),
-    contactCoinLimit: Joi.number().min(0),
-    status: Joi.string().valid('active', 'inactive', 'occupied')
-}).min(1).messages({
-    'object.min': 'At least one field must be provided for update'
-});
+  body('description')
+    .notEmpty()
+    .withMessage('Description is required')
+    .isLength({ min: 20, max: 5000 })
+    .withMessage('Description must be 20-5000 characters')
+    .trim(),
 
-export const statusUpdateValidation = Joi.object({
-    status: Joi.string().valid('active', 'inactive', 'occupied').required().messages({
-        'any.only': 'Status must be one of: active, inactive, occupied',
-        'any.required': 'Status is required'
-    })
-});
+  body('serviceType')
+    .notEmpty()
+    .withMessage('Service type is required')
+    .isIn(['electrician', 'plumber', 'catering', 'house_worker', 'other'])
+    .withMessage('Invalid service type'),
 
-export const renewListingValidation = Joi.object({
-    paidUntil: Joi.date().greater('now').required().messages({
-        'date.greater': 'Paid until date must be in the future',
-        'any.required': 'Paid until date is required'
-    })
-});
+  body('price')
+    .notEmpty()
+    .withMessage('Price is required')
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a positive number'),
+
+  body('location.city')
+    .notEmpty()
+    .withMessage('City is required')
+    .trim(),
+
+  body('location.subCity')
+    .optional()
+    .trim(),
+
+  body('location.placeName')
+    .optional()
+    .trim(),
+
+  body('contactCoinLimit')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Contact coin limit must be a positive integer')
+    .default(0),
+
+  handleValidationErrors,
+];
+
+//  UPDATE SERVICE VALIDATOR 
+export const updateServiceValidator = [
+  body('title')
+    .optional()
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Title must be 5-200 characters')
+    .trim(),
+
+  body('description')
+    .optional()
+    .isLength({ min: 20, max: 5000 })
+    .withMessage('Description must be 20-5000 characters')
+    .trim(),
+
+  body('serviceType')
+    .optional()
+    .isIn(['electrician', 'plumber', 'catering', 'house_worker', 'other'])
+    .withMessage('Invalid service type'),
+
+  body('price')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a positive number'),
+
+  body('location.city')
+    .optional()
+    .trim(),
+
+  body('location.subCity')
+    .optional()
+    .trim(),
+
+  body('location.placeName')
+    .optional()
+    .trim(),
+
+  body('contactCoinLimit')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Contact coin limit must be a positive integer'),
+
+  body('status')
+    .optional()
+    .isIn(['active', 'inactive'])
+    .withMessage('Invalid status'),
+
+  handleValidationErrors,
+];

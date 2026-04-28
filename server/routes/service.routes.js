@@ -1,22 +1,27 @@
-// routes/serviceRoutes.js
 import express from 'express';
-const router = express.Router();
-import * as serviceController from '../controllers/serviceController.js';
 import { protect, admin } from '../middleware/auth.js';
-import { canCreateListing } from '../middleware/canCreateListing.js';
+import * as serviceController from '../controllers/service.controller.js';
+import { createServiceValidator, updateServiceValidator } from '../validators/service.validator.js';
+import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
-// Public routes
-router.get('/', serviceController.getAllListings);
+const router = express.Router();
 
-// Protected routes - ALL SPECIFIC ROUTES MUST COME FIRST
-router.post('/', protect, canCreateListing, serviceController.createListing);
-router.patch('/:id/status', protect, serviceController.updateStatus);
-router.post('/:id/contact', protect, serviceController.requestContact);
-router.post('/:id/renew', protect, serviceController.renewListing);
-router.put('/:id', protect, serviceController.updateListing);
-router.delete('/:id', protect, serviceController.deleteListing);
+//  USER SERVICE ROUTES 
+router.post('/', protect, uploadMultiple, handleUploadError, createServiceValidator, serviceController.createService);
+router.get('/my-listings', protect, serviceController.getMyServices);
+router.get('/:id', protect, serviceController.getServiceById);
+router.put('/:id', protect, uploadMultiple, handleUploadError, updateServiceValidator, serviceController.updateService);
+router.delete('/:id', protect, serviceController.deleteService);
+router.put('/:id/status', protect, serviceController.updateServiceStatus);
 
-// Parameterized route - MUST BE LAST
-router.get('/:id', serviceController.getListingById);
+//  PUBLIC SERVICE ROUTES 
+router.get('/', serviceController.getAllServices);
+router.get('/search/:city', serviceController.searchServicesByCity);
+router.get('/type/:serviceType', serviceController.getServicesByType);
+
+//  ADMIN SERVICE ROUTES 
+router.get('/admin/all', protect, admin, serviceController.adminGetAllServices);
+router.put('/admin/:id/status', protect, admin, serviceController.adminUpdateServiceStatus);
+router.delete('/admin/:id', protect, admin, serviceController.adminDeleteService);
 
 export default router;
