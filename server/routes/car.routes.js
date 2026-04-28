@@ -1,23 +1,26 @@
-// routes/serviceRoutes.js
 import express from 'express';
-const router = express.Router();
-import * as serviceController from '../controllers/serviceController.js';
 import { protect, admin } from '../middleware/auth.js';
-import { canCreateListing } from '../middleware/canCreateListing.js';
+import * as carController from '../controllers/car.controller.js';
+import { createCarValidator, updateCarValidator } from '../validators/car.validator.js';
+import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
-// Public routes
-router.get('/', serviceController.getAllListings);
+const router = express.Router();
 
-// Protected routes - ALL SPECIFIC ROUTES MUST COME FIRST
-// Routes with static segments before dynamic parameters
-router.post('/', protect, canCreateListing, serviceController.createListing);
-router.patch('/:id/status', protect, serviceController.updateStatus);
-router.post('/:id/contact', protect, serviceController.requestContact);
-router.post('/:id/renew', protect, serviceController.renewListing);
-router.put('/:id', protect, serviceController.updateListing);
-router.delete('/:id', protect, serviceController.deleteListing);
+//  USER CAR ROUTES 
+router.post('/', protect, uploadMultiple, handleUploadError, createCarValidator, carController.createCar);
+router.get('/my-listings', protect, carController.getMyCars);
+router.get('/:id', protect, carController.getCarById);
+router.put('/:id', protect, uploadMultiple, handleUploadError, updateCarValidator, carController.updateCar);
+router.delete('/:id', protect, carController.deleteCar);
+router.put('/:id/status', protect, carController.updateCarStatus);
 
-// Parameterized route - MUST BE LAST
-router.get('/:id', serviceController.getListingById);
+//  PUBLIC CAR ROUTES 
+router.get('/', carController.getAllCars);
+router.get('/search/:city', carController.searchCarsByCity);
+
+//  ADMIN CAR ROUTES 
+router.get('/admin/all', protect, admin, carController.adminGetAllCars);
+router.put('/admin/:id/status', protect, admin, carController.adminUpdateCarStatus);
+router.delete('/admin/:id', protect, admin, carController.adminDeleteCar);
 
 export default router;

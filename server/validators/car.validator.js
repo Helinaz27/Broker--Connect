@@ -1,111 +1,141 @@
-import Joi from 'joi';
-import { COIN_RULES } from '../utils/constants.js';
+import { body, validationResult } from 'express-validator';
 
-export const createCarListingValidation = Joi.object({
-    title: Joi.string().required().min(5).max(100).messages({
-        'string.empty': 'Title is required',
-        'string.min': 'Title must be at least 5 characters',
-        'string.max': 'Title cannot exceed 100 characters'
-    }),
-    description: Joi.string().required().min(20).max(1000).messages({
-        'string.empty': 'Description is required',
-        'string.min': 'Description must be at least 20 characters',
-        'string.max': 'Description cannot exceed 1000 characters'
-    }),
-    carType: Joi.string().valid('sedan', 'suv', 'hatchback', 'truck', 'bus', 'others').required().messages({
-        'any.only': 'Car type must be one of: sedan, suv, hatchback, truck, bus, others',
-        'any.required': 'Car type is required'
-    }),
-    brand: Joi.string().required().messages({
-        'string.empty': 'Brand is required'
-    }),
-    model: Joi.string().required().messages({
-        'string.empty': 'Model is required'
-    }),
-    year: Joi.number().integer().min(1900).max(new Date().getFullYear() + 1).required().messages({
-        'number.min': 'Year must be at least 1900',
-        'number.max': `Year cannot exceed ${new Date().getFullYear() + 1}`,
-        'any.required': 'Year is required'
-    }),
-    images: Joi.array().items(Joi.string().uri()).max(COIN_RULES.MAX_IMAGES_PER_LISTING).min(1).required().messages({
-        'array.min': 'At least one image is required',
-        'array.max': `Maximum ${COIN_RULES.MAX_IMAGES_PER_LISTING} images allowed`,
-        'any.required': 'Images are required'
-    }),
-    rentPrice: Joi.number().positive().required().messages({
-        'number.positive': 'Rent price must be a positive number',
-        'any.required': 'Rent price is required'
-    }),
-    listing_type: Joi.string().valid('sale', 'rent').required().messages({
-        'any.only': 'Listing type must be either sale or rent',
-        'any.required': 'Listing type is required'
-    }),
-    location: Joi.object({
-        address: Joi.string().required(),
-        city: Joi.string().required(),
-        subCity: Joi.string(),
-        state: Joi.string().required(),
-        country: Joi.string().required(),
-        pincode: Joi.string().required(),
-        coordinates: Joi.array().items(Joi.number()).length(2)
-    }).required(),
-    contactCoinLimit: Joi.number().min(0).required().messages({
-        'number.min': 'Contact coin limit cannot be negative',
-        'any.required': 'Contact coin limit is required'
-    }),
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const firstError = errors.array()[0];
+    return res.status(400).json({
+      success: false,
+      message: firstError.msg
+    });
+  }
+  next();
+};
 
-    paidUntil: Joi.date().greater('now').required().messages({
-        'date.greater': 'Paid until date must be in the future',
-        'any.required': 'Paid until date is required'
-    }),
-    mileage: Joi.number().min(0).required(),
-    fuel_type: Joi.string().valid('petrol', 'diesel', 'electric', 'hybrid').required(),
-    transmission: Joi.string().valid('manual', 'automatic').required(),
-    seats: Joi.number().min(1).max(100).required(),
-    color: Joi.string().required(),
-    status: Joi.string().valid('active', 'inactive', 'sold', 'rented').default('active')
-});
+//  CREATE CAR VALIDATOR 
+export const createCarValidator = [
+  body('title')
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Title must be 5-200 characters')
+    .trim(),
 
-export const updateCarListingValidation = Joi.object({
-    title: Joi.string().min(5).max(100),
-    description: Joi.string().min(20).max(1000),
-    carType: Joi.string().valid('sedan', 'suv', 'hatchback', 'truck', 'bus', 'others'),
-    brand: Joi.string(),
-    model: Joi.string(),
-    year: Joi.number().integer().min(1900).max(new Date().getFullYear() + 1),
-    images: Joi.array().items(Joi.string().uri()).max(COIN_RULES.MAX_IMAGES_PER_LISTING).min(1),
-    rentPrice: Joi.number().positive(),
-    listing_type: Joi.string().valid('sale', 'rent'),
-    location: Joi.object({
-        address: Joi.string(),
-        city: Joi.string(),
-        subCity: Joi.string(),
-        state: Joi.string(),
-        country: Joi.string(),
-        pincode: Joi.string(),
-        coordinates: Joi.array().items(Joi.number()).length(2)
-    }),
-    contactCoinLimit: Joi.number().min(0),
-    mileage: Joi.number().min(0),
-    fuel_type: Joi.string().valid('petrol', 'diesel', 'electric', 'hybrid'),
-    transmission: Joi.string().valid('manual', 'automatic'),
-    seats: Joi.number().min(1).max(100),
-    color: Joi.string(),
-    status: Joi.string().valid('active', 'inactive', 'sold', 'rented')
-}).min(1).messages({
-    'object.min': 'At least one field must be provided for update'
-});
+  body('description')
+    .notEmpty()
+    .withMessage('Description is required')
+    .isLength({ min: 20, max: 5000 })
+    .withMessage('Description must be 20-5000 characters')
+    .trim(),
 
-export const statusUpdateValidation = Joi.object({
-    status: Joi.string().valid('active', 'inactive', 'sold', 'rented').required().messages({
-        'any.only': 'Status must be one of: active, inactive, sold, rented',
-        'any.required': 'Status is required'
-    })
-});
+  body('carType')
+    .notEmpty()
+    .withMessage('Car type is required')
+    .isIn(['sedan', 'suv', 'hatchback', 'truck', 'bus', 'others'])
+    .withMessage('Invalid car type'),
 
-export const renewListingValidation = Joi.object({
-    paidUntil: Joi.date().greater('now').required().messages({
-        'date.greater': 'Paid until date must be in the future',
-        'any.required': 'Paid until date is required'
-    })
-});
+  body('brand')
+    .notEmpty()
+    .withMessage('Brand is required')
+    .trim(),
+
+  body('model')
+    .notEmpty()
+    .withMessage('Model is required')
+    .trim(),
+
+  body('year')
+    .notEmpty()
+    .withMessage('Year is required')
+    .isInt({ min: 1900, max: new Date().getFullYear() + 1 })
+    .withMessage(`Year must be between 1900 and ${new Date().getFullYear() + 1}`),
+
+  body('rentPrice')
+    .notEmpty()
+    .withMessage('Rent price is required')
+    .isFloat({ min: 0 })
+    .withMessage('Rent price must be a positive number'),
+
+  body('location.city')
+    .notEmpty()
+    .withMessage('City is required')
+    .trim(),
+
+  body('location.subCity')
+    .optional()
+    .trim(),
+
+  body('location.placeName')
+    .optional()
+    .trim(),
+
+  body('contactCoinLimit')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Contact coin limit must be a positive integer')
+    .default(0),
+
+  handleValidationErrors,
+];
+
+//  UPDATE CAR VALIDATOR 
+export const updateCarValidator = [
+  body('title')
+    .optional()
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Title must be 5-200 characters')
+    .trim(),
+
+  body('description')
+    .optional()
+    .isLength({ min: 20, max: 5000 })
+    .withMessage('Description must be 20-5000 characters')
+    .trim(),
+
+  body('carType')
+    .optional()
+    .isIn(['sedan', 'suv', 'hatchback', 'truck', 'bus', 'others'])
+    .withMessage('Invalid car type'),
+
+  body('brand')
+    .optional()
+    .trim(),
+
+  body('model')
+    .optional()
+    .trim(),
+
+  body('year')
+    .optional()
+    .isInt({ min: 1900, max: new Date().getFullYear() + 1 })
+    .withMessage(`Year must be between 1900 and ${new Date().getFullYear() + 1}`),
+
+  body('rentPrice')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Rent price must be a positive number'),
+
+  body('location.city')
+    .optional()
+    .trim(),
+
+  body('location.subCity')
+    .optional()
+    .trim(),
+
+  body('location.placeName')
+    .optional()
+    .trim(),
+
+  body('contactCoinLimit')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Contact coin limit must be a positive integer'),
+
+  body('status')
+    .optional()
+    .isIn(['active', 'inactive'])
+    .withMessage('Invalid status'),
+
+  handleValidationErrors,
+];
