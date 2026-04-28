@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { prisma } from '../config/db.config.js';
 import env from '../utils/env.js';
+
+//  PROTECT MIDDLEWARE 
 
 export const protect = async (req, res, next) => {
   let token;
@@ -9,15 +11,20 @@ export const protect = async (req, res, next) => {
     try {
       token = req.cookies.token;
       const decoded = jwt.verify(token, env.jwtSecret);
-      req.user = await User.findById(decoded.id).select('-passwordHash');
       
-      if (!req.user) {
+      // Find user in database using Prisma
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id }
+      });
+      
+      if (!user) {
         return res.status(401).json({ 
           success: false,
           message: 'Not authorized: User not found' 
         });
       }
       
+      req.user = user;
       return next();
     } catch (error) {
       return res.status(401).json({ 
@@ -26,7 +33,14 @@ export const protect = async (req, res, next) => {
       });
     }
   }
+  
+  return res.status(401).json({ 
+    success: false,
+    message: 'Not authorized: No token provided' 
+  });
 };
+
+//  ADMIN MIDDLEWARE 
 
 export const admin = async (req, res, next) => {
   try {
@@ -37,7 +51,10 @@ export const admin = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.user.id);
+    // Check if user has admin role using Prisma
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
     
     if (!user || !user.roles || !user.roles.includes('admin')) {
       return res.status(403).json({
@@ -55,6 +72,8 @@ export const admin = async (req, res, next) => {
   }
 };
 
+//  AUTHORIZE MIDDLEWARE 
+
 export const authorize = (...roles) => {
   return async (req, res, next) => {
     try {
@@ -65,7 +84,11 @@ export const authorize = (...roles) => {
         });
       }
       
-      const user = await User.findById(req.user.id);
+      // Check user roles using Prisma
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id }
+      });
+      
       const hasRole = user.roles.some(role => roles.includes(role));
       
       if (hasRole) {
