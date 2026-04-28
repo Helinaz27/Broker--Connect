@@ -1,21 +1,21 @@
 import express from 'express';
-import {
-  submitKycRequest,
-  getMyKycRequests,
-  getAllKycRequests,
-  getKycRequestById,
-  reviewKycRequest,
-  deleteKycRequest
-} from '../controllers/kycController.js';
 import { protect, admin } from '../middleware/auth.js';
+import * as kycController from '../controllers/kyc.controller.js';
+import { submitKycValidator } from '../validators/kyc.validator.js';
+import { uploadSingle, handleUploadError } from '../middleware/upload.js';
+
 
 const router = express.Router();
 
-router.post('/', protect, submitKycRequest);
-router.get('/my-requests', protect, getMyKycRequests);
-router.get('/', protect, admin, getAllKycRequests);
-router.get('/:id', protect, admin, getKycRequestById);
-router.put('/:id/review', protect, admin, reviewKycRequest);
-router.delete('/:id', protect, admin, deleteKycRequest);
+//  USER KYC ROUTES 
+router.post('/submit', protect,uploadSingle, handleUploadError, submitKycValidator, kycController.submitKYC);
+router.get('/my-status', protect, kycController.getMyKYCStatus);
+
+//  ADMIN KYC ROUTES 
+router.get('/pending', protect, admin, kycController.getPendingKYC);
+router.get('/all', protect, admin, kycController.getAllKYC);
+router.get('/:requestId', protect, admin, kycController.getKYCById);
+router.put('/:requestId/approve', protect, admin, kycController.approveKYC);
+router.put('/:requestId/reject', protect, admin, kycController.rejectKYC);
 
 export default router;

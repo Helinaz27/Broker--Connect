@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 //import local modules
+import { checkDbConnection, checkAdmin } from "./config/db.config.js";
 import env from "./utils/env.js";
 import router from "./routes/index.js";
 const app = express();
@@ -19,16 +20,6 @@ app.use(
 );
 
 app.use("/api", router);
-
-// Health check
-app.get("/", (req, res) => res.send("API is running..."));
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Server is running",
-    timestamp: new Date().toISOString(),
-  });
-});
 
 app.use((req, res) => {
   res.status(404).json({
@@ -53,9 +44,7 @@ const startServer = async () => {
       console.error("Database connection failed.");
       process.exit(1);
     }
-
     await checkAdmin();
-
     app.listen(env.port, () => {
       console.log(`Server running on port ${env.port}`);
       console.log(`Environment: ${env.NODE_ENV || "development"}`);

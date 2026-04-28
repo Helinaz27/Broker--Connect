@@ -1,7 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
-const dotenv = require("dotenv");
-const bcrypt = require("bcrypt");
-
+import { PrismaClient } from '@prisma/client';
+import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 dotenv.config();
 
 const prisma = new PrismaClient();
@@ -19,60 +18,53 @@ async function checkDbConnection() {
 }
 
 async function checkAdmin() {
-  const connected = await checkDbConnection();
-  if (!connected) process.exit(1);
-
   const adminEmail = process.env.ADMIN_EMAIL?.trim();
   const adminPass = process.env.ADMIN_PASSWORD?.trim();
+  const adminName = process.env.ADMIN_NAME?.trim();
+  const adminPhone = process.env.ADMIN_PHONE?.trim();
 
   if (!adminEmail || !adminPass) {
     console.warn(
       "ADMIN_EMAIL or ADMIN_PASSWORD not set in .env – skipping admin creation"
     );
-    await prisma.$disconnect();
     return;
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const existingAdmin = await tx.user.findFirst({
-        where: {
-          email: adminEmail,
-          roles: { has: "super_admin" }
-        }
-      });
-
-      if (existingAdmin) {
-        console.log(`Admin user already exists: ${existingAdmin.email}`);
-        return;
+    const existingAdmin = await prisma.user.findFirst({
+      where: {
+        email: adminEmail,
+        roles: { has: "super_admin" }
       }
-
-      const hashed = await bcrypt.hash(adminPass, 10);
-
-      const adminUser = await tx.user.create({
-        data: {
-          firstName: "Administrator",
-          lastName: "System",
-          phone: "0000000000",
-          email: adminEmail,
-          passwordHash: hashed,
-          roles: ["super_admin"],
-          coins: 1000,
-          isActive: true,
-          isEmailVerified: true,
-          profileImage: null
-        },
-      });
-      
-      console.log(`Created admin user: ${adminEmail}`);
     });
 
+    if (existingAdmin) {
+      console.log(`Admin user already exists: ${existingAdmin.email}`);
+      return;
+    }
+
+    const hashed = await bcrypt.hash(adminPass, 10);
+
+    // Split name into firstName and lastName
+    const nameParts = adminName ? adminName.split(' ') : ['Administrator', 'System'];
+    const firstName = nameParts[0] || 'Administrator';
+    const lastName = nameParts.slice(1).join(' ') || 'System';
+
+    const adminUser = await prisma.user.create({
+      data: {
+        firstName: firstName,
+        lastName: lastName,
+        phone: adminPhone,
+        email: adminEmail,
+        password: hashed,
+        roles: ["super_admin"]
+      },
+    });
+    
+    console.log(`Created admin user: ${adminEmail}`);
     console.log("Admin seeding completed successfully");
   } catch (err) {
     console.error("Error during admin seeding:", err);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

@@ -1,70 +1,54 @@
+// controllers/user.controller.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.config.js';
 import env from '../utils/env.js';
-import { COIN_RULES, TRANSACTION_REASONS } from '../utils/constants.js';
+import { COIN_RULES } from '../utils/constants.js';
 import generateToken, { setTokenCookie, clearTokenCookie } from '../utils/tokenGenerator.js';
+import { formatUserResponse, comparePassword, successResponse, errorResponse } from '../utils/helpers.js';
+import { saveUserToDatabase, saveUserUpdateToDatabase, saveUserDeletionToDatabase, saveUserDeactivationToDatabase } from '../services/user.service.js';
 
-import { 
-  formatUserResponse, 
-  hashPassword, 
-  comparePassword,
-  successResponse,
-  errorResponse 
-} from '../utils/helpers.js';
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return await bcrypt.hash(password, salt);
+};
 
-//  AUTHENTICATION CONTROLLERS 
+// ==================== AUTHENTICATION ====================
 
 export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password } = req.body;
 
-    // Check if user exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          { phone }
-        ]
-      }
-    });
+    // All checking in controller
+    const existingEmail = await prisma.user.findFirst({ where: { email } });
+    if (existingEmail) {
+      return errorResponse(res, 'Email already exists.', null, 400);
+    }
 
-    if (existingUser) {
-      return errorResponse(res, 'Registration failed: A user with this email or phone already exists.', null, 400);
+    const existingPhone = await prisma.user.findFirst({ where: { phone } });
+    if (existingPhone) {
+      return errorResponse(res, 'Phone already exists.', null, 400);
     }
 
     const hashedPassword = await hashPassword(password);
 
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        passwordHash: hashedPassword,
-        roles: ['user'],
-        coins: COIN_RULES.WELCOME_BONUS || 0,
-        isActive: true,
-        isEmailVerified: false
-      }
-    });
+    const userData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      password: hashedPassword,
+      roles: ['user'],
+      coins: COIN_RULES.WELCOME_BONUS || 0,
+      isActive: true,
+      isEmailVerified: false
+    };
 
-    // Create welcome bonus transaction
-    if (COIN_RULES.WELCOME_BONUS > 0) {
-      await prisma.coinTransaction.create({
-        data: {
-          userId: user.id,
-          type: 'credit',
-          amount: COIN_RULES.WELCOME_BONUS,
-          Reason: 'welcome_bonus',
-          description: `Welcome bonus of ${COIN_RULES.WELCOME_BONUS} coins`
-        }
-      });
-    }
+    // Only after all checks, send to service to save
+    const user = await saveUserToDatabase(userData);
 
-    return successResponse(res, 'Congratulations! You have successfully registered. Welcome aboard! Please login to continue.', { user: formatUserResponse(user) }, 201);
+    return successResponse(res, 'Registration successful! Please login.', { user: formatUserResponse(user) }, 201);
   } catch (error) {
-    console.error('Register error:', error);
     return errorResponse(res, 'Server error', error.message);
   }
 };
@@ -73,56 +57,48 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    const user = await prisma.user.findFirst({ where: { email } });
 
     if (!user) {
-      return errorResponse(res, 'Login failed: Invalid email or password.', null, 401);
+      return errorResponse(res, 'Invalid email or password.', null, 401);
     }
 
     if (!user.isActive) {
-      return errorResponse(res, 'Account is deactivated. Please contact admin.', null, 401);
+      return errorResponse(res, 'Account deactivated. Contact admin.', null, 401);
     }
 
-    const isPasswordMatch = await comparePassword(password, user.passwordHash);
+    const isPasswordMatch = await comparePassword(password, user.password);
     if (!isPasswordMatch) {
-      return errorResponse(res, 'Login failed: Invalid email or password.', null, 401);
+      return errorResponse(res, 'Invalid email or password.', null, 401);
     }
 
     const token = generateToken(user.id);
     setTokenCookie(res, token);
 
-    return successResponse(res, 'Great to see you again! You have successfully logged in.', {
-      token,
-      user: formatUserResponse(user)
-    });
+    return successResponse(res, 'Login successful!', { token, user: formatUserResponse(user) });
   } catch (error) {
-    console.error('Login error:', error);
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
 export const logout = async (req, res) => {
   clearTokenCookie(res);
-  return successResponse(res, 'You have been successfully logged out. See you again soon!');
+  return successResponse(res, 'Logout successful!');
 };
 
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    const user = await prisma.user.findFirst({ where: { email } });
 
     if (!user) {
-      return errorResponse(res, 'User not found with this email', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
     const resetToken = jwt.sign({ id: user.id }, env.jwtSecret, { expiresIn: '1h' });
 
-    return successResponse(res, 'Password reset link sent to your email', { resetToken });
+    return successResponse(res, 'Password reset link sent.', { resetToken });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -137,10 +113,10 @@ export const resetPassword = async (req, res) => {
 
     await prisma.user.update({
       where: { id: decoded.id },
-      data: { passwordHash: hashedPassword }
+      data: { password: hashedPassword }
     });
 
-    return successResponse(res, 'Password reset successfully');
+    return successResponse(res, 'Password reset successful.');
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -151,47 +127,41 @@ export const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const user = await prisma.user.findFirst({ where: { id: userId } });
 
     if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
-    const isPasswordMatch = await comparePassword(currentPassword, user.passwordHash);
+    const isPasswordMatch = await comparePassword(currentPassword, user.password);
     if (!isPasswordMatch) {
-      return errorResponse(res, 'Current password is incorrect', null, 401);
+      return errorResponse(res, 'Current password is incorrect.', null, 401);
     }
 
     const hashedPassword = await hashPassword(newPassword);
 
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash: hashedPassword }
+      data: { password: hashedPassword }
     });
 
-    return successResponse(res, 'Password changed successfully');
+    return successResponse(res, 'Password changed successfully.');
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-//  USER PROFILE CONTROLLERS 
+// ==================== USER PROFILE ====================
 
 export const getProfile = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id }
-    });
+    const user = await prisma.user.findFirst({ where: { id: req.user.id } });
 
     if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
-    return successResponse(res, `Welcome to your profile, ${user.firstName}!`, {
-      user: formatUserResponse(user)
-    });
+    return successResponse(res, 'Profile retrieved.', { user: formatUserResponse(user) });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -213,9 +183,7 @@ export const updateProfile = async (req, res) => {
       data: updateData
     });
 
-    return successResponse(res, 'Your profile has been successfully updated!', {
-      user: formatUserResponse(updatedUser)
-    });
+    return successResponse(res, 'Profile updated.', { user: formatUserResponse(updatedUser) });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -232,29 +200,25 @@ export const deleteAccount = async (req, res) => {
 
     clearTokenCookie(res);
 
-    return successResponse(res, 'Account deactivated successfully');
+    return successResponse(res, 'Account deactivated successfully.');
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-//  GET USERS CONTROLLERS 
+// ==================== GET USERS ====================
 
 export const getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const user = await prisma.user.findFirst({ where: { id: userId } });
 
     if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
-    return successResponse(res, 'User retrieved successfully', {
-      user: formatUserResponse(user)
-    });
+    return successResponse(res, 'User retrieved.', { user: formatUserResponse(user) });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -274,18 +238,16 @@ export const getUserByUsername = async (req, res) => {
     });
 
     if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
-    return successResponse(res, 'User retrieved successfully', {
-      user: formatUserResponse(user)
-    });
+    return successResponse(res, 'User retrieved.', { user: formatUserResponse(user) });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-//  ADMIN USER MANAGEMENT CONTROLLERS 
+// ==================== ADMIN ====================
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -317,7 +279,7 @@ export const getAllUsers = async (req, res) => {
       prisma.user.count({ where })
     ]);
 
-    return successResponse(res, `Retrieved ${users.length} users successfully`, {
+    return successResponse(res, `Retrieved ${users.length} users.`, {
       users: users.map(user => formatUserResponse(user)),
       pagination: {
         page: parseInt(page),
@@ -336,12 +298,10 @@ export const updateUserStatus = async (req, res) => {
     const { userId } = req.params;
     const { isActive } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const user = await prisma.user.findFirst({ where: { id: userId } });
 
     if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
     const updatedUser = await prisma.user.update({
@@ -349,7 +309,7 @@ export const updateUserStatus = async (req, res) => {
       data: { isActive }
     });
 
-    return successResponse(res, 'User status updated successfully', {
+    return successResponse(res, 'User status updated.', {
       user: {
         id: updatedUser.id,
         firstName: updatedUser.firstName,
@@ -367,19 +327,15 @@ export const deleteUserByAdmin = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    const user = await prisma.user.findFirst({ where: { id: userId } });
 
     if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+      return errorResponse(res, 'User not found.', null, 404);
     }
 
-    await prisma.user.delete({
-      where: { id: userId }
-    });
+    await prisma.user.delete({ where: { id: userId } });
 
-    return successResponse(res, 'User deleted successfully');
+    return successResponse(res, 'User deleted successfully.');
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
