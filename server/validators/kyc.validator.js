@@ -25,11 +25,5 @@ export const submitKycValidator = [
     .withMessage('Document number is required')
     .trim(),
 
-  body('documentImageUrl')
-    .notEmpty()
-    .withMessage('Document image URL is required')
-    .isURL()
-    .withMessage('Valid image URL is required'),
-
   handleValidationErrors,
 ];
