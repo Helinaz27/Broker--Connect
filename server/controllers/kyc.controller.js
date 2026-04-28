@@ -1,186 +1,237 @@
-import KycRequest from '../models/KycRequest.js';
-import User from '../models/User.js';
-import CoinTransaction from '../models/CoinTransaction.js'; // ADDED
-import { KYC_STATUS, COIN_RULES, TRANSACTION_REASONS } from '../utils/constants.js'; // ADDED
-import {
-  validateKycSubmit,
-  validateKycReview,
-  validateStatusFilter
-} from '../validations/kycValidation.js';
-import {
-  checkExistingPendingRequest,
-  createKycRequest,
-  getUserKycRequests,
-  fetchAllKycRequests,
-  fetchKycRequestById,
-  processKycReview,
-  removeKycRequest,
-  updateUserLevelAfterKyc,
-  formatKycResponse
-} from '../services/kycService.js';
+import cloudinary from '../config/cloudinary.config.js';
+import { successResponse, errorResponse } from '../utils/helpers.js';
+import { saveKYCToDatabase } from '../services/kyc.service.js';
 
-export const submitKycRequest = async (req, res) => {
+//  USER KYC CONTROLLERS 
+
+export const submitKYC = async (req, res) => {
   try {
-    const validation = validateKycSubmit(req.body);
-    if (!validation.isValid) {
-      return res.status(400).json({
-        message: 'Validation failed: ' + validation.errors.join(', ')
-      });
+    const userId = req.user.id;
+    const { documentType, documentNumber } = req.body;
+
+    // ALL CHECKS IN CONTROLLER
+    if (!req.file) {
+      return errorResponse(res, 'Document image is required', null, 400);
     }
 
-    const existingRequest = await checkExistingPendingRequest(req.user._id);
-    if (existingRequest) {
-      return res.status(400).json({
-        message: 'You already have a pending KYC request'
-      });
+    // Check existing KYC
+    const existingKYC = await prisma.kYCRequest.findFirst({
+      where: {
+        userId: userId,
+        status: { in: ['pending', 'approved'] }
+      }
+    });
+
+    if (existingKYC) {
+      return errorResponse(res, 'You already have a pending or approved KYC request', null, 400);
     }
 
-    const kycRequest = await createKycRequest(req.user._id, {
-      ...req.body,
-      status: KYC_STATUS.PENDING
+    // Upload to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'kyc_documents', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
     });
 
-    // Update user's kyc status
-    await User.findByIdAndUpdate(req.user._id, {
-      kycStatus: KYC_STATUS.PENDING,
-      kycSubmittedAt: new Date()
-    });
+    // Prepare final data after ALL checks
+    const kycData = {
+      userId: userId,
+      documentType: documentType,
+      documentNumber: documentNumber,
+      documentImageUrl: uploadResult.secure_url,
+      status: 'pending'
+    };
 
-    res.status(201).json({
-      message: 'KYC request submitted successfully',
-      kycRequest: formatKycResponse(kycRequest)
-    });
+    // Service ONLY saves to database (no checks)
+    const kycRequest = await saveKYCToDatabase(kycData);
+
+    return successResponse(res, 'KYC request submitted successfully', { kycRequest }, 201);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Submit KYC error:', error);
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const getMyKycRequests = async (req, res) => {
+export const getMyKYCStatus = async (req, res) => {
   try {
-    const requests = await getUserKycRequests(req.user._id);
+    const userId = req.user.id;
 
-    res.json({
-      count: requests.length,
-      requests: requests.map(req => formatKycResponse(req))
+    // Controller does the find
+    const kycRequest = await prisma.kYCRequest.findFirst({
+      where: { userId: userId },
+      orderBy: { createdAt: 'desc' }
     });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
 
-export const getAllKycRequests = async (req, res) => {
-  try {
-    const { status } = req.query;
-    
-    const statusValidation = validateStatusFilter(status);
-    if (!statusValidation.isValid) {
-      return res.status(400).json({ message: statusValidation.message });
-    }
-
-    const filter = status ? { status } : {};
-    const requests = await fetchAllKycRequests(filter, true);
-
-    res.json({
-      count: requests.length,
-      requests: requests.map(req => formatKycResponse(req))
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getKycRequestById = async (req, res) => {
-  try {
-    const request = await fetchKycRequestById(req.params.id, true);
-
-    if (!request) {
-      return res.status(404).json({ message: 'KYC request not found' });
-    }
-
-    res.json({ request: formatKycResponse(request) });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const reviewKycRequest = async (req, res) => {
-  try {
-    const validation = validateKycReview(req.body);
-    if (!validation.isValid) {
-      return res.status(400).json({
-        message: 'Validation failed: ' + validation.errors.join(', ')
-      });
-    }
-
-    const kycRequest = await KycRequest.findById(req.params.id);
     if (!kycRequest) {
-      return res.status(404).json({ message: 'KYC request not found' });
+      return successResponse(res, 'No KYC request found', { status: 'not_submitted' });
+    }
+
+    return successResponse(res, 'KYC status retrieved', { kycRequest });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  ADMIN KYC CONTROLLERS 
+
+export const getPendingKYC = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Controller does the find
+    const [requests, total] = await Promise.all([
+      prisma.kYCRequest.findMany({
+        where: { status: 'pending' },
+        skip: skip,
+        take: parseInt(limit),
+        orderBy: { createdAt: 'asc' }
+      }),
+      prisma.kYCRequest.count({ where: { status: 'pending' } })
+    ]);
+
+    return successResponse(res, `Retrieved ${requests.length} pending KYC requests`, {
+      kycRequests: requests,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const getAllKYC = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const skip = (page - 1) * limit;
+
+    const where = status ? { status } : {};
+
+    // Controller does the find
+    const [requests, total] = await Promise.all([
+      prisma.kYCRequest.findMany({
+        where,
+        skip: skip,
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.kYCRequest.count({ where })
+    ]);
+
+    return successResponse(res, `Retrieved ${requests.length} KYC requests`, {
+      kycRequests: requests,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const getKYCById = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    // Controller does the find
+    const kycRequest = await prisma.kYCRequest.findUnique({
+      where: { id: requestId }
+    });
+
+    if (!kycRequest) {
+      return errorResponse(res, 'KYC request not found', null, 404);
+    }
+
+    return successResponse(res, 'KYC request retrieved', { kycRequest });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const approveKYC = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const adminId = req.user.id;
+
+    // Controller does ALL checks
+    const kycRequest = await prisma.kYCRequest.findUnique({
+      where: { id: requestId }
+    });
+
+    if (!kycRequest) {
+      return errorResponse(res, 'KYC request not found', null, 404);
     }
 
     if (kycRequest.status !== 'pending') {
-      return res.status(400).json({
-        message: `This request has already been ${kycRequest.status}`
-      });
+      return errorResponse(res, 'This KYC request has already been processed', null, 400);
     }
 
-    const updatedRequest = await processKycReview(
-      req.params.id,
-      req.user._id,
-      req.body
-    );
-
-    if (req.body.status === 'approved') {
-      await User.findByIdAndUpdate(kycRequest.userId, {
-        level: 1,
-        kycStatus: KYC_STATUS.APPROVED,
-        canCreateListings: true,
-        kycApprovedAt: new Date()
-      });
-
-      await User.findByIdAndUpdate(kycRequest.userId, {
-        $inc: { coins: COIN_RULES.KYC_BONUS || 0 }
-      });
-
-      await CoinTransaction.create({
-        userId: kycRequest.userId,
-        type: 'credit',
-        amount: COIN_RULES.KYC_BONUS || 0,
-        reason: TRANSACTION_REASONS.KYC_BONUS,
-        description: 'KYC approval bonus'
-      });
-    } else if (req.body.status === 'rejected') {
-      await User.findByIdAndUpdate(kycRequest.userId, {
-        kycStatus: KYC_STATUS.REJECTED,
-        canCreateListings: false,
-        kycRejectedAt: new Date(),
-        kycRejectionReason: req.body.reviewNote
-      });
-    }
-
-    res.json({
-      message: `KYC request ${req.body.status} successfully`,
-      kycRequest: formatKycResponse(updatedRequest)
+    // Controller updates directly (or call service only to save)
+    await prisma.kYCRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'approved',
+        reviewedBy: adminId,
+        reviewedAt: new Date()
+      }
     });
+
+    // Update user
+    await prisma.user.update({
+      where: { id: kycRequest.userId },
+      data: { isEmailVerified: true }
+    });
+
+    return successResponse(res, 'KYC request approved successfully');
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const deleteKycRequest = async (req, res) => {
+export const rejectKYC = async (req, res) => {
   try {
-    const kycRequest = await removeKycRequest(req.params.id);
+    const { requestId } = req.params;
+    const { reviewNote } = req.body;
+    const adminId = req.user.id;
 
-    if (!kycRequest) {
-      return res.status(404).json({ message: 'KYC request not found' });
-    }
-
-    await User.findByIdAndUpdate(kycRequest.userId, {
-      kycStatus: KYC_STATUS.NONE,
-      canCreateListings: false
+    // Controller does ALL checks
+    const kycRequest = await prisma.kYCRequest.findUnique({
+      where: { id: requestId }
     });
 
-    res.json({ message: 'KYC request deleted successfully' });
+    if (!kycRequest) {
+      return errorResponse(res, 'KYC request not found', null, 404);
+    }
+
+    if (kycRequest.status !== 'pending') {
+      return errorResponse(res, 'This KYC request has already been processed', null, 400);
+    }
+
+    // Controller updates directly
+    await prisma.kYCRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'rejected',
+        reviewedBy: adminId,
+        reviewNote: reviewNote,
+        reviewedAt: new Date()
+      }
+    });
+
+    return successResponse(res, 'KYC request rejected successfully');
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    return errorResponse(res, 'Server error', error.message);
   }
 };

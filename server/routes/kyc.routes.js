@@ -2,11 +2,13 @@ import express from 'express';
 import { protect, admin } from '../middleware/auth.js';
 import * as kycController from '../controllers/kyc.controller.js';
 import { submitKycValidator } from '../validators/kyc.validator.js';
+import { uploadSingle, handleUploadError } from '../middleware/upload.js';
+
 
 const router = express.Router();
 
 //  USER KYC ROUTES 
-router.post('/submit', protect, submitKycValidator, kycController.submitKYC);
+router.post('/submit', protect,uploadSingle, handleUploadError, submitKycValidator, kycController.submitKYC);
 router.get('/my-status', protect, kycController.getMyKYCStatus);
 
 //  ADMIN KYC ROUTES 
