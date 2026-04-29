@@ -206,11 +206,21 @@ export const deleteAccount = async (req, res) => {
   }
 };
 
-// ==================== GET USERS ====================
+//  GET USERS BY ID OR USERNAME
 
 export const getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
+    const currentUserId = req.user.id;
+    const currentUserRole = req.user.roles;
+
+    // Check if user is admin or super_admin
+    const isAdmin = currentUserRole.includes('admin') || currentUserRole.includes('super_admin');
+
+    // If not admin, user can only see their own profile
+    if (!isAdmin && currentUserId !== userId) {
+      return errorResponse(res, 'You are not authorized to view this user', null, 403);
+    }
 
     const user = await prisma.user.findFirst({ where: { id: userId } });
 
@@ -227,8 +237,14 @@ export const getUserById = async (req, res) => {
 export const getUserByUsername = async (req, res) => {
   try {
     const { username } = req.params;
+    const currentUserId = req.user.id;
+    const currentUserRole = req.user.roles;
 
-    const user = await prisma.user.findFirst({
+    // Check if user is admin or super_admin
+    const isAdmin = currentUserRole.includes('admin') || currentUserRole.includes('super_admin');
+
+    // First find the user by username
+    const targetUser = await prisma.user.findFirst({
       where: {
         OR: [
           { firstName: username },
@@ -237,17 +253,22 @@ export const getUserByUsername = async (req, res) => {
       }
     });
 
-    if (!user) {
+    if (!targetUser) {
       return errorResponse(res, 'User not found.', null, 404);
     }
 
-    return successResponse(res, 'User retrieved.', { user: formatUserResponse(user) });
+    // If not admin, user can only see their own profile
+    if (!isAdmin && currentUserId !== targetUser.id) {
+      return errorResponse(res, 'You are not authorized to view this user', null, 403);
+    }
+
+    return successResponse(res, 'User retrieved.', { user: formatUserResponse(targetUser) });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-// ==================== ADMIN ====================
+//  ADMIN 
 
 export const getAllUsers = async (req, res) => {
   try {

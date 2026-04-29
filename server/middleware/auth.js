@@ -1,3 +1,4 @@
+// middleware/auth.js
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.config.js';
 import env from '../utils/env.js';
@@ -40,8 +41,7 @@ export const protect = async (req, res, next) => {
   });
 };
 
-//  ADMIN MIDDLEWARE 
-
+//  ADMIN MIDDLEWARE - FIXED to accept admin OR super_admin
 export const admin = async (req, res, next) => {
   try {
     if (!req.user) {
@@ -51,12 +51,11 @@ export const admin = async (req, res, next) => {
       });
     }
 
-    // Check if user has admin role using Prisma
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id }
-    });
+    // Check if user has admin OR super_admin role
+    const userRoles = req.user.roles || [];
+    const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
     
-    if (!user || !user.roles || !user.roles.includes('admin')) {
+    if (!isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin only.'
@@ -73,7 +72,6 @@ export const admin = async (req, res, next) => {
 };
 
 //  AUTHORIZE MIDDLEWARE 
-
 export const authorize = (...roles) => {
   return async (req, res, next) => {
     try {
@@ -84,12 +82,8 @@ export const authorize = (...roles) => {
         });
       }
       
-      // Check user roles using Prisma
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.id }
-      });
-      
-      const hasRole = user.roles.some(role => roles.includes(role));
+      const userRoles = req.user.roles || [];
+      const hasRole = userRoles.some(role => roles.includes(role));
       
       if (hasRole) {
         next();

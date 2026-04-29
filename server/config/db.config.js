@@ -57,7 +57,8 @@ async function checkAdmin() {
         phone: adminPhone,
         email: adminEmail,
         password: hashed,
-        roles: ["super_admin"]
+        roles: ["super_admin"],
+        isEmailVerified: true, 
       },
     });
     
