@@ -1,283 +1,282 @@
-import ChatRoom from '../models/ChatRoom.js';
-import Message from '../models/Message.js';
-import User from '../models/User.js';
-import ContactAccess from '../models/ContactAccess.js'; // ADDED
+import { prisma } from '../config/db.config.js';
+import { successResponse, errorResponse } from '../utils/helpers.js';
+import { createNotification } from '../services/notification.service.js';
 
-export const getChatRooms = async (req, res) => {
+//  USER CHAT CONTROLLERS 
+
+export const createChat = async (req, res) => {
   try {
-    const rooms = await ChatRoom.find({
-      participants: req.user._id
-    })
-    .populate('participants', 'username firstname lastname profileImage')
-    .sort({ updatedAt: -1 });
+    const userId = req.user.id;
+    const { participantId, listingId, listingType } = req.body;
 
-    const roomsWithLastMessage = await Promise.all(
-      rooms.map(async (room) => {
-        const lastMessage = await Message.findOne({ roomId: room._id })
-          .sort({ createdAt: -1 });
+    // Check if chat already exists
+    const existingChat = await prisma.chatRoom.findFirst({
+      where: {
+        AND: [
+          { participants: { has: userId } },
+          { participants: { has: participantId } }
+        ]
+      }
+    });
+
+    if (existingChat) {
+      return successResponse(res, 'Chat already exists', { chatRoom: existingChat });
+    }
+
+    const chatRoom = await prisma.chatRoom.create({
+      data: {
+        participants: [userId, participantId]
+      }
+    });
+
+    return successResponse(res, 'Chat created successfully', { chatRoom }, 201);
+  } catch (error) {
+    console.error('Create chat error:', error);
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const getMyChats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const [chatRooms, total] = await Promise.all([
+      prisma.chatRoom.findMany({
+        where: {
+          participants: { has: userId }
+        },
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { updatedAt: 'desc' }
+      }),
+      prisma.chatRoom.count({
+        where: { participants: { has: userId } }
+      })
+    ]);
+
+    // Get last message for each chat room
+    const chatsWithLastMessage = await Promise.all(
+      chatRooms.map(async (room) => {
+        const lastMessage = await prisma.message.findFirst({
+          where: { roomId: room.id },
+          orderBy: { createdAt: 'desc' }
+        });
         
-        const otherParticipant = room.participants.find(
-          p => p._id.toString() !== req.user._id.toString()
-        );
-
-        const hasAccess = await ContactAccess.findOne({
-          viewerId: req.user._id,
-          ownerId: otherParticipant?._id,
-          isActive: true
+        // Get other participant info
+        const otherParticipantId = room.participants.find(p => p !== userId);
+        const otherParticipant = await prisma.user.findUnique({
+          where: { id: otherParticipantId },
+          select: { id: true, firstName: true, lastName: true, profileImage: true }
         });
 
         return {
-          _id: room._id,
+          ...room,
           otherParticipant,
-          lastMessage,
-          hasAccess: !!hasAccess, 
-          unreadCount: await Message.countDocuments({
-            roomId: room._id,
-            senderId: { $ne: req.user._id },
-            'readBy.userId': { $ne: req.user._id }
-          }),
-          createdAt: room.createdAt,
-          updatedAt: room.updatedAt
+          lastMessage
         };
       })
     );
 
-    res.json({
-      success: true,
-      message: 'Chat rooms retrieved successfully',
-      data: roomsWithLastMessage
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-export const createChatRoom = async (req, res) => {
-  try {
-    const { participantId } = req.body;
-
-    const hasAccess = await ContactAccess.findOne({
-      viewerId: req.user._id,
-      ownerId: participantId,
-      isActive: true
-    });
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        success: false,
-        message: 'You must pay the contact fee before starting a chat'
-      });
-    }
-
-    let room = await ChatRoom.findOne({
-      participants: { $all: [req.user._id, participantId] }
-    });
-
-    if (!room) {
-      room = await ChatRoom.create({
-        participants: [req.user._id, participantId]
-      });
-    }
-
-    await room.populate('participants', 'username firstname lastname profileImage');
-
-    res.status(201).json({
-      success: true,
-      message: 'Chat room created successfully',
-      data: room
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-export const getMessages = async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const { page = 1, limit = 50 } = req.query;
-
-    const room = await ChatRoom.findOne({
-      _id: roomId,
-      participants: req.user._id
-    });
-
-    if (!room) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
-
-    const otherParticipant = room.participants.find(
-      p => p.toString() !== req.user._id.toString()
-    );
-
-    const hasAccess = await ContactAccess.findOne({
-      viewerId: req.user._id,
-      ownerId: otherParticipant,
-      isActive: true
-    });
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        success: false,
-        message: 'You must pay the contact fee to view messages'
-      });
-    }
-
-    const skip = (page - 1) * limit;
-
-    const messages = await Message.find({ roomId })
-      .populate('senderId', 'username firstname lastname profileImage')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-
-    const total = await Message.countDocuments({ roomId });
-
-    await Message.updateMany(
-      {
-        roomId,
-        senderId: { $ne: req.user._id },
-        'readBy.userId': { $ne: req.user._id }
-      },
-      {
-        $push: {
-          readBy: {
-            userId: req.user._id,
-            readAt: new Date()
-          }
-        }
-      }
-    );
-
-    res.json({
-      success: true,
-      message: 'Messages retrieved successfully',
-      data: messages.reverse(),
+    return successResponse(res, `Retrieved ${chatRooms.length} chats`, {
+      chats: chatsWithLastMessage,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: parseInt(page),
+        limit: parseInt(limit),
         total,
         pages: Math.ceil(total / limit)
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const getChatMessages = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const userId = req.user.id;
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Verify user is in this chat room
+    const chatRoom = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: { has: userId }
+      }
     });
+
+    if (!chatRoom) {
+      return errorResponse(res, 'Chat room not found or unauthorized', null, 404);
+    }
+
+    const [messages, total] = await Promise.all([
+      prisma.message.findMany({
+        where: { roomId },
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.message.count({ where: { roomId } })
+    ]);
+
+    return successResponse(res, `Retrieved ${messages.length} messages`, {
+      messages: messages.reverse(),
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
 export const sendMessage = async (req, res) => {
   try {
     const { roomId } = req.params;
+    const userId = req.user.id;
     const { content, messageType = 'text' } = req.body;
 
-    const room = await ChatRoom.findOne({
-      _id: roomId,
-      participants: req.user._id
+    // Verify user is in this chat room
+    const chatRoom = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: { has: userId }
+      }
     });
 
-    if (!room) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
+    if (!chatRoom) {
+      return errorResponse(res, 'Chat room not found or unauthorized', null, 404);
+    }
+
+    // Create message
+    const message = await prisma.message.create({
+      data: {
+        roomId,
+        senderId: userId,
+        content,
+        messageType,
+        readBy: []
+      }
+    });
+
+    // Update chat room updatedAt
+    await prisma.chatRoom.update({
+      where: { id: roomId },
+      data: { updatedAt: new Date() }
+    });
+
+    // Create notification for other participants
+    const otherParticipants = chatRoom.participants.filter(p => p !== userId);
+    for (const participantId of otherParticipants) {
+      await prisma.notification.create({
+        data: {
+          userId: participantId,
+          Type: 'message',
+          title: 'New Message',
+          body: content.substring(0, 100),
+          data: {
+            chatRoomId: roomId,
+            messageId: message.id
+          },
+          isRead: false
+        }
       });
     }
 
-    const otherParticipant = room.participants.find(
-      p => p.toString() !== req.user._id.toString()
-    );
-
-    const hasAccess = await ContactAccess.findOne({
-      viewerId: req.user._id,
-      ownerId: otherParticipant,
-      isActive: true
-    });
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        success: false,
-        message: 'You must pay the contact fee to send messages'
-      });
-    }
-
-    const message = await Message.create({
-      roomId,
-      senderId: req.user._id,
-      messageType,
-      content,
-      readBy: [{
-        userId: req.user._id,
-        readAt: new Date()
-      }]
-    });
-
-    await ChatRoom.findByIdAndUpdate(roomId, {
-      updatedAt: new Date()
-    });
-
-    await message.populate('senderId', 'username firstname lastname profileImage');
-
-    res.status(201).json({
-      success: true,
-      message: 'Message sent successfully',
-      data: message
-    });
+    return successResponse(res, 'Message sent successfully', { message }, 201);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const markMessageRead = async (req, res) => {
+export const markMessageAsRead = async (req, res) => {
   try {
-    const { messageId } = req.params;
+    const { roomId, messageId } = req.params;
+    const userId = req.user.id;
 
-    const message = await Message.findById(messageId);
+    const message = await prisma.message.findFirst({
+      where: {
+        id: messageId,
+        roomId: roomId
+      }
+    });
 
     if (!message) {
-      return res.status(404).json({
-        success: false,
-        message: 'Message not found'
-      });
+      return errorResponse(res, 'Message not found', null, 404);
     }
 
-    const alreadyRead = message.readBy.some(
-      r => r.userId.toString() === req.user._id.toString()
-    );
-
+    // Check if already read by this user
+    const alreadyRead = message.readBy.some(read => read.userId === userId);
+    
     if (!alreadyRead) {
-      message.readBy.push({
-        userId: req.user._id,
-        readAt: new Date()
+      await prisma.message.update({
+        where: { id: messageId },
+        data: {
+          readBy: {
+            push: { userId, readAt: new Date() }
+          }
+        }
       });
-      await message.save();
     }
 
-    res.json({
-      success: true,
-      message: 'Message marked as read'
+    return successResponse(res, 'Message marked as read');
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  ADMIN CHAT CONTROLLERS 
+
+export const adminGetAllChats = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const [chatRooms, total] = await Promise.all([
+      prisma.chatRoom.findMany({
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { updatedAt: 'desc' }
+      }),
+      prisma.chatRoom.count()
+    ]);
+
+    return successResponse(res, `Retrieved ${chatRooms.length} chats`, {
+      chats: chatRooms,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const adminDeleteChat = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    // Delete all messages in the chat room first
+    await prisma.message.deleteMany({
+      where: { roomId }
     });
+
+    // Delete the chat room
+    await prisma.chatRoom.delete({
+      where: { id: roomId }
+    });
+
+    return successResponse(res, 'Chat deleted successfully');
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
   }
 };

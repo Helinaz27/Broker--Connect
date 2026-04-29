@@ -1,77 +1,26 @@
-import { prisma } from '../config/db.config.js';
+import express from 'express';
+import { protect, admin } from '../middleware/auth.js';
+import * as houseController from '../controllers/house.controller.js';
+import { createHouseValidator, updateHouseValidator } from '../validators/house.validator.js';
+import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
-//  CREATE 
-export const saveHouseToDatabase = async (houseData) => {
-  return await prisma.houseListing.create({
-    data: houseData
-  });
-};
+const router = express.Router();
 
-//   READ 
-export const findHouseById = async (id) => {
-  return await prisma.houseListing.findUnique({
-    where: { id }
-  });
-};
+//  USER HOUSE ROUTES 
+router.post('/', protect, uploadMultiple, handleUploadError, createHouseValidator, houseController.createHouse);
+router.get('/my-listings', protect, houseController.getMyHouses);
+router.get('/:id', protect, houseController.getHouseById);
+router.put('/:id', protect, uploadMultiple, handleUploadError, updateHouseValidator, houseController.updateHouse);
+router.delete('/:id', protect, houseController.deleteHouse);
+router.put('/:id/status', protect, houseController.updateHouseStatus);
 
-export const findHousesByOwner = async (ownerId) => {
-  return await prisma.houseListing.findMany({
-    where: { ownerId },
-    orderBy: { createdAt: 'desc' }
-  });
-};
+//  PUBLIC HOUSE ROUTES 
+router.get('/', houseController.getAllHouses);
+router.get('/search/:city', houseController.searchHousesByCity);
 
-export const findAllHouses = async (skip, take, where, orderBy) => {
-  return await prisma.houseListing.findMany({
-    where,
-    skip,
-    take,
-    orderBy
-  });
-};
+//  ADMIN HOUSE ROUTES 
+router.get('/admin/all', protect, admin, houseController.adminGetAllHouses);
+router.put('/admin/:id/status', protect, admin, houseController.adminUpdateHouseStatus);
+router.delete('/admin/:id', protect, admin, houseController.adminDeleteHouse);
 
-export const countHouses = async (where) => {
-  return await prisma.houseListing.count({ where });
-};
-
-export const findHousesByLocation = async (city, skip, take) => {
-  return await prisma.houseListing.findMany({
-    where: {
-      status: 'active',
-      location: {
-        path: 'city',
-        equals: city
-      }
-    },
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' }
-  });
-};
-
-export const countHousesByLocation = async (city) => {
-  return await prisma.houseListing.count({
-    where: {
-      status: 'active',
-      location: {
-        path: 'city',
-        equals: city
-      }
-    }
-  });
-};
-
-//  UPDATE 
-export const updateHouseInDatabase = async (id, updateData) => {
-  return await prisma.houseListing.update({
-    where: { id },
-    data: updateData
-  });
-};
-
-//  DELETE 
-export const deleteHouseFromDatabase = async (id) => {
-  return await prisma.houseListing.delete({
-    where: { id }
-  });
-};
+export default router;
