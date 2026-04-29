@@ -1,4 +1,3 @@
-// middleware/upload.js
 import multer from 'multer';
 import path from 'path';
 
@@ -27,8 +26,11 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-// Single file upload middleware
+// Single file upload middleware (for KYC document)
 export const uploadSingle = upload.single('documentImage');
+
+// Multiple files upload middleware (for House, Car, Service listings)
+export const uploadMultiple = upload.array('images', 10);  // Max 10 images
 
 // Handle upload errors
 export const handleUploadError = (err, req, res, next) => {

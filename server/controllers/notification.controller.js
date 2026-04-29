@@ -1,314 +1,224 @@
-import Notification from '../models/Notification.js';
+import { prisma } from '../config/db.config.js';
+import { successResponse, errorResponse } from '../utils/helpers.js';
 
-export const getNotifications = async (req, res) => {
+//  USER NOTIFICATION CONTROLLERS 
+
+export const getMyNotifications = async (req, res) => {
   try {
-    const { page = 1, limit = 20, type, read } = req.query;
+    const userId = req.user.id;
+    const { page = 1, limit = 20, isRead } = req.query;
     const skip = (page - 1) * limit;
 
-    const filter = { userId: req.user._id };
-    if (type) filter.type = type;
-    if (read !== undefined) filter.isRead = read === 'true';
+    const where = { userId };
+    if (isRead !== undefined) {
+      where.isRead = isRead === 'true';
+    }
 
-    const notifications = await Notification.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-
-    const total = await Notification.countDocuments(filter);
-    const unreadCount = await Notification.countDocuments({ 
-      userId: req.user._id, 
-      isRead: false 
-    });
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const thisWeek = new Date(today);
-    thisWeek.setDate(thisWeek.getDate() - 7);
-
-    const grouped = {
-      today: notifications.filter(n => new Date(n.createdAt) >= today),
-      yesterday: notifications.filter(n => {
-        const date = new Date(n.createdAt);
-        return date >= yesterday && date < today;
+    const [notifications, total] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
       }),
-      thisWeek: notifications.filter(n => {
-        const date = new Date(n.createdAt);
-        return date >= thisWeek && date < yesterday;
-      }),
-      older: notifications.filter(n => new Date(n.createdAt) < thisWeek)
-    };
+      prisma.notification.count({ where })
+    ]);
 
-    res.json({
-      success: true,
-      message: 'Notifications retrieved successfully',
-      data: notifications,
-      grouped,
-      unreadCount,
+    return successResponse(res, `Retrieved ${notifications.length} notifications`, {
+      notifications,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: parseInt(page),
+        limit: parseInt(limit),
         total,
         pages: Math.ceil(total / limit)
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const count = await prisma.notification.count({
+      where: {
+        userId,
+        isRead: false
+      }
     });
+
+    return successResponse(res, 'Unread count retrieved', { unreadCount: count });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
 export const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
 
-    const notification = await Notification.findOneAndUpdate(
-      { _id: id, userId: req.user._id },
-      { isRead: true },
-      { new: true }
-    );
+    const notification = await prisma.notification.findFirst({
+      where: {
+        id: id,
+        userId: userId
+      }
+    });
 
     if (!notification) {
-      return res.status(404).json({
-        success: false,
-        message: 'Notification not found'
-      });
+      return errorResponse(res, 'Notification not found', null, 404);
     }
 
-    const unreadCount = await Notification.countDocuments({
-      userId: req.user._id,
-      isRead: false
+    const updatedNotification = await prisma.notification.update({
+      where: { id: id },
+      data: { isRead: true }
     });
 
-    res.json({
-      success: true,
-      message: 'Notification marked as read',
-      data: notification,
-      unreadCount
-    });
+    return successResponse(res, 'Notification marked as read', { notification: updatedNotification });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-export const markMultipleAsRead = async (req, res) => {
-  try {
-    const { ids } = req.body; 
-
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide an array of notification IDs'
-      });
-    }
-
-    const result = await Notification.updateMany(
-      { _id: { $in: ids }, userId: req.user._id },
-      { isRead: true }
-    );
-
-    const unreadCount = await Notification.countDocuments({
-      userId: req.user._id,
-      isRead: false
-    });
-
-    res.json({
-      success: true,
-      message: `${result.modifiedCount} notifications marked as read`,
-      data: { modifiedCount: result.modifiedCount },
-      unreadCount
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
 export const markAllAsRead = async (req, res) => {
   try {
-    const result = await Notification.updateMany(
-      { userId: req.user._id, isRead: false },
-      { isRead: true }
-    );
+    const userId = req.user.id;
 
-    res.json({
-      success: true,
-      message: `${result.modifiedCount} notifications marked as read`,
-      data: { modifiedCount: result.modifiedCount }
+    await prisma.notification.updateMany({
+      where: {
+        userId: userId,
+        isRead: false
+      },
+      data: { isRead: true }
     });
+
+    return successResponse(res, 'All notifications marked as read');
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
 export const deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
 
-    const notification = await Notification.findOneAndDelete({
-      _id: id,
-      userId: req.user._id
+    const notification = await prisma.notification.findFirst({
+      where: {
+        id: id,
+        userId: userId
+      }
     });
 
     if (!notification) {
-      return res.status(404).json({
-        success: false,
-        message: 'Notification not found'
+      return errorResponse(res, 'Notification not found', null, 404);
+    }
+
+    await prisma.notification.delete({
+      where: { id: id }
+    });
+
+    return successResponse(res, 'Notification deleted successfully');
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    await prisma.notification.deleteMany({
+      where: { userId: userId }
+    });
+
+    return successResponse(res, 'All notifications deleted successfully');
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  ADMIN NOTIFICATION CONTROLLERS 
+
+export const sendSystemNotification = async (req, res) => {
+  try {
+    const { title, body, Type, userId, data } = req.body;
+
+    let notificationData = {
+      title,
+      body,
+      Type,
+      isRead: false
+    };
+
+    if (data) {
+      notificationData.data = data;
+    }
+
+    if (userId) {
+      // Send to specific user
+      notificationData.userId = userId;
+      const notification = await prisma.notification.create({
+        data: notificationData
       });
+      return successResponse(res, 'Notification sent to user', { notification }, 201);
+    } else {
+      // Send to all users
+      const users = await prisma.user.findMany({
+        where: { isActive: true },
+        select: { id: true }
+      });
+
+      const notifications = await Promise.all(
+        users.map(user => 
+          prisma.notification.create({
+            data: {
+              ...notificationData,
+              userId: user.id
+            }
+          })
+        )
+      );
+
+      return successResponse(res, `Notification sent to ${notifications.length} users`, { count: notifications.length }, 201);
     }
-
-    const unreadCount = await Notification.countDocuments({
-      userId: req.user._id,
-      isRead: false
-    });
-
-    res.json({
-      success: true,
-      message: 'Notification deleted successfully',
-      unreadCount
-    });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    console.error('Send notification error:', error);
+    return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const deleteAllRead = async (req, res) => {
+export const adminGetAllNotifications = async (req, res) => {
   try {
-    const result = await Notification.deleteMany({
-      userId: req.user._id,
-      isRead: true
-    });
+    const { page = 1, limit = 20, userId, Type } = req.query;
+    const skip = (page - 1) * limit;
 
-    res.json({
-      success: true,
-      message: `${result.deletedCount} read notifications deleted successfully`
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
+    const where = {};
+    if (userId) where.userId = userId;
+    if (Type) where.Type = Type;
 
-export const createNotification = async (userId, type, title, body, data = {}) => {
-  try {
-    if (!userId || !type || !title || !body) {
-      console.error('Missing required fields for notification');
-      return null;
-    }
-
-    const notification = await Notification.create({
-      userId,
-      type,
-      title,
-      body,
-      data,
-      isRead: false
-    });
-
-  
-
-    return notification;
-  } catch (error) {
-    console.error('Error creating notification:', error);
-    return null;
-  }
-};
-
-export const createBulkNotifications = async (userIds, type, title, body, data = {}) => {
-  try {
-    const notifications = userIds.map(userId => ({
-      userId,
-      type,
-      title,
-      body,
-      data,
-      isRead: false
-    }));
-
-    const result = await Notification.insertMany(notifications);
-    return result;
-  } catch (error) {
-    console.error('Error creating bulk notifications:', error);
-    return null;
-  }
-};
-
-export const getUnreadCount = async (req, res) => {
-  try {
-    const count = await Notification.countDocuments({
-      userId: req.user._id,
-      isRead: false
-    });
-
-    res.json({
-      success: true,
-      message: 'Unread count retrieved successfully',
-      data: { count }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-export const getNotificationStats = async (req, res) => {
-  try {
-    const stats = await Notification.aggregate([
-      { $match: { userId: req.user._id } },
-      { $group: {
-        _id: '$type',
-        count: { $sum: 1 },
-        unread: { $sum: { $cond: ['$isRead', 0, 1] } }
-      }}
+    const [notifications, total] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.notification.count({ where })
     ]);
 
-    const total = await Notification.countDocuments({ userId: req.user._id });
-    const unread = await Notification.countDocuments({ 
-      userId: req.user._id, 
-      isRead: false 
-    });
-
-    res.json({
-      success: true,
-      message: 'Notification statistics retrieved successfully',
-      data: {
+    return successResponse(res, `Retrieved ${notifications.length} notifications`, {
+      notifications,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
         total,
-        unread,
-        byType: stats
+        pages: Math.ceil(total / limit)
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    return errorResponse(res, 'Server error', error.message);
   }
 };

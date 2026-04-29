@@ -1,14 +1,19 @@
-// routes/notificationRoutes.js
 import express from 'express';
-const router = express.Router();
-import * as notificationController from '../controllers/notificationController.js';
-import { protect } from '../middleware/auth.js';  // Change this line
+import { protect, admin } from '../middleware/auth.js';
+import * as notificationController from '../controllers/notification.controller.js';
 
-// All notification routes are protected
-router.get('/', protect, notificationController.getNotifications);
+const router = express.Router();
+
+//  USER NOTIFICATION ROUTES 
+router.get('/', protect, notificationController.getMyNotifications);
+router.get('/unread/count', protect, notificationController.getUnreadCount);
 router.put('/:id/read', protect, notificationController.markAsRead);
 router.put('/read-all', protect, notificationController.markAllAsRead);
 router.delete('/:id', protect, notificationController.deleteNotification);
-router.get('/unread/count', protect, notificationController.getUnreadCount);
+router.delete('/', protect, notificationController.deleteAllNotifications);
+
+//  ADMIN NOTIFICATION ROUTES 
+router.post('/admin/send', protect, admin, notificationController.sendSystemNotification);
+router.get('/admin/all', protect, admin, notificationController.adminGetAllNotifications);
 
 export default router;
