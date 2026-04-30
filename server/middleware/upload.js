@@ -55,4 +55,9 @@ export const handleUploadError = (err, req, res, next) => {
   next();
 };
 
+export const uploadKYCImages = upload.fields([
+  { name: 'frontSideImage', maxCount: 1 },
+  { name: 'backSideImage', maxCount: 1 }
+]);
+
 export default upload;

@@ -17,8 +17,8 @@ export const submitKycValidator = [
   body('documentType')
     .notEmpty()
     .withMessage('Document type is required')
-    .isIn(['national_id', 'passport'])
-    .withMessage('Document type must be national_id or passport'),
+    .isIn(['national_id', 'passport', 'driving_license'])
+    .withMessage('Document type must be national_id, passport, or driving_license'),
 
   body('documentNumber')
     .notEmpty()

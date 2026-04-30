@@ -23,6 +23,7 @@ model User {
   isActive         Boolean   @default(true)
   isEmailVerified  Boolean   @default(false)
   profileImage     String?
+  kycRequests      KYCRequest[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -35,14 +36,14 @@ model KYCRequest {
   userId           String         @db.ObjectId
   documentType     DocumentType
   documentNumber   String
-  documentImageUrl String
+  frontSideImage       String
+  backSideImage        String?
   status           KYCStatus      @default(pending)
   reviewedBy       String?        @db.ObjectId
   reviewNote       String?
   reviewedAt       DateTime?
   createdAt        DateTime       @default(now())
-
-  @@map("kyc_requests")
+  user             User           @relation(fields: [userId], references: [id])
 }
 
 // 2.3 House Listings Collection
@@ -216,6 +217,8 @@ enum Role {
 enum DocumentType {
   national_id
   passport
+  driving_license
+
 }
 
 enum KYCStatus {
