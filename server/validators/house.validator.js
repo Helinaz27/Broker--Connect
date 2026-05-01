@@ -1,4 +1,4 @@
-import { body, validationResult } from 'express-validator';
+import { body, param, validationResult } from 'express-validator';
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -39,6 +39,12 @@ export const createHouseValidator = [
     .withMessage('Price is required')
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number'),
+
+  body('durationDays')
+    .notEmpty()
+    .withMessage('Duration days is required')
+    .isInt({ min: 1, max: 365 })
+    .withMessage('Duration days must be between 1 and 365'),
 
   body('location.city')
     .notEmpty()
@@ -105,8 +111,58 @@ export const updateHouseValidator = [
 
   body('status')
     .optional()
-    .isIn(['active', 'inactive', 'occupied'])
+    .isIn(['active', 'inactive'])
     .withMessage('Invalid status'),
 
+  handleValidationErrors,
+];
+
+//  PARAM VALIDATORS 
+export const idParamValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('House ID is required')
+    .isMongoId()
+    .withMessage('Invalid house ID format'),
+  handleValidationErrors,
+];
+
+export const ownerIdParamValidator = [
+  param('ownerId')
+    .notEmpty()
+    .withMessage('Owner ID is required')
+    .isMongoId()
+    .withMessage('Invalid owner ID format'),
+  handleValidationErrors,
+];
+
+export const typeParamValidator = [
+  param('houseType')
+    .notEmpty()
+    .withMessage('House type is required')
+    .isIn(['condominium', 'villa', 'business', 'apartment', 'others'])
+    .withMessage('Invalid house type'),
+  handleValidationErrors,
+];
+
+export const cityParamValidator = [
+  param('city')
+    .notEmpty()
+    .withMessage('City is required')
+    .trim(),
+  handleValidationErrors,
+];
+
+export const priceParamValidator = [
+  param('min')
+    .notEmpty()
+    .withMessage('Minimum price is required')
+    .isFloat({ min: 0 })
+    .withMessage('Minimum price must be a positive number'),
+  param('max')
+    .notEmpty()
+    .withMessage('Maximum price is required')
+    .isFloat({ min: 0 })
+    .withMessage('Maximum price must be a positive number'),
   handleValidationErrors,
 ];

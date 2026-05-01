@@ -6,21 +6,25 @@ import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
-//  USER HOUSE ROUTES 
+//  CREATE 
 router.post('/', protect, uploadMultiple, handleUploadError, createHouseValidator, houseController.createHouse);
-router.get('/my-listings', protect, houseController.getMyHouses);
-router.get('/:id', protect, houseController.getHouseById);
+
+//  UPDATE 
 router.put('/:id', protect, uploadMultiple, handleUploadError, updateHouseValidator, houseController.updateHouse);
-router.delete('/:id', protect, houseController.deleteHouse);
 router.put('/:id/status', protect, houseController.updateHouseStatus);
 
-//  PUBLIC HOUSE ROUTES 
-router.get('/', houseController.getAllHouses);
-router.get('/search/:city', houseController.searchHousesByCity);
+//  GET (All with pagination) 
+router.get('/', protect, houseController.getAllHouses);
+router.get('/my', protect, houseController.getMyHouses);
+router.get('/owner/:ownerId', protect, houseController.getHousesByOwner);
+router.get('/type/:houseType', protect, houseController.getHousesByType);
+router.get('/city/:city', protect, houseController.getHousesByCity);
+router.get('/price/:min/:max', protect, houseController.getHousesByPrice);
 
-//  ADMIN HOUSE ROUTES 
+//admin routes
 router.get('/admin/all', protect, admin, houseController.adminGetAllHouses);
-router.put('/admin/:id/status', protect, admin, houseController.adminUpdateHouseStatus);
-router.delete('/admin/:id', protect, admin, houseController.adminDeleteHouse);
+// GET http://localhost:5000/api/houses/admin/all?status=active
+// GET http://localhost:5000/api/houses/admin/all?status=inactive
+// GET http://localhost:5000/api/houses/admin/all?status=all
 
 export default router;
