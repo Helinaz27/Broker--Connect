@@ -1,6 +1,13 @@
 import { prisma } from '../config/db.config.js';
 import cloudinary from '../config/cloudinary.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
+import {
+  saveServiceToDatabase,
+  findServiceById,
+  findAllServices,
+  findAllActiveServices,
+  updateServiceInDatabase
+} from '../services/service.service.js';
 
 //  HELPER FUNCTIONS 
 
@@ -20,12 +27,47 @@ const uploadImagesToCloudinary = async (files) => {
   return await Promise.all(uploadPromises);
 };
 
-//  USER SERVICE CONTROLLERS 
+const formatServiceResponse = (service, isOwner = false, isAdmin = false) => {
+  const baseData = {
+    id: service.id,
+    title: service.title,
+    description: service.description,
+    serviceType: service.serviceType,
+    price: service.price,
+    location: {
+      city: service.location?.city,
+      subCity: service.location?.subCity,
+      placeName: service.location?.placeName,
+      fullAddress: `${service.location?.placeName || ''} ${service.location?.subCity || ''} ${service.location?.city || ''}`.trim()
+    },
+    images: service.images,
+    contactCoinLimit: service.contactCoinLimit,
+    status: service.status,
+    createdAt: service.createdAt
+  };
 
+  if (isOwner || isAdmin) {
+    baseData.ownerId = service.ownerId;
+    baseData.paidUntil = service.paidUntil;
+    baseData.updatedAt = service.updatedAt;
+    baseData.isExpired = service.paidUntil ? new Date() > new Date(service.paidUntil) : false;
+    baseData.daysRemaining = service.paidUntil ? Math.ceil((new Date(service.paidUntil) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+  }
+
+  return baseData;
+};
+
+//  CREATE SERVICE 
 export const createService = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { title, description, serviceType, price, location, contactCoinLimit } = req.body;
+    const userFullName = `${req.user.firstName} ${req.user.lastName}`;
+    const { title, description, serviceType, price, location, contactCoinLimit, durationDays } = req.body;
+   
+
+    if (!durationDays || durationDays < 1) {
+      return errorResponse(res, 'Duration days is required and must be at least 1 day', null, 400);
+    }
 
     const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
 
@@ -33,6 +75,36 @@ export const createService = async (req, res) => {
     if (req.files && req.files.length > 0) {
       imageUrls = await uploadImagesToCloudinary(req.files);
     }
+
+    const POSTING_RATE_PER_DAY = 1;
+    const totalCoinsNeeded = durationDays * POSTING_RATE_PER_DAY;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true }
+    });
+
+    if (!user || user.coins < totalCoinsNeeded) {
+      return errorResponse(res, `Insufficient coins. Need ${totalCoinsNeeded} coins for ${durationDays} days. Please buy coins first.`, null, 400);
+    }
+
+    const paidUntil = new Date();
+    paidUntil.setDate(paidUntil.getDate() + parseInt(durationDays));
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { coins: { decrement: totalCoinsNeeded } }
+    });
+
+    await prisma.coinTransaction.create({
+      data: {
+        userId: userId,
+        type: 'debit',
+        amount: totalCoinsNeeded,
+        Reason: 'posting_fee',
+        description: `Paid ${totalCoinsNeeded} coins for ${durationDays} days of service listing`
+      }
+    });
 
     const serviceData = {
       ownerId: userId,
@@ -42,66 +114,75 @@ export const createService = async (req, res) => {
       price: parseFloat(price),
       images: imageUrls,
       location: parsedLocation,
-      contactCoinLimit: contactCoinLimit || 0,
+      contactCoinLimit: parseInt(contactCoinLimit) || 0,
+      postingFeeId: null,
+      paidUntil: paidUntil,
       status: 'active'
     };
 
-    const service = await prisma.serviceListing.create({
-      data: serviceData
+    const service = await saveServiceToDatabase(serviceData);
+
+    const owner = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, phone: true, email: true }
     });
 
-    return successResponse(res, 'Service listing created successfully', { service }, 201);
+    const formattedResponse = {
+      id: service.id,
+      title: service.title,
+      description: service.description,
+      serviceType: service.serviceType,
+      price: service.price,
+      location: {
+        city: service.location.city,
+        subCity: service.location.subCity,
+        placeName: service.location.placeName,
+        fullAddress: `${service.location.placeName || ''} ${service.location.subCity || ''} ${service.location.city || ''}`.trim()
+      },
+      images: service.images,
+      contactCoinLimit: service.contactCoinLimit,
+      status: service.status,
+      createdAt: service.createdAt,
+      owner: {
+        id: owner.id,
+        name: `${owner.firstName} ${owner.lastName}`,
+        phone: owner.phone,
+        email: owner.email
+      },
+      postingDetails: {
+        durationDays: parseInt(durationDays),
+        totalCoinsPaid: totalCoinsNeeded,
+        paidUntil: paidUntil,
+        expiresIn: `${durationDays} days`,
+        isActive: true
+      },
+      currentCoinsRemaining: user.coins - totalCoinsNeeded
+    };
+
+    return successResponse(res, `Dear ${userFullName}, your service listing '${title}' has been posted successfully for ${durationDays} days.`, { service: formattedResponse }, 201);
   } catch (error) {
     console.error('Create service error:', error);
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const getMyServices = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const services = await prisma.serviceListing.findMany({
-      where: { ownerId: userId },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    return successResponse(res, `Retrieved ${services.length} services`, { services });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-export const getServiceById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const service = await prisma.serviceListing.findUnique({
-      where: { id }
-    });
-
-    if (!service) {
-      return errorResponse(res, 'Service listing not found', null, 404);
-    }
-
-    return successResponse(res, 'Service retrieved successfully', { service });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
+//  UPDATE SERVICE 
 export const updateService = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.roles || [];
+    const isAdmin = userRole.includes('admin') || userRole.includes('super_admin');
     const { title, description, serviceType, price, location, contactCoinLimit, status } = req.body;
 
-    const existingService = await prisma.serviceListing.findFirst({
-      where: { id, ownerId: userId }
-    });
+    const existingService = await findServiceById(id);
 
     if (!existingService) {
-      return errorResponse(res, 'Service not found or unauthorized', null, 404);
+      return errorResponse(res, 'Service not found', null, 404);
+    }
+
+    if (!isAdmin && existingService.ownerId !== userId) {
+      return errorResponse(res, 'You are not authorized to update this service', null, 403);
     }
 
     const updateData = {};
@@ -113,7 +194,7 @@ export const updateService = async (req, res) => {
       const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
       updateData.location = parsedLocation;
     }
-    if (contactCoinLimit !== undefined) updateData.contactCoinLimit = contactCoinLimit;
+    if (contactCoinLimit !== undefined) updateData.contactCoinLimit = parseInt(contactCoinLimit);
     if (status !== undefined) updateData.status = status;
 
     if (req.files && req.files.length > 0) {
@@ -121,134 +202,65 @@ export const updateService = async (req, res) => {
       updateData.images = [...existingService.images, ...newImageUrls];
     }
 
-    const updatedService = await prisma.serviceListing.update({
-      where: { id },
-      data: updateData
-    });
+    const updatedService = await updateServiceInDatabase(id, updateData);
 
-    return successResponse(res, 'Service updated successfully', { service: updatedService });
+    const formattedService = formatServiceResponse(updatedService, !isAdmin, isAdmin);
+
+    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, your service has been updated successfully`, { service: formattedService });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const deleteService = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const existingService = await prisma.serviceListing.findFirst({
-      where: { id, ownerId: userId }
-    });
-
-    if (!existingService) {
-      return errorResponse(res, 'Service not found or unauthorized', null, 404);
-    }
-
-    await prisma.serviceListing.delete({ where: { id } });
-
-    return successResponse(res, 'Service deleted successfully');
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
+//  UPDATE SERVICE STATUS 
 export const updateServiceStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.roles || [];
+    const isAdmin = userRole.includes('admin') || userRole.includes('super_admin');
     const { status } = req.body;
 
-    const existingService = await prisma.serviceListing.findFirst({
-      where: { id, ownerId: userId }
-    });
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return errorResponse(res, 'Status must be active or inactive', null, 400);
+    }
+
+    const existingService = await findServiceById(id);
 
     if (!existingService) {
-      return errorResponse(res, 'Service not found or unauthorized', null, 404);
+      return errorResponse(res, 'Service not found', null, 404);
     }
 
-    const updatedService = await prisma.serviceListing.update({
-      where: { id },
-      data: { status }
-    });
+    if (!isAdmin && existingService.ownerId !== userId) {
+      return errorResponse(res, 'You are not authorized to update this service status', null, 403);
+    }
 
-    return successResponse(res, 'Service status updated', { service: updatedService });
+    const updatedService = await updateServiceInDatabase(id, { status });
+
+    return successResponse(res, `Service status updated to ${status} successfully`, {
+      id: updatedService.id,
+      status: updatedService.status,
+      updatedAt: updatedService.updatedAt
+    });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-//  PUBLIC SERVICE CONTROLLERS 
-
+//  GET ALL SERVICES (Public - Active only) 
 export const getAllServices = async (req, res) => {
   try {
-    const { page = 1, limit = 20, serviceType, minPrice, maxPrice } = req.query;
-    const skip = (page - 1) * limit;
-
-    const where = { status: 'active' };
-    if (serviceType) where.serviceType = serviceType;
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
-    }
-
-    const [services, total] = await Promise.all([
-      prisma.serviceListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.serviceListing.count({ where })
-    ]);
-
-    return successResponse(res, `Retrieved ${services.length} services`, {
-      services,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-export const searchServicesByCity = async (req, res) => {
-  try {
-    const { city } = req.params;
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const [services, total] = await Promise.all([
-      prisma.serviceListing.findMany({
-        where: {
-          status: 'active',
-          location: {
-            path: 'city',
-            equals: city
-          }
-        },
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.serviceListing.count({
-        where: {
-          status: 'active',
-          location: {
-            path: 'city',
-            equals: city
-          }
-        }
-      })
-    ]);
+    const allServices = await findAllActiveServices();
+    
+    const total = allServices.length;
+    const services = allServices.slice(skip, skip + parseInt(limit));
+    const formattedServices = services.map(service => formatServiceResponse(service, false, false));
 
-    return successResponse(res, `Found ${services.length} services in ${city}`, {
-      services,
+    return successResponse(res, `Retrieved ${formattedServices.length} services successfully`, {
+      services: formattedServices,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -261,32 +273,22 @@ export const searchServicesByCity = async (req, res) => {
   }
 };
 
-export const getServicesByType = async (req, res) => {
+//  GET MY SERVICES (User - own services) 
+export const getMyServices = async (req, res) => {
   try {
-    const { serviceType } = req.params;
+    const userId = req.user.id;
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const [services, total] = await Promise.all([
-      prisma.serviceListing.findMany({
-        where: {
-          status: 'active',
-          serviceType: serviceType
-        },
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.serviceListing.count({
-        where: {
-          status: 'active',
-          serviceType: serviceType
-        }
-      })
-    ]);
+    const allServices = await findAllServices();
+    
+    const myServices = allServices.filter(service => service.ownerId === userId);
+    const total = myServices.length;
+    const services = myServices.slice(skip, skip + parseInt(limit));
+    const formattedServices = services.map(service => formatServiceResponse(service, true, false));
 
-    return successResponse(res, `Found ${services.length} ${serviceType} services`, {
-      services,
+    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, you have ${formattedServices.length} of ${total} services`, {
+      services: formattedServices,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -299,28 +301,24 @@ export const getServicesByType = async (req, res) => {
   }
 };
 
-//  ADMIN SERVICE CONTROLLERS 
-
+//  ADMIN GET ALL SERVICES 
 export const adminGetAllServices = async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = {};
-    if (status) where.status = status;
+    let allServices = await findAllServices();
+    
+    if (status && status !== 'all') {
+      allServices = allServices.filter(service => service.status === status);
+    }
+    
+    const total = allServices.length;
+    const services = allServices.slice(skip, skip + parseInt(limit));
+    const formattedServices = services.map(service => formatServiceResponse(service, false, true));
 
-    const [services, total] = await Promise.all([
-      prisma.serviceListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.serviceListing.count({ where })
-    ]);
-
-    return successResponse(res, `Retrieved ${services.length} services`, {
-      services,
+    return successResponse(res, `Retrieved ${formattedServices.length} services successfully`, {
+      services: formattedServices,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -333,45 +331,144 @@ export const adminGetAllServices = async (req, res) => {
   }
 };
 
-export const adminUpdateServiceStatus = async (req, res) => {
+//  GET SERVICE BY ID 
+export const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
 
-    const existingService = await prisma.serviceListing.findUnique({
-      where: { id }
-    });
+    const service = await findServiceById(id);
 
-    if (!existingService) {
+    if (!service) {
       return errorResponse(res, 'Service not found', null, 404);
     }
 
-    const updatedService = await prisma.serviceListing.update({
-      where: { id },
-      data: { status }
-    });
+    if (service.status !== 'active') {
+      return errorResponse(res, 'Service not available', null, 404);
+    }
 
-    return successResponse(res, 'Service status updated by admin', { service: updatedService });
+    const formattedService = formatServiceResponse(service, false, false);
+
+    return successResponse(res, 'Service retrieved successfully', { service: formattedService });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const adminDeleteService = async (req, res) => {
+//  SEARCH SERVICES (Public - Active only) 
+export const searchServices = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { page = 1, limit = 20, serviceType, city, minPrice, maxPrice, search } = req.query;
+    const skip = (page - 1) * limit;
 
-    const existingService = await prisma.serviceListing.findUnique({
-      where: { id }
-    });
+    let allServices = await findAllActiveServices();
 
-    if (!existingService) {
-      return errorResponse(res, 'Service not found', null, 404);
+    if (serviceType) allServices = allServices.filter(s => s.serviceType === serviceType);
+    if (city) allServices = allServices.filter(s => s.location?.city?.toLowerCase() === city.toLowerCase());
+    if (minPrice) allServices = allServices.filter(s => s.price >= parseFloat(minPrice));
+    if (maxPrice) allServices = allServices.filter(s => s.price <= parseFloat(maxPrice));
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allServices = allServices.filter(s => 
+        s.title.toLowerCase().includes(searchLower) ||
+        s.description.toLowerCase().includes(searchLower)
+      );
     }
 
-    await prisma.serviceListing.delete({ where: { id } });
+    const total = allServices.length;
+    const services = allServices.slice(skip, skip + parseInt(limit));
+    const formattedServices = services.map(service => formatServiceResponse(service, false, false));
 
-    return successResponse(res, 'Service deleted by admin successfully');
+    return successResponse(res, `Found ${formattedServices.length} services`, {
+      services: formattedServices,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  SEARCH USER SERVICES (Dashboard) 
+export const searchUserServices = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 20, serviceType, city, minPrice, maxPrice, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    let allServices = await findAllServices();
+
+    let filteredServices = allServices.filter(service => {
+      return service.status === 'active' || service.ownerId === userId;
+    });
+
+    if (serviceType) filteredServices = filteredServices.filter(s => s.serviceType === serviceType);
+    if (city) filteredServices = filteredServices.filter(s => s.location?.city?.toLowerCase() === city.toLowerCase());
+    if (minPrice) filteredServices = filteredServices.filter(s => s.price >= parseFloat(minPrice));
+    if (maxPrice) filteredServices = filteredServices.filter(s => s.price <= parseFloat(maxPrice));
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredServices = filteredServices.filter(s => 
+        s.title.toLowerCase().includes(searchLower) ||
+        s.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = filteredServices.length;
+    const services = filteredServices.slice(skip, skip + parseInt(limit));
+    const formattedServices = services.map(service => formatServiceResponse(service, service.ownerId === userId, false));
+
+    return successResponse(res, `Found ${formattedServices.length} services`, {
+      services: formattedServices,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  SEARCH ADMIN SERVICES (Admin Dashboard) 
+export const searchAdminServices = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, serviceType, city, minPrice, maxPrice, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    let allServices = await findAllServices();
+
+    if (status && status !== 'all') allServices = allServices.filter(s => s.status === status);
+    if (serviceType) allServices = allServices.filter(s => s.serviceType === serviceType);
+    if (city) allServices = allServices.filter(s => s.location?.city?.toLowerCase() === city.toLowerCase());
+    if (minPrice) allServices = allServices.filter(s => s.price >= parseFloat(minPrice));
+    if (maxPrice) allServices = allServices.filter(s => s.price <= parseFloat(maxPrice));
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allServices = allServices.filter(s => 
+        s.title.toLowerCase().includes(searchLower) ||
+        s.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = allServices.length;
+    const services = allServices.slice(skip, skip + parseInt(limit));
+    const formattedServices = services.map(service => formatServiceResponse(service, false, true));
+
+    return successResponse(res, `Found ${formattedServices.length} services`, {
+      services: formattedServices,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }

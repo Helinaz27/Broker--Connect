@@ -6,22 +6,24 @@ import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
-//  USER SERVICE ROUTES 
+//   CREATE 
 router.post('/', protect, uploadMultiple, handleUploadError, createServiceValidator, serviceController.createService);
-router.get('/my-listings', protect, serviceController.getMyServices);
-router.get('/:id', protect, serviceController.getServiceById);
+
+//   UPDATE  
 router.put('/:id', protect, uploadMultiple, handleUploadError, updateServiceValidator, serviceController.updateService);
-router.delete('/:id', protect, serviceController.deleteService);
-router.put('/:id/status', protect, serviceController.updateServiceStatus);
+router.patch('/:id/status', protect, serviceController.updateServiceStatus);
 
-//  PUBLIC SERVICE ROUTES 
-router.get('/', serviceController.getAllServices);
-router.get('/search/:city', serviceController.searchServicesByCity);
-router.get('/type/:serviceType', serviceController.getServicesByType);
+//   GET    
+router.get('/', serviceController.getAllServices);                      
+router.get('/my', protect, serviceController.getMyServices);            
+router.get('/admin/all', protect, admin, serviceController.adminGetAllServices); 
 
-//  ADMIN SERVICE ROUTES 
-router.get('/admin/all', protect, admin, serviceController.adminGetAllServices);
-router.put('/admin/:id/status', protect, admin, serviceController.adminUpdateServiceStatus);
-router.delete('/admin/:id', protect, admin, serviceController.adminDeleteService);
+//  search
+router.get('/search', serviceController.searchServices);                    
+router.get('/dashboard/search', protect, serviceController.searchUserServices); 
+router.get('/admin/search', protect, admin, serviceController.searchAdminServices);  
+
+//  GET BY ID (Must be LAST) 
+router.get('/:id', serviceController.getServiceById);
 
 export default router;
