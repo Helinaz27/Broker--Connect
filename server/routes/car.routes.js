@@ -6,21 +6,22 @@ import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
-//  USER CAR ROUTES 
+//  CREATE 
 router.post('/', protect, uploadMultiple, handleUploadError, createCarValidator, carController.createCar);
-router.get('/my-listings', protect, carController.getMyCars);
-router.get('/:id', protect, carController.getCarById);
+
+//  UPDATE 
 router.put('/:id', protect, uploadMultiple, handleUploadError, updateCarValidator, carController.updateCar);
-router.delete('/:id', protect, carController.deleteCar);
 router.put('/:id/status', protect, carController.updateCarStatus);
 
-//  PUBLIC CAR ROUTES 
-router.get('/', carController.getAllCars);
-router.get('/search/:city', carController.searchCarsByCity);
+//  GET 
+router.get('/', carController.getAllCars);                          
+router.get('/my', protect, carController.getMyCars);                 
+router.get('/admin/all', protect, admin, carController.adminGetAllCars); 
+router.get('/search', carController.searchCars);                     
+router.get('/dashboard/search', protect, carController.searchUserCars); 
+router.get('/admin/search', protect, admin, carController.searchAdminCars); 
 
-//  ADMIN CAR ROUTES 
-router.get('/admin/all', protect, admin, carController.adminGetAllCars);
-router.put('/admin/:id/status', protect, admin, carController.adminUpdateCarStatus);
-router.delete('/admin/:id', protect, admin, carController.adminDeleteCar);
+//  GET BY ID (Must be LAST) 
+router.get('/:id', carController.getCarById);
 
 export default router;

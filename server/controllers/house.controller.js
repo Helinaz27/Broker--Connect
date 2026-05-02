@@ -1,6 +1,13 @@
 import { prisma } from '../config/db.config.js';
 import cloudinary from '../config/cloudinary.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
+import {
+  saveHouseToDatabase,
+  findHouseById,
+  findAllHouses,
+  findAllActiveHouses,
+  updateHouseInDatabase
+} from '../services/house.service.js';
 
 //  HELPER FUNCTIONS 
 
@@ -113,9 +120,8 @@ export const createHouse = async (req, res) => {
       status: 'active'
     };
 
-    const house = await prisma.houseListing.create({
-      data: houseData
-    });
+    // ✅ USING SERVICE
+    const house = await saveHouseToDatabase(houseData);
 
     const owner = await prisma.user.findUnique({
       where: { id: userId },
@@ -167,14 +173,19 @@ export const updateHouse = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.roles || [];
+    const isAdmin = userRole.includes('admin') || userRole.includes('super_admin');
     const { title, description, houseType, price, location, contactCoinLimit, status } = req.body;
 
-    const existingHouse = await prisma.houseListing.findFirst({
-      where: { id, ownerId: userId }
-    });
+    // ✅ USING SERVICE
+    const existingHouse = await findHouseById(id);
 
     if (!existingHouse) {
-      return errorResponse(res, 'House not found or unauthorized', null, 404);
+      return errorResponse(res, 'House not found', null, 404);
+    }
+
+    if (!isAdmin && existingHouse.ownerId !== userId) {
+      return errorResponse(res, 'You are not authorized to update this house', null, 403);
     }
 
     const updateData = {};
@@ -194,14 +205,12 @@ export const updateHouse = async (req, res) => {
       updateData.images = [...existingHouse.images, ...newImageUrls];
     }
 
-    const updatedHouse = await prisma.houseListing.update({
-      where: { id },
-      data: updateData
-    });
+    // ✅ USING SERVICE
+    const updatedHouse = await updateHouseInDatabase(id, updateData);
 
-    const formattedHouse = formatHouseResponse(updatedHouse, true, false);
+    const formattedHouse = formatHouseResponse(updatedHouse, !isAdmin, isAdmin);
 
-    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, your house updated successfully`, { house: formattedHouse });
+    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, your house has been updated successfully`, { house: formattedHouse });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -213,52 +222,53 @@ export const updateHouseStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.roles || [];
+    const isAdmin = userRole.includes('admin') || userRole.includes('super_admin');
     const { status } = req.body;
 
-    const existingHouse = await prisma.houseListing.findFirst({
-      where: { id, ownerId: userId }
-    });
-
-    if (!existingHouse) {
-      return errorResponse(res, 'House not found or unauthorized', null, 404);
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return errorResponse(res, 'Status must be active or inactive', null, 400);
     }
 
-    const updatedHouse = await prisma.houseListing.update({
-      where: { id },
-      data: { status }
+    // ✅ USING SERVICE
+    const existingHouse = await findHouseById(id);
+
+    if (!existingHouse) {
+      return errorResponse(res, 'House not found', null, 404);
+    }
+
+    if (!isAdmin && existingHouse.ownerId !== userId) {
+      return errorResponse(res, 'You are not authorized to update this house status', null, 403);
+    }
+
+    // ✅ USING SERVICE
+    const updatedHouse = await updateHouseInDatabase(id, { status });
+
+    return successResponse(res, `House status updated to ${status} successfully`, {
+      id: updatedHouse.id,
+      status: updatedHouse.status,
+      updatedAt: updatedHouse.updatedAt
     });
-
-    const formattedHouse = formatHouseResponse(updatedHouse, true, false);
-
-    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, your house status updated to ${status} successfully`, { house: formattedHouse });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-//  GET HOUSES (All Active - Public) 
+//  GET ALL HOUSES (Public - Active only) 
 
 export const getAllHouses = async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = { status: 'active' };
-
-    const [houses, total] = await Promise.all([
-      prisma.houseListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.houseListing.count({ where })
-    ]);
-
+    // ✅ USING SERVICE
+    const allHouses = await findAllActiveHouses();
+    
+    const total = allHouses.length;
+    const houses = allHouses.slice(skip, skip + parseInt(limit));
     const formattedHouses = houses.map(house => formatHouseResponse(house, false, false));
-    const userName = req.user ? `${req.user.firstName} ${req.user.lastName}` : 'User';
 
-    return successResponse(res, `dear ${req.user.firstName} ${req.user.lastName}, you have retrieved ${formattedHouses.length} houses successfully`, {
+    return successResponse(res, `Retrieved ${formattedHouses.length} houses successfully`, {
       houses: formattedHouses,
       pagination: {
         page: parseInt(page),
@@ -272,7 +282,7 @@ export const getAllHouses = async (req, res) => {
   }
 };
 
-//  GET MY HOUSES (User's own) 
+//  GET MY HOUSES (User - own houses) 
 
 export const getMyHouses = async (req, res) => {
   try {
@@ -280,21 +290,15 @@ export const getMyHouses = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = { ownerId: userId };
-
-    const [houses, total] = await Promise.all([
-      prisma.houseListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.houseListing.count({ where })
-    ]);
-
+    // ✅ USING SERVICE
+    const allHouses = await findAllHouses();
+    
+    const myHouses = allHouses.filter(house => house.ownerId === userId);
+    const total = myHouses.length;
+    const houses = myHouses.slice(skip, skip + parseInt(limit));
     const formattedHouses = houses.map(house => formatHouseResponse(house, true, false));
 
-    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, you have retrieved ${formattedHouses.length} of your houses from the database among ${total} houses`, {
+    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, you have ${formattedHouses.length} of ${total} houses`, {
       houses: formattedHouses,
       pagination: {
         page: parseInt(page),
@@ -308,193 +312,208 @@ export const getMyHouses = async (req, res) => {
   }
 };
 
-//  GET HOUSES BY OWNER 
-
-export const getHousesByOwner = async (req, res) => {
-  try {
-    const { ownerId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (page - 1) * limit;
-
-    const where = { 
-      ownerId: ownerId,
-      status: 'active'
-    };
-
-    const [houses, total] = await Promise.all([
-      prisma.houseListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.houseListing.count({ where })
-    ]);
-
-    const formattedHouses = houses.map(house => formatHouseResponse(house, false, false));
-
-    // Get owner info
-    const owner = await prisma.user.findUnique({
-      where: { id: ownerId },
-      select: { firstName: true, lastName: true, phone: true }
-    });
-
-    return successResponse(res, `Retrieved ${formattedHouses.length} houses by ${owner?.firstName || ''} ${owner?.lastName || ''}`, {
-      owner: owner ? { name: `${owner.firstName} ${owner.lastName}`, phone: owner.phone } : null,
-      houses: formattedHouses,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-//  GET HOUSES BY TYPE 
-
-export const getHousesByType = async (req, res) => {
-  try {
-    const { houseType } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (page - 1) * limit;
-
-    const where = { 
-      houseType: houseType,
-      status: 'active'
-    };
-
-    const [houses, total] = await Promise.all([
-      prisma.houseListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.houseListing.count({ where })
-    ]);
-
-    const formattedHouses = houses.map(house => formatHouseResponse(house, false, false));
-
-    return successResponse(res, `Retrieved ${formattedHouses.length} ${houseType} houses`, {
-      houses: formattedHouses,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-//get houses by city (filtering in memory due to nested location structure)
-export const getHousesByCity = async (req, res) => {
-  try {
-    const { city } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (page - 1) * limit;
-
-    // Get all active houses first, then filter in memory
-    const allHouses = await prisma.houseListing.findMany({
-      where: { status: 'active' }
-    });
-
-    // Filter by city
-    const filteredHouses = allHouses.filter(house => 
-      house.location?.city?.toLowerCase() === city.toLowerCase()
-    );
-
-    // Apply pagination
-    const paginatedHouses = filteredHouses.slice(skip, skip + parseInt(limit));
-    const total = filteredHouses.length;
-
-    const formattedHouses = paginatedHouses.map(house => formatHouseResponse(house, false, false));
-
-    return successResponse(res, `Found ${formattedHouses.length} houses in ${city}`, {
-      city: city,
-      houses: formattedHouses,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-//  GET HOUSES BY PRICE RANGE
-
-export const getHousesByPrice = async (req, res) => {
-  try {
-    const { min, max } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (page - 1) * limit;
-
-    const where = {
-      status: 'active',
-      price: {
-        gte: parseFloat(min),
-        lte: parseFloat(max)
-      }
-    };
-
-    const [houses, total] = await Promise.all([
-      prisma.houseListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { price: 'asc' }
-      }),
-      prisma.houseListing.count({ where })
-    ]);
-
-    const formattedHouses = houses.map(house => formatHouseResponse(house, false, false));
-
-    return successResponse(res, `Retrieved ${formattedHouses.length} houses between ${min} and ${max} Birr`, {
-      priceRange: { min: parseFloat(min), max: parseFloat(max) },
-      houses: formattedHouses,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-//  ADMIN GET ALL HOUSES (Including inactive/expired) 
+//  ADMIN GET ALL HOUSES 
 
 export const adminGetAllHouses = async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = {};
-    if (status && status !== 'all') where.status = status;
-
-    const [houses, total] = await Promise.all([
-      prisma.houseListing.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.houseListing.count({ where })
-    ]);
-
+    // ✅ USING SERVICE
+    let allHouses = await findAllHouses();
+    
+    if (status && status !== 'all') {
+      allHouses = allHouses.filter(house => house.status === status);
+    }
+    
+    const total = allHouses.length;
+    const houses = allHouses.slice(skip, skip + parseInt(limit));
     const formattedHouses = houses.map(house => formatHouseResponse(house, false, true));
 
-    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, Retrieved ${formattedHouses.length} houses  successfully`, {
+    return successResponse(res, `Retrieved ${formattedHouses.length} houses successfully`, {
+      houses: formattedHouses,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  GET HOUSE BY ID 
+
+export const getHouseById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ USING SERVICE
+    const house = await findHouseById(id);
+
+    if (!house) {
+      return errorResponse(res, 'House not found', null, 404);
+    }
+
+    if (house.status !== 'active') {
+      return errorResponse(res, 'House not available', null, 404);
+    }
+
+    const formattedHouse = formatHouseResponse(house, false, false);
+
+    return successResponse(res, 'House retrieved successfully', { house: formattedHouse });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+// ==================== SEARCH HOUSES (Public - Active only) ====================
+
+export const searchHouses = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, houseType, city, minPrice, maxPrice, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    // ✅ USING SERVICE
+    let allHouses = await findAllActiveHouses();
+
+    // Apply filters (business logic in controller)
+    if (houseType) {
+      allHouses = allHouses.filter(h => h.houseType === houseType);
+    }
+    if (city) {
+      allHouses = allHouses.filter(h => h.location?.city?.toLowerCase() === city.toLowerCase());
+    }
+    if (minPrice) {
+      allHouses = allHouses.filter(h => h.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      allHouses = allHouses.filter(h => h.price <= parseFloat(maxPrice));
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allHouses = allHouses.filter(h => 
+        h.title.toLowerCase().includes(searchLower) ||
+        h.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = allHouses.length;
+    const houses = allHouses.slice(skip, skip + parseInt(limit));
+    const formattedHouses = houses.map(house => formatHouseResponse(house, false, false));
+
+    return successResponse(res, `Found ${formattedHouses.length} houses`, {
+      houses: formattedHouses,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  SEARCH USER HOUSES (Dashboard) 
+
+export const searchUserHouses = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 20, houseType, city, minPrice, maxPrice, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    // ✅ USING SERVICE
+    let allHouses = await findAllHouses();
+
+    // Filter: active OR user's own houses
+    let filteredHouses = allHouses.filter(house => {
+      return house.status === 'active' || house.ownerId === userId;
+    });
+
+    // Apply filters
+    if (houseType) {
+      filteredHouses = filteredHouses.filter(h => h.houseType === houseType);
+    }
+    if (city) {
+      filteredHouses = filteredHouses.filter(h => h.location?.city?.toLowerCase() === city.toLowerCase());
+    }
+    if (minPrice) {
+      filteredHouses = filteredHouses.filter(h => h.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      filteredHouses = filteredHouses.filter(h => h.price <= parseFloat(maxPrice));
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredHouses = filteredHouses.filter(h => 
+        h.title.toLowerCase().includes(searchLower) ||
+        h.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = filteredHouses.length;
+    const houses = filteredHouses.slice(skip, skip + parseInt(limit));
+    const formattedHouses = houses.map(house => 
+      formatHouseResponse(house, house.ownerId === userId, false)
+    );
+
+    return successResponse(res, `Found ${formattedHouses.length} houses`, {
+      houses: formattedHouses,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+// ==================== SEARCH ADMIN HOUSES (Admin Dashboard) ====================
+
+export const searchAdminHouses = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, houseType, city, minPrice, maxPrice, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    // ✅ USING SERVICE
+    let allHouses = await findAllHouses();
+
+    // Apply filters
+    if (status && status !== 'all') {
+      allHouses = allHouses.filter(h => h.status === status);
+    }
+    if (houseType) {
+      allHouses = allHouses.filter(h => h.houseType === houseType);
+    }
+    if (city) {
+      allHouses = allHouses.filter(h => h.location?.city?.toLowerCase() === city.toLowerCase());
+    }
+    if (minPrice) {
+      allHouses = allHouses.filter(h => h.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      allHouses = allHouses.filter(h => h.price <= parseFloat(maxPrice));
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allHouses = allHouses.filter(h => 
+        h.title.toLowerCase().includes(searchLower) ||
+        h.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = allHouses.length;
+    const houses = allHouses.slice(skip, skip + parseInt(limit));
+    const formattedHouses = houses.map(house => formatHouseResponse(house, false, true));
+
+    return successResponse(res, `Found ${formattedHouses.length} houses`, {
       houses: formattedHouses,
       pagination: {
         page: parseInt(page),

@@ -69,33 +69,6 @@ export const countHousesByType = async (houseType) => {
   });
 };
 
-export const findHousesByCity = async (city, skip, take) => {
-  return await prisma.houseListing.findMany({
-    where: {
-      status: 'active',
-      location: {
-        path: 'city',
-        equals: city
-      }
-    },
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' }
-  });
-};
-
-export const countHousesByCity = async (city) => {
-  return await prisma.houseListing.count({
-    where: {
-      status: 'active',
-      location: {
-        path: 'city',
-        equals: city
-      }
-    }
-  });
-};
-
 export const findHousesByPriceRange = async (min, max, skip, take) => {
   return await prisma.houseListing.findMany({
     where: {
@@ -123,6 +96,17 @@ export const countHousesByPriceRange = async (min, max) => {
   });
 };
 
+// For city filtering (in memory due to nested location structure)
+export const getAllActiveHouses = async () => {
+  return await prisma.houseListing.findMany({
+    where: { status: 'active' }
+  });
+};
+
+export const getAllHousesForAdmin = async () => {
+  return await prisma.houseListing.findMany({});
+};
+
 //  UPDATE 
 export const updateHouseInDatabase = async (id, updateData) => {
   return await prisma.houseListing.update({
@@ -137,3 +121,10 @@ export const updateHouseStatusInDatabase = async (id, status) => {
     data: { status }
   });
 };
+
+export const findAllActiveHouses = async () => {
+  return await prisma.houseListing.findMany({
+    where: { status: 'active' }
+  });
+};
+

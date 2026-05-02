@@ -29,6 +29,9 @@ const upload = multer({
 // Single file upload middleware (for KYC document)
 export const uploadSingle = upload.single('documentImage');
 
+// Profile image upload middleware
+export const uploadProfileImage = upload.single('profileImage');
+
 // Multiple files upload middleware (for House, Car, Service listings)
 export const uploadMultiple = upload.array('images', 10);  // Max 10 images
 

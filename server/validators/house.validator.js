@@ -1,4 +1,4 @@
-import { body, param, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -32,7 +32,7 @@ export const createHouseValidator = [
     .notEmpty()
     .withMessage('House type is required')
     .isIn(['condominium', 'villa', 'business', 'apartment', 'others'])
-    .withMessage('Invalid house type'),
+    .withMessage('House type must be: condominium, villa, business, apartment, or others'),
 
   body('price')
     .notEmpty()
@@ -85,7 +85,7 @@ export const updateHouseValidator = [
   body('houseType')
     .optional()
     .isIn(['condominium', 'villa', 'business', 'apartment', 'others'])
-    .withMessage('Invalid house type'),
+    .withMessage('House type must be: condominium, villa, business, apartment, or others'),
 
   body('price')
     .optional()
@@ -112,12 +112,12 @@ export const updateHouseValidator = [
   body('status')
     .optional()
     .isIn(['active', 'inactive'])
-    .withMessage('Invalid status'),
+    .withMessage('Status must be active or inactive'),
 
   handleValidationErrors,
 ];
 
-//  PARAM VALIDATORS 
+//  ID PARAM VALIDATOR 
 export const idParamValidator = [
   param('id')
     .notEmpty()
@@ -127,42 +127,49 @@ export const idParamValidator = [
   handleValidationErrors,
 ];
 
-export const ownerIdParamValidator = [
-  param('ownerId')
-    .notEmpty()
-    .withMessage('Owner ID is required')
-    .isMongoId()
-    .withMessage('Invalid owner ID format'),
-  handleValidationErrors,
-];
+//  SEARCH QUERY VALIDATOR 
+export const searchQueryValidator = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer')
+    .toInt(),
 
-export const typeParamValidator = [
-  param('houseType')
-    .notEmpty()
-    .withMessage('House type is required')
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100')
+    .toInt(),
+
+  query('houseType')
+    .optional()
     .isIn(['condominium', 'villa', 'business', 'apartment', 'others'])
     .withMessage('Invalid house type'),
-  handleValidationErrors,
-];
 
-export const cityParamValidator = [
-  param('city')
-    .notEmpty()
-    .withMessage('City is required')
+  query('city')
+    .optional()
     .trim(),
-  handleValidationErrors,
-];
 
-export const priceParamValidator = [
-  param('min')
-    .notEmpty()
-    .withMessage('Minimum price is required')
+  query('minPrice')
+    .optional()
     .isFloat({ min: 0 })
-    .withMessage('Minimum price must be a positive number'),
-  param('max')
-    .notEmpty()
-    .withMessage('Maximum price is required')
+    .withMessage('Minimum price must be a positive number')
+    .toFloat(),
+
+  query('maxPrice')
+    .optional()
     .isFloat({ min: 0 })
-    .withMessage('Maximum price must be a positive number'),
+    .withMessage('Maximum price must be a positive number')
+    .toFloat(),
+
+  query('search')
+    .optional()
+    .trim(),
+
+  query('status')
+    .optional()
+    .isIn(['active', 'inactive', 'all'])
+    .withMessage('Status must be active, inactive, or all'),
+
   handleValidationErrors,
 ];
