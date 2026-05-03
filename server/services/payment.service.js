@@ -5,12 +5,36 @@ export const savePaymentToDatabase = async (paymentData) => {
 };
 
 export const findPaymentById = async (id) => {
-  return await prisma.payment.findUnique({ where: { id } });
+  return await prisma.payment.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true
+        }
+      }
+    }
+  });
 };
 
 export const findPaymentByIdAndUser = async (id, userId) => {
   return await prisma.payment.findFirst({
-    where: { id: id, userId: userId }
+    where: { id: id, userId: userId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true
+        }
+      }
+    }
   });
 };
 
@@ -21,7 +45,18 @@ export const findPaymentsByUser = async (userId, skip, take, status) => {
     where,
     skip,
     take,
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true
+        }
+      }
+    }
   });
 };
 
@@ -36,7 +71,18 @@ export const findAllPayments = async (skip, take, where) => {
     where,
     skip,
     take,
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true
+        }
+      }
+    }
   });
 };
 
@@ -47,6 +93,17 @@ export const countAllPayments = async (where) => {
 export const updatePaymentInDatabase = async (id, updateData) => {
   return await prisma.payment.update({
     where: { id },
-    data: updateData
+    data: updateData,
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true
+        }
+      }
+    }
   });
 };

@@ -113,7 +113,7 @@ export const getMyPayments = async (req, res) => {
       countPaymentsByUser(userId, status)
     ]);
 
-    const formattedPayments = payments.map(p => formatPaymentResponse(p, false));
+const formattedPayments = payments.map(p => formatPaymentResponse(p, false));
 
     return successResponse(res, `Retrieved ${formattedPayments.length} payments`, {
       payments: formattedPayments,
@@ -246,6 +246,7 @@ export const adminUpdatePaymentStatus = async (req, res) => {
       });
     }
 
+    // ✅ CHANGE false to true
     const formattedPayment = formatPaymentResponse(updatedPayment, true);
 
     return successResponse(res, `Payment status updated to ${status} successfully`, {
