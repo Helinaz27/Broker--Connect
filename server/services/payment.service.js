@@ -1,65 +1,52 @@
 import { prisma } from '../config/db.config.js';
 
-//  CREATE 
 export const savePaymentToDatabase = async (paymentData) => {
-  return await prisma.payment.create({
-    data: paymentData
-  });
+  return await prisma.payment.create({ data: paymentData });
 };
 
-//  READ 
 export const findPaymentById = async (id) => {
-  return await prisma.payment.findUnique({
-    where: { id }
-  });
+  return await prisma.payment.findUnique({ where: { id } });
 };
 
 export const findPaymentByIdAndUser = async (id, userId) => {
   return await prisma.payment.findFirst({
-    where: {
-      id: id,
-      userId: userId
-    }
+    where: { id: id, userId: userId }
   });
 };
 
-export const findPaymentsByUser = async (userId, skip, take) => {
+export const findPaymentsByUser = async (userId, skip, take, status) => {
+  const where = { userId };
+  if (status && status !== 'all') where.status = status;
   return await prisma.payment.findMany({
-    where: { userId },
+    where,
     skip,
     take,
     orderBy: { createdAt: 'desc' }
   });
 };
 
-export const countPaymentsByUser = async (userId) => {
-  return await prisma.payment.count({ where: { userId } });
+export const countPaymentsByUser = async (userId, status) => {
+  const where = { userId };
+  if (status && status !== 'all') where.status = status;
+  return await prisma.payment.count({ where });
 };
 
-export const findAllPayments = async (skip, take, where, orderBy) => {
+export const findAllPayments = async (skip, take, where) => {
   return await prisma.payment.findMany({
     where,
     skip,
     take,
-    orderBy
+    orderBy: { createdAt: 'desc' }
   });
 };
 
-export const countPayments = async (where) => {
+export const countAllPayments = async (where) => {
   return await prisma.payment.count({ where });
 };
 
-//  UPDATE 
 export const updatePaymentInDatabase = async (id, updateData) => {
   return await prisma.payment.update({
     where: { id },
     data: updateData
-  });
-};
-
-//  DELETE 
-export const deletePaymentFromDatabase = async (id) => {
-  return await prisma.payment.delete({
-    where: { id }
   });
 };
