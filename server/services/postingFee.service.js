@@ -14,33 +14,38 @@ export const findPostingFeeById = async (id) => {
   });
 };
 
-export const findAllPostingFees = async (skip, take, where, orderBy) => {
+export const findAllPostingFees = async (skip, take) => {
+  return await prisma.postingFee.findMany({
+    skip,
+    take,
+    orderBy: { createdAt: 'desc' }
+  });
+};
+
+export const countAllPostingFees = async () => {
+  return await prisma.postingFee.count();
+};
+
+export const findPostingFeesByFilter = async (where, skip, take) => {
   return await prisma.postingFee.findMany({
     where,
     skip,
     take,
-    orderBy
+    orderBy: { createdAt: 'desc' }
   });
 };
 
-export const countPostingFees = async (where) => {
+
+export const countPostingFeesByFilter = async (where) => {
   return await prisma.postingFee.count({ where });
 };
 
-export const findActivePostingFees = async () => {
-  return await prisma.postingFee.findMany({
-    where: { isActive: true },
-    orderBy: { category: 'asc' }
-  });
-};
-
-export const findPostingFeesByCategory = async (category) => {
-  return await prisma.postingFee.findMany({
+export const findActivePostingFeeByCategory = async (category) => {
+  return await prisma.postingFee.findFirst({
     where: {
-      category: category,
+      category,
       isActive: true
-    },
-    orderBy: { durationDays: 'asc' }
+    }
   });
 };
 
@@ -49,12 +54,5 @@ export const updatePostingFeeInDatabase = async (id, updateData) => {
   return await prisma.postingFee.update({
     where: { id },
     data: updateData
-  });
-};
-
-//  DELETE 
-export const deletePostingFeeFromDatabase = async (id) => {
-  return await prisma.postingFee.delete({
-    where: { id }
   });
 };
