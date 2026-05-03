@@ -5,15 +5,14 @@ import { createPostingFeeValidator, updatePostingFeeValidator } from '../validat
 
 const router = express.Router();
 
-//  ADMIN POSTING FEE ROUTES (Only Admin) 
+//  ADMIN ONLY 
 router.post('/', protect, admin, createPostingFeeValidator, postingFeeController.createPostingFee);
 router.get('/', protect, admin, postingFeeController.getAllPostingFees);
-router.get('/:id', protect, admin, postingFeeController.getPostingFeeById);
 router.put('/:id', protect, admin, updatePostingFeeValidator, postingFeeController.updatePostingFee);
-router.delete('/:id', protect, admin, postingFeeController.deletePostingFee);
 
-//  PUBLIC ROUTES (View active fees) 
-router.get('/public/active', postingFeeController.getActivePostingFees);
-router.get('/public/category/:category', postingFeeController.getPostingFeesByCategory);
+// Get posting fees with filters (by id, category, isActive, etc.)
+router.get('/filter', protect, admin, postingFeeController.getPostingFees);
+router.get('/:id', protect, admin, postingFeeController.getPostingFeeById);
+
 
 export default router;

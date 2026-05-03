@@ -1,8 +1,16 @@
 import { prisma } from '../config/db.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
+import {
+  savePostingFeeToDatabase,
+  findPostingFeeById,
+  findAllPostingFees,
+  countAllPostingFees,
+  findPostingFeesByFilter,
+  countPostingFeesByFilter,
+  updatePostingFeeInDatabase
+} from '../services/postingFee.service.js';
 
-//  ADMIN POSTING FEE CONTROLLERS 
-
+//  CREATE POSTING FEE 
 export const createPostingFee = async (req, res) => {
   try {
     const adminId = req.user.id;
@@ -17,9 +25,8 @@ export const createPostingFee = async (req, res) => {
       createdBy: adminId
     };
 
-    const postingFee = await prisma.postingFee.create({
-      data: postingFeeData
-    });
+    // ✅ USING SERVICE
+    const postingFee = await savePostingFeeToDatabase(postingFeeData);
 
     return successResponse(res, 'Posting fee created successfully', { postingFee }, 201);
   } catch (error) {
@@ -28,23 +35,16 @@ export const createPostingFee = async (req, res) => {
   }
 };
 
+//  GET ALL POSTING FEES 
 export const getAllPostingFees = async (req, res) => {
   try {
-    const { page = 1, limit = 20, category, isActive } = req.query;
+    const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = {};
-    if (category) where.category = category;
-    if (isActive !== undefined) where.isActive = isActive === 'true';
-
+    // ✅ USING SERVICE
     const [postingFees, total] = await Promise.all([
-      prisma.postingFee.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.postingFee.count({ where })
+      findAllPostingFees(skip, parseInt(limit)),
+      countAllPostingFees()
     ]);
 
     return successResponse(res, `Retrieved ${postingFees.length} posting fees`, {
@@ -61,13 +61,56 @@ export const getAllPostingFees = async (req, res) => {
   }
 };
 
+//  GET POSTING FEES WITH FILTERS 
+export const getPostingFees = async (req, res) => {
+  try {
+    const { id, category, isActive, page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // If ID is provided, get single posting fee
+    if (id) {
+      // ✅ USING SERVICE
+      const postingFee = await findPostingFeeById(id);
+
+      if (!postingFee) {
+        return errorResponse(res, 'Posting fee not found', null, 404);
+      }
+
+      return successResponse(res, 'Posting fee retrieved successfully', { postingFee });
+    }
+
+    // Build filter object
+    const where = {};
+    if (category) where.category = category;
+    if (isActive !== undefined) where.isActive = isActive === 'true';
+
+    // ✅ USING SERVICE
+    const [postingFees, total] = await Promise.all([
+      findPostingFeesByFilter(where, parseInt(skip), parseInt(limit)),
+      countPostingFeesByFilter(where)
+    ]);
+
+    return successResponse(res, `Retrieved ${postingFees.length} posting fees`, {
+      postingFees,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+//  GET POSTING FEE BY ID 
 export const getPostingFeeById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const postingFee = await prisma.postingFee.findUnique({
-      where: { id }
-    });
+    // ✅ USING SERVICE
+    const postingFee = await findPostingFeeById(id);
 
     if (!postingFee) {
       return errorResponse(res, 'Posting fee not found', null, 404);
@@ -79,14 +122,14 @@ export const getPostingFeeById = async (req, res) => {
   }
 };
 
+//  UPDATE POSTING FEE 
 export const updatePostingFee = async (req, res) => {
   try {
     const { id } = req.params;
     const { category, durationDays, price, description, isActive } = req.body;
 
-    const existingPostingFee = await prisma.postingFee.findUnique({
-      where: { id }
-    });
+    // ✅ USING SERVICE
+    const existingPostingFee = await findPostingFeeById(id);
 
     if (!existingPostingFee) {
       return errorResponse(res, 'Posting fee not found', null, 404);
@@ -99,67 +142,10 @@ export const updatePostingFee = async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    const updatedPostingFee = await prisma.postingFee.update({
-      where: { id },
-      data: updateData
-    });
+    // ✅ USING SERVICE
+    const updatedPostingFee = await updatePostingFeeInDatabase(id, updateData);
 
     return successResponse(res, 'Posting fee updated successfully', { postingFee: updatedPostingFee });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-export const deletePostingFee = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const existingPostingFee = await prisma.postingFee.findUnique({
-      where: { id }
-    });
-
-    if (!existingPostingFee) {
-      return errorResponse(res, 'Posting fee not found', null, 404);
-    }
-
-    await prisma.postingFee.delete({
-      where: { id }
-    });
-
-    return successResponse(res, 'Posting fee deleted successfully');
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-//  PUBLIC POSTING FEE CONTROLLERS 
-
-export const getActivePostingFees = async (req, res) => {
-  try {
-    const postingFees = await prisma.postingFee.findMany({
-      where: { isActive: true },
-      orderBy: { category: 'asc' }
-    });
-
-    return successResponse(res, `Retrieved ${postingFees.length} active posting fees`, { postingFees });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-export const getPostingFeesByCategory = async (req, res) => {
-  try {
-    const { category } = req.params;
-
-    const postingFees = await prisma.postingFee.findMany({
-      where: {
-        category: category,
-        isActive: true
-      },
-      orderBy: { durationDays: 'asc' }
-    });
-
-    return successResponse(res, `Retrieved ${postingFees.length} posting fees for ${category}`, { postingFees });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }

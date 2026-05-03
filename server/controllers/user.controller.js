@@ -1,4 +1,3 @@
-// controllers/user.controller.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.config.js';
@@ -13,7 +12,7 @@ const hashPassword = async (password) => {
   return await bcrypt.hash(password, salt);
 };
 
-// ==================== AUTHENTICATION ====================
+//  AUTHENTICATION 
 
 export const register = async (req, res) => {
   try {
@@ -151,7 +150,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// ==================== USER PROFILE ====================
+//  USER PROFILE 
 
 export const getProfile = async (req, res) => {
   try {

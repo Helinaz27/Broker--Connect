@@ -1,4 +1,4 @@
-import { body, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -69,5 +69,47 @@ export const updatePostingFeeValidator = [
     .isBoolean()
     .withMessage('isActive must be a boolean'),
 
+  handleValidationErrors,
+];
+
+//  GET POSTING FEES FILTER VALIDATOR 
+export const getPostingFeesValidator = [
+  query('id')
+    .optional()
+    .isMongoId()
+    .withMessage('Invalid ID format'),
+
+  query('category')
+    .optional()
+    .isIn(['house', 'car', 'service'])
+    .withMessage('Category must be house, car, or service'),
+
+  query('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be true or false'),
+
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer')
+    .toInt(),
+
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100')
+    .toInt(),
+
+  handleValidationErrors,
+];
+
+//  ID PARAM VALIDATOR 
+export const idParamValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('Posting fee ID is required')
+    .isMongoId()
+    .withMessage('Invalid posting fee ID format'),
   handleValidationErrors,
 ];
