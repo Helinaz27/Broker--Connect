@@ -8,11 +8,11 @@ const router = express.Router();
 //  USER PAYMENT ROUTES 
 router.post('/', protect, createPaymentValidator, paymentController.createPayment);
 router.get('/my-payments', protect, paymentController.getMyPayments);
-router.get('/:id', protect, paymentController.getPaymentById);
 
 //  ADMIN PAYMENT ROUTES 
-router.get('/admin/all', protect, admin, paymentController.adminGetAllPayments);
-router.put('/admin/:id/status', protect, admin, updatePaymentStatusValidator, paymentController.adminUpdatePaymentStatus);
-router.get('/admin/user/:userId', protect, admin, paymentController.adminGetPaymentsByUser);
+router.get('/all', protect, admin, paymentController.adminGetAllPayments);
+router.get('/:id', protect, paymentController.getPaymentById);
+router.get('/detail/:id', protect, admin, paymentController.adminGetPaymentById);
+router.patch('/status/:id', protect, admin, updatePaymentStatusValidator, paymentController.adminUpdatePaymentStatus);
 
 export default router;

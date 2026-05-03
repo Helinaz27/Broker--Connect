@@ -76,7 +76,21 @@ export const createHouse = async (req, res) => {
       imageUrls = await uploadImagesToCloudinary(req.files);
     }
 
-    const POSTING_RATE_PER_DAY = 1;
+
+    // Fetch active posting fee for house
+const postingFee = await prisma.postingFee.findFirst({
+  where: {
+    category: 'house',
+    isActive: true
+  }
+});
+
+if (!postingFee) {
+  return errorResponse(res, 'No active posting fee found for house listings. Please contact admin.', null, 400);
+}
+
+const POSTING_RATE_PER_DAY = postingFee.price;
+
     const totalCoinsNeeded = durationDays * POSTING_RATE_PER_DAY;
 
     const user = await prisma.user.findUnique({
