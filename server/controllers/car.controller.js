@@ -1,4 +1,3 @@
-// controllers/car.controller.js
 import { prisma } from '../config/db.config.js';
 import cloudinary from '../config/cloudinary.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
@@ -79,7 +78,20 @@ export const createCar = async (req, res) => {
       imageUrls = await uploadImagesToCloudinary(req.files);
     }
 
-    const POSTING_RATE_PER_DAY = 1;
+    // Fetch active posting fee for car
+const postingFee = await prisma.postingFee.findFirst({
+  where: {
+    category: 'car',
+    isActive: true
+  }
+});
+
+if (!postingFee) {
+  return errorResponse(res, 'No active posting fee found for car listings. Please contact admin.', null, 400);
+}
+
+const POSTING_RATE_PER_DAY = postingFee.price;
+
     const totalCoinsNeeded = durationDays * POSTING_RATE_PER_DAY;
 
     const user = await prisma.user.findUnique({
