@@ -8,6 +8,7 @@ const router = express.Router();
 //  USER PAYMENT ROUTES 
 router.post('/', protect, createPaymentValidator, paymentController.createPayment);
 router.get('/my-payments', protect, paymentController.getMyPayments);
+router.get('/coins/balance', protect, paymentController.getCoinBalance);
 
 //  ADMIN PAYMENT ROUTES 
 router.get('/all', protect, admin, paymentController.adminGetAllPayments);

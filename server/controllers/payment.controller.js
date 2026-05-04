@@ -102,6 +102,29 @@ export const createPayment = async (req, res) => {
   }
 };
 
+// Add this function at the bottom of payment.controller.js
+
+export const getCoinBalance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true }
+    });
+
+    if (!user) {
+      return errorResponse(res, 'User not found', null, 404);
+    }
+
+    return successResponse(res, 'Coin balance retrieved successfully', {
+      coins: user.coins
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
 export const getMyPayments = async (req, res) => {
   try {
     const userId = req.user.id;
