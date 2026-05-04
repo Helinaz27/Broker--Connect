@@ -383,7 +383,7 @@ export const getHouseById = async (req, res) => {
   }
 };
 
-// ==================== SEARCH HOUSES (Public - Active only) ====================
+//  SEARCH HOUSES (Public - Active only) 
 
 export const searchHouses = async (req, res) => {
   try {
@@ -489,7 +489,7 @@ export const searchUserHouses = async (req, res) => {
   }
 };
 
-// ==================== SEARCH ADMIN HOUSES (Admin Dashboard) ====================
+//  SEARCH ADMIN HOUSES (Admin Dashboard) 
 
 export const searchAdminHouses = async (req, res) => {
   try {
