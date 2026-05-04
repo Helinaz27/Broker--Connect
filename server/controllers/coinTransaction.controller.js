@@ -1,29 +1,57 @@
-import { prisma } from '../config/db.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
+import {
+  findTransactionsByUser,
+  countTransactionsByUser,
+  findTransactionByIdAndUser,
+  findAllTransactions,
+  countAllTransactions,
+  findTransactionsByUserForAdmin,
+  countTransactionsByUserForAdmin,
+  findTransactionById
+} from '../services/coinTransaction.service.js';
+
+//  HELPER FUNCTIONS 
+
+const formatTransactionResponse = (transaction, includeUser = false) => {
+  const baseData = {
+    id: transaction.id,
+    type: transaction.type,
+    amount: transaction.amount,
+    reason: transaction.Reason,
+    description: transaction.description,
+    createdAt: transaction.createdAt
+  };
+
+  if (includeUser && transaction.user) {
+    baseData.user = {
+      id: transaction.user.id,
+      firstName: transaction.user.firstName,
+      lastName: transaction.user.lastName,
+      email: transaction.user.email,
+      phone: transaction.user.phone
+    };
+  }
+
+  return baseData;
+};
 
 //  USER COIN TRANSACTION CONTROLLERS 
 
 export const getMyTransactions = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { page = 1, limit = 20, type } = req.query;
+    const { page = 1, limit = 20, type, reason } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = { userId };
-    if (type) where.type = type;
-
     const [transactions, total] = await Promise.all([
-      prisma.coinTransaction.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.coinTransaction.count({ where })
+      findTransactionsByUser(userId, parseInt(skip), parseInt(limit), type, reason),
+      countTransactionsByUser(userId, type, reason)
     ]);
 
-    return successResponse(res, `Retrieved ${transactions.length} transactions`, {
-      transactions,
+    const formattedTransactions = transactions.map(t => formatTransactionResponse(t, false));
+
+    return successResponse(res, `Retrieved ${formattedTransactions.length} transactions`, {
+      transactions: formattedTransactions,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -36,22 +64,20 @@ export const getMyTransactions = async (req, res) => {
   }
 };
 
-export const getMyBalance = async (req, res) => {
+export const getMyTransactionById = async (req, res) => {
   try {
+    const { id } = req.params;
     const userId = req.user.id;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { coins: true }
-    });
+    const transaction = await findTransactionByIdAndUser(id, userId);
 
-    if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+    if (!transaction) {
+      return errorResponse(res, 'Transaction not found', null, 404);
     }
 
-    return successResponse(res, 'Balance retrieved successfully', {
-      coins: user.coins
-    });
+    const formattedTransaction = formatTransactionResponse(transaction, false);
+
+    return successResponse(res, 'Transaction retrieved successfully', { transaction: formattedTransaction });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
@@ -61,25 +87,27 @@ export const getMyBalance = async (req, res) => {
 
 export const adminGetAllTransactions = async (req, res) => {
   try {
-    const { page = 1, limit = 20, type, userId } = req.query;
+    const { page = 1, limit = 20, type, reason, userId } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = {};
-    if (type) where.type = type;
-    if (userId) where.userId = userId;
+    let transactions, total;
 
-    const [transactions, total] = await Promise.all([
-      prisma.coinTransaction.findMany({
-        where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.coinTransaction.count({ where })
-    ]);
+    if (userId) {
+      [transactions, total] = await Promise.all([
+        findTransactionsByUserForAdmin(userId, parseInt(skip), parseInt(limit), type, reason),
+        countTransactionsByUserForAdmin(userId, type, reason)
+      ]);
+    } else {
+      [transactions, total] = await Promise.all([
+        findAllTransactions(parseInt(skip), parseInt(limit), type, reason),
+        countAllTransactions(type, reason)
+      ]);
+    }
 
-    return successResponse(res, `Retrieved ${transactions.length} transactions`, {
-      transactions,
+    const formattedTransactions = transactions.map(t => formatTransactionResponse(t, true));
+
+    return successResponse(res, `Retrieved ${formattedTransactions.length} transactions`, {
+      transactions: formattedTransactions,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -92,24 +120,39 @@ export const adminGetAllTransactions = async (req, res) => {
   }
 };
 
+export const adminGetTransactionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const transaction = await findTransactionById(id);
+
+    if (!transaction) {
+      return errorResponse(res, 'Transaction not found', null, 404);
+    }
+
+    const formattedTransaction = formatTransactionResponse(transaction, true);
+
+    return successResponse(res, 'Transaction retrieved successfully', { transaction: formattedTransaction });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
 export const adminGetTransactionsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, type, reason } = req.query;
     const skip = (page - 1) * limit;
 
     const [transactions, total] = await Promise.all([
-      prisma.coinTransaction.findMany({
-        where: { userId },
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.coinTransaction.count({ where: { userId } })
+      findTransactionsByUserForAdmin(userId, parseInt(skip), parseInt(limit), type, reason),
+      countTransactionsByUserForAdmin(userId, type, reason)
     ]);
 
-    return successResponse(res, `Retrieved ${transactions.length} transactions for user`, {
-      transactions,
+    const formattedTransactions = transactions.map(t => formatTransactionResponse(t, false));
+
+    return successResponse(res, `Retrieved ${formattedTransactions.length} transactions for user`, {
+      transactions: formattedTransactions,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),

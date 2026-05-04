@@ -13,7 +13,6 @@ const hashPassword = async (password) => {
 };
 
 //  AUTHENTICATION 
-
 export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password } = req.body;
@@ -43,8 +42,19 @@ export const register = async (req, res) => {
       isEmailVerified: false
     };
 
-    // Only after all checks, send to service to save
     const user = await saveUserToDatabase(userData);
+
+    if (COIN_RULES.WELCOME_BONUS > 0) {
+      await prisma.coinTransaction.create({
+        data: {
+          userId: user.id,
+          type: 'credit',
+          amount: COIN_RULES.WELCOME_BONUS,
+          Reason: 'welcome_bonus',
+          description: `Welcome bonus of ${COIN_RULES.WELCOME_BONUS} coins`
+        }
+      });
+    }
 
     return successResponse(res, 'Registration successful! Please login.', { user: formatUserResponse(user) }, 201);
   } catch (error) {

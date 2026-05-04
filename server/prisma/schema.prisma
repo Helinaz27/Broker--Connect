@@ -25,6 +25,7 @@ model User {
   profileImage     String?
   kycRequests      KYCRequest[]
    payments         Payment[] 
+  coinTransactions CoinTransaction[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -150,6 +151,7 @@ model CoinTransaction {
   Reason          CoinReason
   description     String?
   createdAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id]) 
 
   @@map("coin_transactions")
 }
