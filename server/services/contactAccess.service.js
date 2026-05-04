@@ -1,18 +1,16 @@
 import { prisma } from '../config/db.config.js';
 
-//  CREATE 
 export const saveContactAccessToDatabase = async (accessData) => {
   return await prisma.contactAccess.create({
     data: accessData
   });
 };
 
-//  READ 
 export const findAccessByViewerAndListing = async (viewerId, listingId) => {
   return await prisma.contactAccess.findFirst({
     where: {
-      viewerId,
-      listingId,
+      viewerId: viewerId,
+      listingId: listingId,
       isActive: true
     }
   });
@@ -28,7 +26,9 @@ export const findAccessByViewer = async (viewerId, skip, take) => {
 };
 
 export const countAccessByViewer = async (viewerId) => {
-  return await prisma.contactAccess.count({ where: { viewerId } });
+  return await prisma.contactAccess.count({
+    where: { viewerId }
+  });
 };
 
 export const findAccessByListing = async (listingId, skip, take) => {
@@ -41,14 +41,16 @@ export const findAccessByListing = async (listingId, skip, take) => {
 };
 
 export const countAccessByListing = async (listingId) => {
-  return await prisma.contactAccess.count({ where: { listingId } });
+  return await prisma.contactAccess.count({
+    where: { listingId }
+  });
 };
 
-export const findAllContactAccesses = async (skip, take, orderBy) => {
+export const findAllContactAccesses = async (skip, take) => {
   return await prisma.contactAccess.findMany({
     skip,
     take,
-    orderBy
+    orderBy: { createdAt: 'desc' }
   });
 };
 
@@ -56,17 +58,27 @@ export const countAllContactAccesses = async () => {
   return await prisma.contactAccess.count();
 };
 
-//  UPDATE 
-export const updateContactAccessInDatabase = async (id, updateData) => {
-  return await prisma.contactAccess.update({
-    where: { id },
-    data: updateData
+export const findAccessByUser = async (userId, skip, take) => {
+  return await prisma.contactAccess.findMany({
+    where: {
+      OR: [
+        { viewerId: userId },
+        { ownerId: userId }
+      ]
+    },
+    skip,
+    take,
+    orderBy: { createdAt: 'desc' }
   });
 };
 
-//  DELETE 
-export const deleteContactAccessFromDatabase = async (id) => {
-  return await prisma.contactAccess.delete({
-    where: { id }
+export const countAccessByUser = async (userId) => {
+  return await prisma.contactAccess.count({
+    where: {
+      OR: [
+        { viewerId: userId },
+        { ownerId: userId }
+      ]
+    }
   });
 };
