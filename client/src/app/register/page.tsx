@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import Link from "next/link";
 import { useState } from "react";
+import { useRegisterMutation } from '@/store/apis/userApi';
+import { setUser } from '@/store/slices/userSlice';
+import { useAppDispatch } from '@/store/hooks';
+import { useRouter } from 'next/navigation';
+
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -20,6 +25,9 @@ export default function Register() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const dispatch = useAppDispatch();
+const router = useRouter();
+const [register, { isLoading }] = useRegisterMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -48,18 +56,25 @@ export default function Register() {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors = validateForm();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const newErrors = validateForm();
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
 
-    // Handle registration
-    console.log("Register with:", formData);
-  };
+  try {
+    const { confirmPassword, agreeToTerms, ...registerData } = formData;
+    const user = await register(registerData).unwrap(); 
+    dispatch(setUser(user));                           
+    router.push('/dashboard');                          
+  } catch (err: any) {
+    
+    setErrors({ email: err?.data?.message || 'Registration failed. Please try again.' });
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
