@@ -54,6 +54,7 @@ model HouseListing {
   ownerId          String         @db.ObjectId
   title            String
   description      String
+  listingType      ListingType
   houseType        HouseType
   images           String[]
   price            Float
@@ -74,6 +75,7 @@ model CarListing {
   ownerId          String         @db.ObjectId
   title            String
   description      String
+  listingType      ListingType
   carType          CarType
   brand            String
   model            String
@@ -237,6 +239,10 @@ enum HouseType {
   business
   apartment
   others
+}
+enum ListingType {
+  rent
+  sell
 }
 
 enum CarType {

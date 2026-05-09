@@ -1,5 +1,12 @@
 import bcrypt from 'bcryptjs';
 
+//password hashing (reusable for registration, password change)
+export const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return await bcrypt.hash(password, salt);
+};
+
+
 export const formatUserResponse = (user) => {
   return {
     id: user.id,
@@ -22,7 +29,6 @@ export const comparePassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
-// Format pagination response (reusable for all list endpoints)
 export const formatPagination = (page, limit, total) => {
   return {
     page: parseInt(page),
@@ -32,7 +38,6 @@ export const formatPagination = (page, limit, total) => {
   };
 };
 
-// Format success response (reusable)
 export const successResponse = (res, message, data = null, statusCode = 200) => {
   const response = { success: true, message };
   if (data) response.data = data;

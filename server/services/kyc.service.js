@@ -14,8 +14,3 @@ export const updateKYCInDatabase = async (requestId, updateData) => {
   });
 };
 
-export const deleteKYCFromDatabase = async (requestId) => {
-  return await prisma.kYCRequest.delete({
-    where: { id: requestId }
-  });
-};
