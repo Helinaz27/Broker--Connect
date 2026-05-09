@@ -215,7 +215,9 @@ model ContactAccess {
 
 // ============ ENUMS ============
 enum Role {
+  customer
   user
+  Service_provider 
   admin
   super_admin
 }
