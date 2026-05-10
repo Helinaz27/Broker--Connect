@@ -1,4 +1,3 @@
-// routes/user.routes.js
 import express from 'express';
 import * as userController from '../controllers/user.controller.js';
 import { protect, admin } from '../middleware/auth.js';
@@ -22,16 +21,11 @@ router.post('/forgot-password', forgotPasswordValidator, userController.forgotPa
 router.post('/reset-password', resetPasswordValidator, userController.resetPassword);
 router.post('/change-password', protect, changePasswordValidator, userController.changePassword);
 
-//  USER PROFILE    
 router.get('/profile', protect, userController.getProfile);
 router.put('/profile', protect, updateProfileValidator, userController.updateProfile);
-router.delete('/profile', protect, userController.deleteAccount);
 
-//  GET USERS 
 router.get('/:userId', protect, userController.getUserById);
-router.get('/username/:username', protect, userController.getUserByUsername);
 
-//   ADMIN - USER MANAGEMENT 
 router.get('/admin/all', protect, admin, userController.getAllUsers);
 router.put('/admin/:userId/status', protect, admin, updateUserStatusValidator, userController.updateUserStatus);
 router.delete('/admin/:userId', protect, admin, userController.deleteUserByAdmin);

@@ -7,8 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-// ============ COLLECTIONS ============
+//  COLLECTIONS 
 
 // 2.1 Users Collection
 model User {
@@ -21,7 +20,7 @@ model User {
   roles            Role[]
   coins            Int       @default(0)
   isActive         Boolean   @default(true)
-  isEmailVerified  Boolean   @default(false)
+  isKYCVerified  Boolean   @default(false)
   profileImage     String?
   kycRequests      KYCRequest[]
    payments         Payment[] 
@@ -48,15 +47,23 @@ model KYCRequest {
   user             User           @relation(fields: [userId], references: [id])
 }
 
+
 // 2.3 House Listings Collection
 model HouseListing {
   id               String         @id @default(auto()) @map("_id") @db.ObjectId
   ownerId          String         @db.ObjectId
   title            String
   description      String
+  listingMode      ListingMode
   houseType        HouseType
   images           String[]
   price            Float
+  rentalPeriod     Period
+  bedrooms         Int
+  bathrooms        Int
+  area_sqm         Int
+  tanker           Boolean
+  parking          Int
   location         LocationData
   contactCoinLimit Int
   postingFeeId     String?        @db.ObjectId
@@ -64,7 +71,6 @@ model HouseListing {
   status           ListingStatus  @default(active)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-
   @@map("house_listings")
 }
 
@@ -74,12 +80,14 @@ model CarListing {
   ownerId          String         @db.ObjectId
   title            String
   description      String
+  listingMode      ListingMode
   carType          CarType
+  condition        carConditionType
   brand            String
   model            String
-  year             Int
   images           String[]
-  rentPrice        Float
+  Price            Float
+  rentalPeriod     Period
   location         LocationData
   contactCoinLimit Int
   postingFeeId     String?        @db.ObjectId
@@ -92,11 +100,11 @@ model CarListing {
 }
 
 // 2.5 Service Listings Collection
-model ServiceListing {
+model serviceListing {
   id               String         @id @default(auto()) @map("_id") @db.ObjectId
   ownerId          String         @db.ObjectId
-  serviceType      ServiceType
   title            String
+  serviceType      ServiceType
   description      String
   images           String[]
   price            Float
@@ -115,10 +123,12 @@ model ServiceListing {
 model PostingFee {
   id              String         @id @default(auto()) @map("_id") @db.ObjectId
   category        ListingCategory
+  listingMode     ListingMode?
   durationDays    Int
   price           Float
   description     String?
   isActive        Boolean        @default(true)
+  updatedAt       DateTime?
   createdBy       String         @db.ObjectId
   createdAt       DateTime       @default(now())
 
@@ -133,7 +143,6 @@ model Payment {
   coinsReceived   Int
   paymentMethod   PaymentMethod
   transactionId   String         @unique
-  purpose         PaymentPurpose @default(buy_coins)
   status          PaymentStatus  @default(pending)
   createdAt       DateTime       @default(now())
   completedAt     DateTime?
@@ -171,6 +180,8 @@ model Message {
   id              String         @id @default(auto()) @map("_id") @db.ObjectId
   roomId          String         @db.ObjectId
   senderId        String         @db.ObjectId
+  listingId       String         @db.ObjectId
+  listingType     ListingType
   messageType     MessageType    @default(text)
   content         String
   readBy          ReadReceipt[]
@@ -202,7 +213,7 @@ model ContactAccess {
   viewerId        String         @db.ObjectId
   ownerId         String         @db.ObjectId
   listingId       String         @db.ObjectId
-  listingType     ListingCategory
+  listingType     ListingType
   coinsPaid       Int
   isActive        Boolean        @default(true)
   createdAt       DateTime       @default(now())
@@ -211,9 +222,11 @@ model ContactAccess {
 }
 
 
-// ============ ENUMS ============
+//  ENUMS 
 enum Role {
+  customer
   user
+  Service_provider 
   admin
   super_admin
 }
@@ -239,13 +252,34 @@ enum HouseType {
   others
 }
 
+enum  Period {
+  daily
+  weekly
+  monthly
+  yearly
+}
+enum ListingType {
+  car
+  home
+  service
+}
+
+enum ListingMode{
+  rent
+  sell
+}
+
+
+
 enum CarType {
-  sedan
-  suv
-  hatchback
-  truck
-  bus
-  others
+  electric
+  fuel
+}
+
+enum carConditionType {
+  used
+  new
+
 }
 
 enum ServiceType {
@@ -260,16 +294,19 @@ enum ListingStatus {
   active
   inactive
   occupied
+  sold
+  done
 }
 
 enum ListingCategory {
   house
   car
-  service
+  othersservice
 }
 
 enum PaymentMethod {
   telebirr
+  CBE
 }
 
 enum PaymentPurpose {
@@ -314,7 +351,7 @@ enum NotificationType {
   system
 }
 
-// ============ EMBEDDED TYPES ============
+//  EMBEDDED TYPES 
 type Coordinates {
   lat Float
   lng Float
@@ -336,3 +373,5 @@ type NotificationData {
   path        String?
   referenceId String? @db.ObjectId
 }
+
+
