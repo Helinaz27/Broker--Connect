@@ -6,16 +6,14 @@ import { uploadKYCImages, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
+//  USER ROUTES 
 router.post('/submit', protect, uploadKYCImages, handleUploadError, submitKycValidator, kycController.submitKYC);
 router.get('/my-status', protect, kycController.getMyKYCStatus);
 
-// Admin routes
-
-router.get('/', protect, admin, kycController.getAllKYC);
-router.get('/:requestId', protect, admin, kycController.getKYCById);
-
-// Approve/Reject KYC
-router.put('/:requestId/approve', protect, admin, kycController.approveKYC);
-router.put('/:requestId/reject', protect, admin, kycController.rejectKYC);
+//  ADMIN ROUTES 
+router.get('/', protect, admin, kycController.getAllKYC);  
+router.get('/getkyc/:requestId', protect, admin, kycController.getKYCById);
+router.put('/:requestId/approve', protect, admin, kycController.approveKYC); 
+router.patch('/:requestId/reject', protect, admin, kycController.rejectKYC);   
 
 export default router;

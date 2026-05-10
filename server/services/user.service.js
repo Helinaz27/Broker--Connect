@@ -58,7 +58,7 @@ export const loginUserService = async (email, password) => {
   const user = await prisma.user.findFirst({ where: { email } });
   
   if (!user) {
-    return { success: false, message: 'Invalid email or password.', status: 401 };
+    return { success: false, message: 'user not found already registered by this email ', status: 401 };
   }
   
   if (!user.isActive) {
@@ -67,7 +67,7 @@ export const loginUserService = async (email, password) => {
   
   const isPasswordMatch = await comparePassword(password, user.password);
   if (!isPasswordMatch) {
-    return { success: false, message: 'Invalid email or password.', status: 401 };
+    return { success: false, message: 'please try to use correct password', status: 401 };
   }
   
   const token = generateToken(user.id);
