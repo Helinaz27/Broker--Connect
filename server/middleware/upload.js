@@ -3,10 +3,8 @@ import path from 'path';
 import cloudinary from '../config/cloudinary.config.js';
 import { Readable } from 'stream';
 
-// Configure storage (memory storage for Cloudinary)
 const storage = multer.memoryStorage();
 
-// File filter for images only
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -19,16 +17,15 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Create multer upload instance
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: fileFilter,
 });
 
-// ─── Cloudinary Helpers ───────────────────────────────────────────────────────
+//  Cloudinary Helpers 
 
 export const uploadToCloudinary = (buffer, folder = 'listings') =>
   new Promise((resolve, reject) => {
@@ -50,18 +47,11 @@ export const deleteFromCloudinary = (url) => {
   return cloudinary.uploader.destroy(publicId);
 };
 
-// ─── Multer Middleware ────────────────────────────────────────────────────────
+//  Multer Middleware 
 
-// Single file upload middleware (for KYC document)
 export const uploadSingle = upload.single('documentImage');
-
-// Profile image upload middleware
 export const uploadProfileImage = upload.single('profileImage');
-
-// Multiple files upload middleware (for House, Car, Service listings)
 export const uploadMultiple = upload.array('images', 10); // Max 10 images
-
-// Handle upload errors
 export const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'FILE_TOO_LARGE') {

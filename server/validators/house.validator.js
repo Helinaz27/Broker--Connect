@@ -108,16 +108,11 @@ export const createHouseValidator = [
     .withMessage('Contact coin limit must be a positive integer'),
 
   body('paidUntil')
-    .optional()
-    .isISO8601()
-    .withMessage('paidUntil must be a valid date')
-    .toDate()
-    .custom((value) => {
-      if (value && value < new Date()) {
-        throw new Error('paidUntil must be a future date');
-      }
-      return true;
-    }),
+  .optional()
+  .isInt({ min: 1 })
+  .withMessage('paidUntil must be a positive integer representing days')
+  .toInt(),
+   
 
   handleValidationErrors,
 ];

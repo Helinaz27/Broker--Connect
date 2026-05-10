@@ -4,6 +4,7 @@ import { uploadManyToCloudinary, deleteFromCloudinary } from '../middleware/uplo
 export const createHouse = async (req, res) => {
   try {
     const userId = req.user.id;
+
     const houseData = req.body;
 
     // Validate images present
