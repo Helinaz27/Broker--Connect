@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export interface User {
   id: string;
@@ -23,41 +23,38 @@ export interface LoginRequest {
 }
 
 export const userApi = createApi({
-  reducerPath: 'userApi',
+  reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.base_url,
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       // Attach token to every request if it exists
-      const token = (getState() as { user: { token: string | null } }).user.token;
-      if (token) headers.set('Authorization', `Bearer ${token}`);
+      const token = (getState() as { user: { token: string | null } }).user
+        .token;
+      if (token) headers.set("Authorization", `Bearer ${token}`);
       return headers;
     },
   }),
   endpoints: (builder) => ({
     register: builder.mutation<User, RegisterRequest>({
       query: (body) => ({
-        url: '/auth/register',
-        method: 'POST',
+        url: "/auth/register",
+        method: "POST",
         body,
       }),
     }),
 
     login: builder.mutation<User, LoginRequest>({
       query: (body) => ({
-        url: '/auth/login',
-        method: 'POST',
+        url: "/auth/login",
+        method: "POST",
         body,
       }),
     }),
 
     getMe: builder.query<User, void>({
-      query: () => '/auth/me',
+      query: () => "/auth/me",
     }),
   }),
 });
 
-export const {
-  useRegisterMutation,
-  useLoginMutation,
-  useGetMeQuery,
-} = userApi;
+export const { useRegisterMutation, useLoginMutation, useGetMeQuery } = userApi;
