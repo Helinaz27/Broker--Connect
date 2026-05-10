@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 
-//password hashing (reusable for registration, password change)
 export const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return await bcrypt.hash(password, salt);
@@ -17,7 +16,7 @@ export const formatUserResponse = (user) => {
     roles: user.roles,
     coins: user.coins,
     isActive: user.isActive,
-    isEmailVerified: user.isEmailVerified,
+    isKYCVerified: user.isKYCVerified,
     profileImage: user.profileImage,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt

@@ -30,7 +30,7 @@ export const registerUserService = async (userData) => {
       roles: ['user'],
       coins: COIN_RULES.WELCOME_BONUS || 0,
       isActive: true,
-      isEmailVerified: false
+      isKYCVerified: false
     }
   });
 
@@ -164,7 +164,7 @@ export const updateProfileUserService = async (userId, updateData) => {
 };
 
 export const getUserByIdService = async (userId, currentUserId, currentUserRole) => {
-  const isAdmin = currentUserRole.includes('admin') || currentUserRole.includes('super_admin');
+  const isAdmin = currentUserRole.includes('admin');
   
   if (!isAdmin && currentUserId !== userId) {
     return { success: false, message: 'You are not authorized to view this user', status: 403 };

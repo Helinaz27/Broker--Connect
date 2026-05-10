@@ -187,7 +187,7 @@ export const updateService = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const userRole = req.user.roles || [];
-    const isAdmin = userRole.includes('admin') || userRole.includes('super_admin');
+    const isAdmin = userRole.includes('admin');
     const { title, description, serviceType, price, location, contactCoinLimit, status } = req.body;
 
     const existingService = await findServiceById(id);
@@ -233,7 +233,7 @@ export const updateServiceStatus = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const userRole = req.user.roles || [];
-    const isAdmin = userRole.includes('admin') || userRole.includes('super_admin');
+    const isAdmin = userRole.includes('admin');
     const { status } = req.body;
 
     if (!status || !['active', 'inactive'].includes(status)) {
