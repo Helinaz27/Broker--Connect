@@ -97,19 +97,18 @@ export const getMyHouses = async (req, res) => {
     return errorResponse(res, error.message, null, 500);
   }
 };
-
 export const updateHouse = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId  = req.user.id;
+    const isAdmin = req.user.roles?.includes('admin') || req.user.role === 'admin';
     const updateData = req.body;
 
-    // Upload new images only if provided — existing DB images stay untouched otherwise
     if (req.files && req.files.length > 0) {
       updateData.images = await uploadManyToCloudinary(req.files, 'listings');
     }
 
-    const house = await houseService.updateHouseInDatabase(id, updateData, userId, false);
+    const house = await houseService.updateHouseInDatabase(id, updateData, userId, isAdmin);
 
     return successResponse(res, 'House updated successfully', { house }, 200);
   } catch (error) {
@@ -119,36 +118,40 @@ export const updateHouse = async (req, res) => {
     if (error.message === 'You do not have permission to update this house') {
       return errorResponse(res, error.message, null, 403);
     }
+    if (error.message.startsWith('Insufficient coins')) {
+      return errorResponse(res, error.message, null, 400);
+    }
     return errorResponse(res, error.message, null, 500);
   }
 };
 
 export const updateHouseStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id }   = req.params;
+    const userId   = req.user.id;
     const { status } = req.body;
+    const isAdmin  = req.user.roles?.includes('admin') || req.user.role === 'admin';
 
     if (!status) {
       return errorResponse(res, 'Status is required', null, 400);
     }
 
-    const isAdmin = req.user.roles?.includes('admin') || req.user.role === 'admin';
-
-    const house = await houseService.updateHouseInDatabase(id, { status }, userId, isAdmin);
+    const house = await houseService.updateHouseStatusInDatabase(id, status, userId, isAdmin);
 
     return successResponse(res, 'House status updated successfully', { house }, 200);
   } catch (error) {
     if (error.message === 'House not found') {
       return errorResponse(res, error.message, null, 404);
     }
-    if (error.message === 'You do not have permission to update this house') {
+    if (error.message === 'You do not have permission to update this house status') {
+      return errorResponse(res, error.message, null, 403);
+    }
+    if (error.message.startsWith('Users cannot set status')) {
       return errorResponse(res, error.message, null, 403);
     }
     return errorResponse(res, error.message, null, 500);
   }
 };
-
 export const deleteHouse = async (req, res) => {
   try {
     const { id } = req.params;
