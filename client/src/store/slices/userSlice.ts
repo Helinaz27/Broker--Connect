@@ -3,12 +3,10 @@ import { User } from '../apis/userApi';
 
 interface UserState {
   currentUser: User | null;
-  token: string | null;
 }
 
 const initialState: UserState = {
   currentUser: null,
-  token: null,
 };
 
 const userSlice = createSlice({
@@ -17,11 +15,9 @@ const userSlice = createSlice({
   reducers: {
     setUser: (state, action: PayloadAction<User>) => {
       state.currentUser = action.payload;
-      state.token = action.payload.token;
     },
     clearUser: (state) => {
       state.currentUser = null;
-      state.token = null;
     },
   },
 });

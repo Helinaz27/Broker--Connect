@@ -5,7 +5,6 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 
-// Check database connection
 async function checkDbConnection() {
   try {
     await prisma.$runCommandRaw({ ping: 1 });
@@ -24,18 +23,13 @@ async function checkAdmin() {
   const adminPhone = process.env.ADMIN_PHONE?.trim();
 
   if (!adminEmail || !adminPass) {
-    console.warn(
-      "ADMIN_EMAIL or ADMIN_PASSWORD not set in .env – skipping admin creation"
-    );
+    console.warn("ADMIN_EMAIL or ADMIN_PASSWORD not set in .env – skipping admin creation");
     return;
   }
 
   try {
-    const existingAdmin = await prisma.user.findFirst({
-      where: {
-        email: adminEmail,
-        roles: { has: "super_admin" }
-      }
+    const existingAdmin = await prisma.user.findUnique({
+      where: { email: adminEmail }
     });
 
     if (existingAdmin) {
@@ -44,8 +38,6 @@ async function checkAdmin() {
     }
 
     const hashed = await bcrypt.hash(adminPass, 10);
-
-    // Split name into firstName and lastName
     const nameParts = adminName ? adminName.split(' ') : ['Administrator', 'System'];
     const firstName = nameParts[0] || 'Administrator';
     const lastName = nameParts.slice(1).join(' ') || 'System';
@@ -57,12 +49,12 @@ async function checkAdmin() {
         phone: adminPhone,
         email: adminEmail,
         password: hashed,
-        roles: ["super_admin"],
-        isEmailVerified: true, 
+        roles: ["admin"],
+        isKYCVerified: true,
       },
     });
     
-    console.log(`Created admin user: ${adminEmail}`);
+    console.log(`✅ Created admin: ${adminEmail}`);
     console.log("Admin seeding completed successfully");
   } catch (err) {
     console.error("Error during admin seeding:", err);

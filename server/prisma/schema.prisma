@@ -25,6 +25,9 @@ model User {
   kycRequests      KYCRequest[]
    payments         Payment[] 
   coinTransactions CoinTransaction[]
+  houseListings    HouseListing[]    // ✅ added
+  carListings      CarListing[]      // ✅ added
+  serviceListings  serviceListing[]  // ✅ added
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -58,7 +61,7 @@ model HouseListing {
   houseType        HouseType
   images           String[]
   price            Float
-  rentalPeriod     Period
+  rentalPeriod     Period?
   bedrooms         Int
   bathrooms        Int
   area_sqm         Int
@@ -71,6 +74,7 @@ model HouseListing {
   status           ListingStatus  @default(active)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  owner            User           @relation(fields: [ownerId], references: [id]) // ✅ added
   @@map("house_listings")
 }
 
@@ -95,6 +99,7 @@ model CarListing {
   status           ListingStatus  @default(active)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  owner            User           @relation(fields: [ownerId], references: [id]) // ✅ added
 
   @@map("car_listings")
 }
@@ -115,6 +120,7 @@ model serviceListing {
   status           ListingStatus  @default(active)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  owner            User           @relation(fields: [ownerId], references: [id]) // ✅ added
 
   @@map("service_listings")
 }
@@ -224,11 +230,11 @@ model ContactAccess {
 
 //  ENUMS 
 enum Role {
-  customer
+  
   user
   Service_provider 
   admin
-  super_admin
+  
 }
 
 enum DocumentType {
@@ -260,7 +266,7 @@ enum  Period {
 }
 enum ListingType {
   car
-  home
+  house
   service
 }
 
@@ -373,5 +379,3 @@ type NotificationData {
   path        String?
   referenceId String? @db.ObjectId
 }
-
-

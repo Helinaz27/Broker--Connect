@@ -5,19 +5,25 @@ import { createHouseValidator, updateHouseValidator } from '../validators/house.
 import { uploadMultiple, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
-router.post('/', protect, uploadMultiple, handleUploadError, createHouseValidator, houseController.createHouse);
 
+//  Public Routes 
+router.get('/', houseController.getAllHouses);
+router.get('/search', houseController.searchHouses);
+
+//  Protected User Routes 
+router.post('/', protect, uploadMultiple, handleUploadError, createHouseValidator, houseController.createHouse);
+router.get('/my-houses', protect, houseController.getMyHouses);
 router.put('/:id', protect, uploadMultiple, handleUploadError, updateHouseValidator, houseController.updateHouse);
 router.put('/:id/status', protect, houseController.updateHouseStatus);
+router.delete('/:id', protect, houseController.deleteHouse);
 
-
-router.get('/', houseController.getAllHouses); 
-router.get('/my', protect, houseController.getMyHouses);
+//  Admin Routes 
 router.get('/admin/all', protect, admin, houseController.adminGetAllHouses);
-
-router.get('/search', houseController.searchHouses);
-router.get('/:id', houseController.getHouseById);
-router.get('/dashboard/search', protect, houseController.searchUserHouses);
 router.get('/admin/search', protect, admin, houseController.searchAdminHouses);
+router.put('/admin/:id/status', protect, admin, houseController.updateHouseStatus);
+router.delete('/admin/:id', protect, admin, houseController.deleteHouse);
+
+// Dynamic Param —
+router.get('/:id', houseController.getHouseById);
 
 export default router;

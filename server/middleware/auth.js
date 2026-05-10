@@ -1,4 +1,3 @@
-// middleware/auth.js
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.config.js';
 import env from '../utils/env.js';
@@ -41,7 +40,7 @@ export const protect = async (req, res, next) => {
   });
 };
 
-//  ADMIN MIDDLEWARE - FIXED to accept admin OR super_admin
+//  ADMIN MIDDLEWARE - FIXED to accept admin 
 export const admin = async (req, res, next) => {
   try {
     if (!req.user) {
@@ -51,9 +50,9 @@ export const admin = async (req, res, next) => {
       });
     }
 
-    // Check if user has admin OR super_admin role
+    // Check if user has admin role
     const userRoles = req.user.roles || [];
-    const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
+    const isAdmin = userRoles.includes('admin');
     
     if (!isAdmin) {
       return res.status(403).json({

@@ -17,7 +17,7 @@ const uploadToCloudinary = (file, folder) => {
 export const submitKYCService = async (userId, userFullName, files, documentType, documentNumber) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   
-  if (user.isEmailVerified) {
+  if (user.isKYCVerified) {
     return { success: false, message: 'You are already verified.', status: 400 };
   }
 
@@ -81,7 +81,7 @@ export const submitKYCService = async (userId, userFullName, files, documentType
     where: { id: userId },
     select: {
       id: true, firstName: true, lastName: true, email: true, phone: true,
-      roles: true, coins: true, isActive: true, isEmailVerified: true,
+      roles: true, coins: true, isActive: true, isKYCVerified: true,
       profileImage: true, createdAt: true, updatedAt: true
     }
   });
@@ -104,12 +104,12 @@ export const submitKYCService = async (userId, userFullName, files, documentType
   };
 };
 
-export const getMyKYCStatusService = async (userId, userFullName, isEmailVerified) => {
-  if (isEmailVerified) {
+export const getMyKYCStatusService = async (userId, userFullName, isKYCVerified) => {
+  if (isKYCVerified) {
     return {
       success: true,
       message: `Dear ${userFullName}, you are already verified.`,
-      data: { isEmailVerified: true, status: 'verified', nextAction: 'can_create_listings' },
+      data: { isKYCVerified: true, status: 'verified', nextAction: 'can_create_listings' },
       status: 200
     };
   }
@@ -252,7 +252,7 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
     }),
     prisma.user.update({
       where: { id: kycRequest.userId },
-      data: { isEmailVerified: true }
+      data: { isKYCVerified: true }
     }),
     prisma.notification.create({
       data: {
@@ -276,7 +276,7 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
         approvedAt,
         approvedBy: { id: adminId, name: adminFullName }
       },
-      user: { id: kycRequest.userId, isEmailVerified: true }
+      user: { id: kycRequest.userId, isKYCVerified: true }
     },
     status: 200
   };
@@ -327,7 +327,7 @@ export const rejectKYCService = async (requestId, adminId, adminFullName, review
         reason,
         rejectedBy: { id: adminId, name: adminFullName }
       },
-      user: { id: kycRequest.userId, isEmailVerified: false },
+      user: { id: kycRequest.userId, isKYCVerified: false },
       nextAction: 'user_needs_to_resubmit_with_clear_images'
     },
     status: 200

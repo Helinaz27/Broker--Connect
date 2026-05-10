@@ -23,8 +23,8 @@ export const submitKYC = async (req, res) => {
 export const getMyKYCStatus = async (req, res) => {
   const userId = req.user.id;
   const userFullName = `${req.user.firstName} ${req.user.lastName}`;
-  const isEmailVerified = req.user.isEmailVerified;
-  const result = await getMyKYCStatusService(userId, userFullName, isEmailVerified);
+  const isKYCVerified = req.user.isKYCVerified;
+  const result = await getMyKYCStatusService(userId, userFullName, isKYCVerified);
   return res.status(result.status).json({
     success: result.success,
     message: result.message,

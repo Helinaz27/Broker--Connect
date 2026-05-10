@@ -10,9 +10,9 @@ router.post('/', protect, admin, createPostingFeeValidator, postingFeeController
 router.get('/', protect, admin, postingFeeController.getAllPostingFees);
 router.put('/:id', protect, admin, updatePostingFeeValidator, postingFeeController.updatePostingFee);
 
-// Get posting fees with filters (by id, category, isActive, etc.)
 router.get('/filter', protect, admin, postingFeeController.getPostingFees);
 router.get('/:id', protect, admin, postingFeeController.getPostingFeeById);
+router.delete('/:id', protect, admin, postingFeeController.deletePostingFee);
 
 
 export default router;
