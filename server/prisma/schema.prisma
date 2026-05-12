@@ -7,247 +7,207 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//  COLLECTIONS 
-
-// 2.1 Users Collection
 model User {
-  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
   firstName        String
   lastName         String
   phone            String
-  email            String    @unique
-  password     String
+  email            String            @unique
+  password         String
   roles            Role[]
-  coins            Int       @default(0)
-  isActive         Boolean   @default(true)
-  isKYCVerified  Boolean   @default(false)
+  coins            Int               @default(0)
+  isActive         Boolean           @default(true)
+  isKYCVerified    Boolean           @default(false)
   profileImage     String?
   kycRequests      KYCRequest[]
-   payments         Payment[] 
+  payments         Payment[]
   coinTransactions CoinTransaction[]
-  houseListings    HouseListing[]    // ✅ added
-  carListings      CarListing[]      // ✅ added
-  serviceListings  serviceListing[]  // ✅ added
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  listings         Listing[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@map("users")
 }
 
-// 2.2 KYC Requests Collection
 model KYCRequest {
-  id               String         @id @default(auto()) @map("_id") @db.ObjectId
-  userId           String         @db.ObjectId
-  documentType     DocumentType
-  documentNumber   String
-  frontSideImage       String
-  backSideImage        String?
-  status           KYCStatus      @default(pending)
-  reviewedBy       String?        @db.ObjectId
-  reviewNote       String?
-  reviewedAt       DateTime?
-  createdAt        DateTime       @default(now())
-  user             User           @relation(fields: [userId], references: [id])
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String       @db.ObjectId
+  documentType   DocumentType
+  documentNumber String
+  frontSideImage String
+  backSideImage  String?
+  status         KYCStatus    @default(pending)
+  reviewedBy     String?      @db.ObjectId
+  reviewNote     String?
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@map("kyc_requests")
 }
 
-
-// 2.3 House Listings Collection
-model HouseListing {
-  id               String         @id @default(auto()) @map("_id") @db.ObjectId
-  ownerId          String         @db.ObjectId
+model Listing {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String            @db.ObjectId
+  listingType      ListingType
+  listingMode      ListingMode?
   title            String
   description      String
-  listingMode      ListingMode
-  houseType        HouseType
   images           String[]
   price            Float
+  location         LocationData
+  status           ListingStatus     @default(active)
+  contactCoinLimit Int
+  postingFeeId     String?           @db.ObjectId
+  paidUntil        DateTime?
+
+  houseType        HouseType?
+  bedrooms         Int?
+  bathrooms        Int?
+  area_sqm         Int?
+  tanker           Boolean?
+  parking          Int?
   rentalPeriod     Period?
-  bedrooms         Int
-  bathrooms        Int
-  area_sqm         Int
-  tanker           Boolean
-  parking          Int
-  location         LocationData
-  contactCoinLimit Int
-  postingFeeId     String?        @db.ObjectId
-  paidUntil        DateTime?
-  status           ListingStatus  @default(active)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  owner            User           @relation(fields: [ownerId], references: [id]) // ✅ added
-  @@map("house_listings")
+
+  carType          CarType?
+  condition        CarConditionType?
+  brand            String?
+  carModel         String?
+
+  serviceType      ServiceType?
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  owner            User              @relation(fields: [ownerId], references: [id])
+  contactAccesses  ContactAccess[]
+  messages         Message[]
+
+  @@map("listings")
 }
 
-// 2.4 Car Listings Collection
-model CarListing {
-  id               String         @id @default(auto()) @map("_id") @db.ObjectId
-  ownerId          String         @db.ObjectId
-  title            String
-  description      String
-  listingMode      ListingMode
-  carType          CarType
-  condition        carConditionType
-  brand            String
-  model            String
-  images           String[]
-  Price            Float
-  rentalPeriod     Period
-  location         LocationData
-  contactCoinLimit Int
-  postingFeeId     String?        @db.ObjectId
-  paidUntil        DateTime?
-  status           ListingStatus  @default(active)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  owner            User           @relation(fields: [ownerId], references: [id]) // ✅ added
+model PlatformFee {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  feeType      FeeType
+  category     ListingCategory?
+  listingMode  ListingMode?
+  durationDays Int?
+  coinAmount   Int?
+  price        Float?
+  description  String?
+  isActive     Boolean         @default(true)
+  createdBy    String          @db.ObjectId
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime?
 
-  @@map("car_listings")
+  @@map("platform_fees")
 }
 
-// 2.5 Service Listings Collection
-model serviceListing {
-  id               String         @id @default(auto()) @map("_id") @db.ObjectId
-  ownerId          String         @db.ObjectId
-  title            String
-  serviceType      ServiceType
-  description      String
-  images           String[]
-  price            Float
-  location         LocationData
-  contactCoinLimit Int
-  postingFeeId     String?        @db.ObjectId
-  paidUntil        DateTime?
-  status           ListingStatus  @default(active)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  owner            User           @relation(fields: [ownerId], references: [id]) // ✅ added
-
-  @@map("service_listings")
-}
-
-// 2.6 Posting Fees Collection
-model PostingFee {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  category        ListingCategory
-  listingMode     ListingMode?
-  durationDays    Int
-  price           Float
-  description     String?
-  isActive        Boolean        @default(true)
-  updatedAt       DateTime?
-  createdBy       String         @db.ObjectId
-  createdAt       DateTime       @default(now())
-
-  @@map("posting_fees")
-}
-
-// 2.7 Payments Collection
 model Payment {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String         @db.ObjectId
-  amountBirr      Float
-  coinsReceived   Int
-  paymentMethod   PaymentMethod
-  transactionId   String         @unique
-  status          PaymentStatus  @default(pending)
-  createdAt       DateTime       @default(now())
-  completedAt     DateTime?
-   user            User           @relation(fields: [userId], references: [id]) 
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String        @db.ObjectId
+  amountBirr    Float
+  coinsReceived Int
+  paymentMethod PaymentMethod
+  transactionId String        @unique
+  status        PaymentStatus @default(pending)
+  createdAt     DateTime      @default(now())
+  completedAt   DateTime?
+  user          User          @relation(fields: [userId], references: [id])
 
   @@map("payments")
 }
 
-// 2.8 Coin Transactions Collection
 model CoinTransaction {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String         @db.ObjectId
-  type            TransactionType
-  amount          Int
-  Reason          CoinReason
-  description     String?
-  createdAt       DateTime       @default(now())
-  user            User           @relation(fields: [userId], references: [id]) 
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String          @db.ObjectId
+  type        TransactionType
+  amount      Int
+  reason      CoinReason
+  description String?
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id])
 
   @@map("coin_transactions")
 }
 
-// 2.9 Chat Rooms Collection
 model ChatRoom {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  participants    String[]       @db.ObjectId
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  participants String[] @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("chat_rooms")
 }
 
-// 2.10 Messages Collection
 model Message {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  roomId          String         @db.ObjectId
-  senderId        String         @db.ObjectId
-  listingId       String         @db.ObjectId
-  listingType     ListingType
-  messageType     MessageType    @default(text)
-  content         String
-  readBy          ReadReceipt[]
-  createdAt       DateTime       @default(now())
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  roomId      String        @db.ObjectId
+  senderId    String        @db.ObjectId
+  listingId   String        @db.ObjectId
+  messageType MessageType   @default(text)
+  content     String
+  readBy      ReadReceipt[]
+  createdAt   DateTime      @default(now())
+  listing     Listing       @relation(fields: [listingId], references: [id])
 
   @@map("messages")
 }
 
-// 2.11 Notifications Collection
 model Notification {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String         @db.ObjectId
-  Type            NotificationType
-  title           String
-  body            String
-  data            NotificationData?
-  isRead          Boolean        @default(false)
-  createdAt       DateTime       @default(now())
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String            @db.ObjectId
+  type      NotificationType
+  title     String
+  body      String
+  data      NotificationData?
+  isRead    Boolean           @default(false)
+  createdAt DateTime          @default(now())
 
   @@index([userId])
   @@index([createdAt])
-
   @@map("notifications")
 }
 
-// 2.12 Contact Access Collection
 model ContactAccess {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  viewerId        String         @db.ObjectId
-  ownerId         String         @db.ObjectId
-  listingId       String         @db.ObjectId
-  listingType     ListingType
-  coinsPaid       Int
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  viewerId  String   @db.ObjectId
+  ownerId   String   @db.ObjectId
+  listingId String   @db.ObjectId
+  coinsPaid Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id])
 
   @@map("contact_accesses")
 }
 
-
-//  ENUMS 
 enum Role {
-  
   user
-  Service_provider 
+  service_provider
   admin
-  
 }
 
 enum DocumentType {
   national_id
   passport
   driving_license
-
 }
 
 enum KYCStatus {
   pending
   approved
   rejected
+}
+
+enum ListingType {
+  car
+  house
+  service
+}
+
+enum ListingMode {
+  rent
+  sell
 }
 
 enum HouseType {
@@ -258,34 +218,21 @@ enum HouseType {
   others
 }
 
-enum  Period {
+enum Period {
   daily
   weekly
   monthly
   yearly
 }
-enum ListingType {
-  car
-  house
-  service
-}
-
-enum ListingMode{
-  rent
-  sell
-}
-
-
 
 enum CarType {
   electric
   fuel
 }
 
-enum carConditionType {
+enum CarConditionType {
   used
   new
-
 }
 
 enum ServiceType {
@@ -307,16 +254,12 @@ enum ListingStatus {
 enum ListingCategory {
   house
   car
-  othersservice
+  service
 }
 
 enum PaymentMethod {
   telebirr
   CBE
-}
-
-enum PaymentPurpose {
-  buy_coins
 }
 
 enum PaymentStatus {
@@ -357,7 +300,11 @@ enum NotificationType {
   system
 }
 
-//  EMBEDDED TYPES 
+enum FeeType {
+  posting_fee
+  contact_access_fee
+}
+
 type Coordinates {
   lat Float
   lng Float
@@ -371,8 +318,8 @@ type LocationData {
 }
 
 type ReadReceipt {
-  userId  String @db.ObjectId
-  readAt  DateTime
+  userId String   @db.ObjectId
+  readAt DateTime
 }
 
 type NotificationData {
