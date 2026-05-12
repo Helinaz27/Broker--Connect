@@ -118,6 +118,21 @@ export const createListingCtrl = async (req, res) => {
       return errorResponse(res, `No active posting fee found for ${listingType} listings. Please contact admin.`, null, 400);
     }
 
+    const contactAccessFee = await prisma.platformFee.findFirst({
+      where: { feeType: 'contact_access_fee', category: listingType, isActive: true }
+    });
+
+    if (!contactAccessFee) {
+      return errorResponse(res, `No active contact access fee found for ${listingType} listings. Please contact admin.`, null, 400);
+    }
+
+    const platformContactFee = contactAccessFee.coinAmount;
+    const parsedContactCoinLimit = contactCoinLimit ? parseInt(contactCoinLimit) : null;
+    const resolvedContactCoinLimit =
+      parsedContactCoinLimit && parsedContactCoinLimit > platformContactFee
+        ? parsedContactCoinLimit
+        : platformContactFee;
+
     const totalCoinsNeeded = parseInt(durationDays) * postingFee.coinAmount;
 
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { coins: true } });
@@ -149,7 +164,7 @@ export const createListingCtrl = async (req, res) => {
       price: parseFloat(price),
       images: imageUrls,
       location: parsedLocation,
-      contactCoinLimit: parseInt(contactCoinLimit) || 0,
+      contactCoinLimit: resolvedContactCoinLimit,
       paidUntil,
       status: 'active',
       ...(listingMode && { listingMode }),
