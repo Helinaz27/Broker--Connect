@@ -12,10 +12,8 @@ import {
   updatePaymentInDatabase
 } from '../services/payment.service.js';
 
-// Get coin price from constants
-const EXCHANGE_RATE = COIN_RULES.COIN_PRICE_IN_BIRR; // 1 Birr = 1 Coin
+const EXCHANGE_RATE = COIN_RULES.COIN_PRICE_IN_BIRR; 
 
-//  HELPER FUNCTIONS 
 
 const formatPaymentResponse = (payment, includeUser = false) => {
   const baseData = {
@@ -41,7 +39,6 @@ const formatPaymentResponse = (payment, includeUser = false) => {
   return baseData;
 };
 
-//  USER PAYMENT CONTROLLERS 
 
 export const createPayment = async (req, res) => {
   try {
@@ -49,7 +46,6 @@ export const createPayment = async (req, res) => {
     const userFullName = `${req.user.firstName} ${req.user.lastName}`;
     const { amountBirr, paymentMethod, transactionId } = req.body;
 
-    // Check for duplicate transaction ID
     const existingTransaction = await prisma.payment.findFirst({
       where: {
         transactionId: transactionId,
@@ -102,7 +98,6 @@ export const createPayment = async (req, res) => {
   }
 };
 
-// Add this function at the bottom of payment.controller.js
 
 export const getCoinBalance = async (req, res) => {
   try {
@@ -171,7 +166,6 @@ export const getPaymentById = async (req, res) => {
   }
 };
 
-//  ADMIN PAYMENT CONTROLLERS 
 
 export const adminGetAllPayments = async (req, res) => {
   try {
@@ -269,7 +263,6 @@ export const adminUpdatePaymentStatus = async (req, res) => {
       });
     }
 
-    // ✅ CHANGE false to true
     const formattedPayment = formatPaymentResponse(updatedPayment, true);
 
     return successResponse(res, `Payment status updated to ${status} successfully`, {

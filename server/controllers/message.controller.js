@@ -1,7 +1,6 @@
 import { prisma } from '../config/db.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
 
-//  USER MESSAGE CONTROLLERS 
 
 export const getMessagesByRoom = async (req, res) => {
   try {
@@ -64,7 +63,6 @@ export const sendMessage = async (req, res) => {
       return errorResponse(res, 'Chat room not found or unauthorized', null, 404);
     }
 
-    // Create message
     const message = await prisma.message.create({
       data: {
         roomId,
@@ -75,13 +73,11 @@ export const sendMessage = async (req, res) => {
       }
     });
 
-    // Update chat room updatedAt
     await prisma.chatRoom.update({
       where: { id: roomId },
       data: { updatedAt: new Date() }
     });
 
-    // Create notifications for other participants
     const otherParticipants = chatRoom.participants.filter(p => p !== userId);
     for (const participantId of otherParticipants) {
       await prisma.notification.create({
@@ -118,12 +114,10 @@ export const markAsRead = async (req, res) => {
       return errorResponse(res, 'Message not found', null, 404);
     }
 
-    // Check if user is the sender (can't mark own message as read)
     if (message.senderId === userId) {
       return errorResponse(res, 'Cannot mark your own message as read', null, 400);
     }
 
-    // Check if already read by this user
     const alreadyRead = message.readBy.some(read => read.userId === userId);
     
     if (!alreadyRead) {
@@ -156,7 +150,6 @@ export const deleteMessage = async (req, res) => {
       return errorResponse(res, 'Message not found', null, 404);
     }
 
-    // Only sender can delete their own message
     if (message.senderId !== userId) {
       return errorResponse(res, 'You can only delete your own messages', null, 403);
     }

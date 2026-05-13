@@ -1,7 +1,6 @@
 import { prisma } from '../config/db.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
 
-//  USER NOTIFICATION CONTROLLERS 
 
 export const getMyNotifications = async (req, res) => {
   try {
@@ -140,7 +139,6 @@ export const deleteAllNotifications = async (req, res) => {
   }
 };
 
-//  ADMIN NOTIFICATION CONTROLLERS 
 
 export const sendSystemNotification = async (req, res) => {
   try {
@@ -158,14 +156,12 @@ export const sendSystemNotification = async (req, res) => {
     }
 
     if (userId) {
-      // Send to specific user
       notificationData.userId = userId;
       const notification = await prisma.notification.create({
         data: notificationData
       });
       return successResponse(res, 'Notification sent to user', { notification }, 201);
     } else {
-      // Send to all users
       const users = await prisma.user.findMany({
         where: { isActive: true },
         select: { id: true }

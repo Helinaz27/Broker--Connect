@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-//import local modules
 import { checkDbConnection, checkAdmin } from "./config/db.config.js";
 import env from "./utils/env.js";
 import router from "./routes/index.js";
@@ -14,7 +13,7 @@ app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:4000",
+    origin: "http://localhost:3000",
   }),
 );
 
