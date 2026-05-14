@@ -8,14 +8,11 @@ const buildPagination = (page, limit, total) => ({
 });
 
 const buildUniquenessWhere = (feeType, category, listingMode) => {
-  const needsMode =
-    feeType === 'posting_fee' &&
-    (category === 'house' || category === 'car') &&
-    listingMode;
+  const needsMode =(category === 'house' || category === 'car') && listingMode;
 
   return {
     feeType,
-    category:    category  ?? null,
+    category:    category ?? null,
     listingMode: needsMode ? listingMode : null,
   };
 };
@@ -41,7 +38,7 @@ const checkForDuplicate = async (feeType, category, listingMode, excludeId = nul
   }
 };
 
-// ─── CREATE ──────────────────────────────────────────────────────────────────
+//  CREATE 
 
 export const createPlatformFee = async ({
   feeType, category, listingMode, durationDays,
@@ -52,6 +49,12 @@ export const createPlatformFee = async ({
 
   if (isPosting && (category === 'house' || category === 'car') && !listingMode) {
     const error = new Error('Listing mode is required for house and car posting fees');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (isContact && (category === 'house' || category === 'car') && !listingMode) {
+    const error = new Error('Listing mode is required for house and car contact access fees');
     error.statusCode = 400;
     throw error;
   }
@@ -79,13 +82,13 @@ export const createPlatformFee = async ({
       price:        price        ? parseFloat(price)      : null,
       coinAmount:   coinAmount   !== undefined ? parseInt(coinAmount) : null,
       description:  description  ?? null,
-      isActive: true,
-      createdBy: adminId,
+      isActive:     true,
+      createdBy:    adminId,
     },
   });
 };
 
-// ─── READ ─────────────────────────────────────────────────────────────────────
+//  READ 
 
 export const getAllPlatformFees = async ({ page = 1, limit = 20 }) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -100,23 +103,37 @@ export const getAllPlatformFees = async ({ page = 1, limit = 20 }) => {
 };
 
 export const searchPlatformFees = async ({
-  feeType, category, listingMode, isActive, page = 1, limit = 20,
+  q, feeType, category, listingMode, isActive, page = 1, limit = 20,
 }) => {
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
+
   const where = {};
   if (feeType)                where.feeType     = feeType;
   if (category)               where.category    = category;
   if (listingMode)            where.listingMode = listingMode;
   if (isActive !== undefined) where.isActive    = isActive === 'true' || isActive === true;
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const take = parseInt(limit);
+  // Fetch with exact filters
+  let platformFees = await prisma.platformFee.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+  });
 
-  const [platformFees, total] = await Promise.all([
-    prisma.platformFee.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
-    prisma.platformFee.count({ where }),
-  ]);
+  // Keyword search in JavaScript (case-insensitive, partial match)
+  if (q) {
+    const regex = new RegExp(q, 'i');
+    platformFees = platformFees.filter(fee =>
+      regex.test(fee.description ?? '') ||
+      regex.test(fee.feeType     ?? '') ||
+      regex.test(fee.category    ?? '')
+    );
+  }
 
-  return { platformFees, pagination: buildPagination(page, limit, total) };
+  const total     = platformFees.length;
+  const paginated = platformFees.slice(skip, skip + take);
+
+  return { platformFees: paginated, pagination: buildPagination(page, limit, total) };
 };
 
 export const getPlatformFeeById = async (id) => {
@@ -129,7 +146,7 @@ export const getPlatformFeeById = async (id) => {
   return platformFee;
 };
 
-// ─── UPDATE ───────────────────────────────────────────────────────────────────
+//  UPDATE 
 
 export const updatePlatformFee = async (id, body) => {
   const existing = await prisma.platformFee.findUnique({ where: { id } });
@@ -165,7 +182,7 @@ export const updatePlatformFee = async (id, body) => {
   return await prisma.platformFee.update({ where: { id }, data: updateData });
 };
 
-// ─── DELETE 
+//  DELETE 
 
 export const deletePlatformFee = async (id) => {
   const existing = await prisma.platformFee.findUnique({ where: { id } });
