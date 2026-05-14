@@ -103,8 +103,26 @@ export const createListingCtrl = async (req, res) => {
       return errorResponse(res, 'Duration days is required and must be at least 1 day', null, 400);
     }
 
-    const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
-
+const parseLocation = (raw) => {
+  const parsed = typeof raw === 'string' ? JSON.parse(raw.trim()) : raw;
+  const { city, subCity, placeName, coordinates } = parsed;
+  
+  let parsedCoordinates = undefined;
+  if (coordinates) {
+    parsedCoordinates = {
+      lat: typeof coordinates.lat === 'string' ? parseFloat(coordinates.lat) : coordinates.lat,
+      lng: typeof coordinates.lng === 'string' ? parseFloat(coordinates.lng) : coordinates.lng
+    };
+  }
+  
+  return { 
+    city, 
+    ...(subCity && { subCity }), 
+    ...(placeName && { placeName }), 
+    ...(parsedCoordinates && { coordinates: parsedCoordinates })
+  };
+};
+const parsedLocation = location ? parseLocation(location) : null;
     let imageUrls = [];
     if (req.files && req.files.length > 0) {
       imageUrls = await uploadImagesToCloudinary(req.files);
@@ -215,6 +233,8 @@ export const createListingCtrl = async (req, res) => {
       },
       201
     );
+
+    
   } catch (error) {
     console.error('Create listing error:', error);
     return errorResponse(res, 'Server error', error.message);

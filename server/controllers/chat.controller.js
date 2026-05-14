@@ -2,14 +2,12 @@ import { prisma } from '../config/db.config.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
 import { createNotification } from '../services/notification.service.js';
 
-//  USER CHAT CONTROLLERS 
 
 export const createChat = async (req, res) => {
   try {
     const userId = req.user.id;
     const { participantId, listingId, listingType } = req.body;
 
-    // Check if chat already exists
     const existingChat = await prisma.chatRoom.findFirst({
       where: {
         AND: [
@@ -56,7 +54,6 @@ export const getMyChats = async (req, res) => {
       })
     ]);
 
-    // Get last message for each chat room
     const chatsWithLastMessage = await Promise.all(
       chatRooms.map(async (room) => {
         const lastMessage = await prisma.message.findFirst({
@@ -64,7 +61,6 @@ export const getMyChats = async (req, res) => {
           orderBy: { createdAt: 'desc' }
         });
         
-        // Get other participant info
         const otherParticipantId = room.participants.find(p => p !== userId);
         const otherParticipant = await prisma.user.findUnique({
           where: { id: otherParticipantId },
@@ -142,7 +138,6 @@ export const sendMessage = async (req, res) => {
     const userId = req.user.id;
     const { content, messageType = 'text' } = req.body;
 
-    // Verify user is in this chat room
     const chatRoom = await prisma.chatRoom.findFirst({
       where: {
         id: roomId,
@@ -154,7 +149,6 @@ export const sendMessage = async (req, res) => {
       return errorResponse(res, 'Chat room not found or unauthorized', null, 404);
     }
 
-    // Create message
     const message = await prisma.message.create({
       data: {
         roomId,
@@ -165,13 +159,11 @@ export const sendMessage = async (req, res) => {
       }
     });
 
-    // Update chat room updatedAt
     await prisma.chatRoom.update({
       where: { id: roomId },
       data: { updatedAt: new Date() }
     });
 
-    // Create notification for other participants
     const otherParticipants = chatRoom.participants.filter(p => p !== userId);
     for (const participantId of otherParticipants) {
       await prisma.notification.create({
@@ -211,7 +203,6 @@ export const markMessageAsRead = async (req, res) => {
       return errorResponse(res, 'Message not found', null, 404);
     }
 
-    // Check if already read by this user
     const alreadyRead = message.readBy.some(read => read.userId === userId);
     
     if (!alreadyRead) {
@@ -231,7 +222,6 @@ export const markMessageAsRead = async (req, res) => {
   }
 };
 
-//  ADMIN CHAT CONTROLLERS 
 
 export const adminGetAllChats = async (req, res) => {
   try {
@@ -265,12 +255,10 @@ export const adminDeleteChat = async (req, res) => {
   try {
     const { roomId } = req.params;
 
-    // Delete all messages in the chat room first
     await prisma.message.deleteMany({
       where: { roomId }
     });
 
-    // Delete the chat room
     await prisma.chatRoom.delete({
       where: { id: roomId }
     });

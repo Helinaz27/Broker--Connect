@@ -7,12 +7,54 @@ const buildPagination = (page, limit, total) => ({
   pages: Math.ceil(total / parseInt(limit)),
 });
 
-export const createPlatformFee = async ({ feeType, category, listingMode, durationDays, price, coinAmount, description, adminId }) => {
+const buildUniquenessWhere = (feeType, category, listingMode) => {
+  const needsMode =(category === 'house' || category === 'car') && listingMode;
+
+  return {
+    feeType,
+    category:    category ?? null,
+    listingMode: needsMode ? listingMode : null,
+  };
+};
+
+const checkForDuplicate = async (feeType, category, listingMode, excludeId = null) => {
+  const where = buildUniquenessWhere(feeType, category, listingMode);
+  if (excludeId) where.id = { not: excludeId };
+
+  const existing = await prisma.platformFee.findFirst({ where });
+
+  if (existing) {
+    const label = existing.listingMode
+      ? `${feeType} / ${category} / ${existing.listingMode}`
+      : `${feeType} / ${category}`;
+
+    const error = new Error(
+      `A platform fee for [${label}] already exists (id: ${existing.id}). ` +
+      `Update the existing record instead of creating a new one.`
+    );
+    error.statusCode = 409;
+    error.existingId = existing.id;
+    throw error;
+  }
+};
+
+//  CREATE 
+
+export const createPlatformFee = async ({
+  feeType, category, listingMode, durationDays,
+  price, coinAmount, description, adminId,
+}) => {
   const isPosting = feeType === 'posting_fee';
   const isContact = feeType === 'contact_access_fee';
 
   if (isPosting && (category === 'house' || category === 'car') && !listingMode) {
     const error = new Error('Listing mode is required for house and car posting fees');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (isContact && (category === 'house' || category === 'car') && !listingMode) {
+    const error = new Error('Listing mode is required for house and car contact access fees');
     error.statusCode = 400;
     throw error;
   }
@@ -29,6 +71,8 @@ export const createPlatformFee = async ({ feeType, category, listingMode, durati
     throw error;
   }
 
+  await checkForDuplicate(feeType, category, listingMode);
+
   return await prisma.platformFee.create({
     data: {
       feeType,
@@ -38,11 +82,13 @@ export const createPlatformFee = async ({ feeType, category, listingMode, durati
       price:        price        ? parseFloat(price)      : null,
       coinAmount:   coinAmount   !== undefined ? parseInt(coinAmount) : null,
       description:  description  ?? null,
-      isActive: true,
-      createdBy: adminId,
+      isActive:     true,
+      createdBy:    adminId,
     },
   });
 };
+
+//  READ 
 
 export const getAllPlatformFees = async ({ page = 1, limit = 20 }) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -56,22 +102,38 @@ export const getAllPlatformFees = async ({ page = 1, limit = 20 }) => {
   return { platformFees, pagination: buildPagination(page, limit, total) };
 };
 
-export const searchPlatformFees = async ({ feeType, category, listingMode, isActive, page = 1, limit = 20 }) => {
-  const where = {};
-  if (feeType)              where.feeType     = feeType;
-  if (category)             where.category    = category;
-  if (listingMode)          where.listingMode = listingMode;
-  if (isActive !== undefined) where.isActive  = isActive === 'true' || isActive === true;
-
+export const searchPlatformFees = async ({
+  q, feeType, category, listingMode, isActive, page = 1, limit = 20,
+}) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
 
-  const [platformFees, total] = await Promise.all([
-    prisma.platformFee.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
-    prisma.platformFee.count({ where }),
-  ]);
+  const where = {};
+  if (feeType)                where.feeType     = feeType;
+  if (category)               where.category    = category;
+  if (listingMode)            where.listingMode = listingMode;
+  if (isActive !== undefined) where.isActive    = isActive === 'true' || isActive === true;
 
-  return { platformFees, pagination: buildPagination(page, limit, total) };
+  // Fetch with exact filters
+  let platformFees = await prisma.platformFee.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Keyword search in JavaScript (case-insensitive, partial match)
+  if (q) {
+    const regex = new RegExp(q, 'i');
+    platformFees = platformFees.filter(fee =>
+      regex.test(fee.description ?? '') ||
+      regex.test(fee.feeType     ?? '') ||
+      regex.test(fee.category    ?? '')
+    );
+  }
+
+  const total     = platformFees.length;
+  const paginated = platformFees.slice(skip, skip + take);
+
+  return { platformFees: paginated, pagination: buildPagination(page, limit, total) };
 };
 
 export const getPlatformFeeById = async (id) => {
@@ -84,12 +146,27 @@ export const getPlatformFeeById = async (id) => {
   return platformFee;
 };
 
+//  UPDATE 
+
 export const updatePlatformFee = async (id, body) => {
   const existing = await prisma.platformFee.findUnique({ where: { id } });
   if (!existing) {
     const error = new Error('Platform fee not found');
     error.statusCode = 404;
     throw error;
+  }
+
+  const newFeeType     = body.feeType     ?? existing.feeType;
+  const newCategory    = body.category    ?? existing.category;
+  const newListingMode = body.listingMode ?? existing.listingMode;
+
+  const combinationChanged =
+    newFeeType     !== existing.feeType     ||
+    newCategory    !== existing.category    ||
+    newListingMode !== existing.listingMode;
+
+  if (combinationChanged) {
+    await checkForDuplicate(newFeeType, newCategory, newListingMode, id);
   }
 
   const updateData = {};
@@ -104,6 +181,8 @@ export const updatePlatformFee = async (id, body) => {
 
   return await prisma.platformFee.update({ where: { id }, data: updateData });
 };
+
+//  DELETE 
 
 export const deletePlatformFee = async (id) => {
   const existing = await prisma.platformFee.findUnique({ where: { id } });

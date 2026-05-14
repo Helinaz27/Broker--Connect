@@ -147,7 +147,6 @@ export const accessContact = async (req, res) => {
       });
     }
 
-    // Create contact access record
     const contactAccess = await saveContactAccessToDatabase({
       viewerId: viewerId,
       ownerId: listing.ownerId,
@@ -157,8 +156,6 @@ export const accessContact = async (req, res) => {
       isActive: true
     });
 
-    // Record coin transactions
-    // Viewer debit transaction
     await prisma.coinTransaction.create({
       data: {
         userId: viewerId,
@@ -169,7 +166,6 @@ export const accessContact = async (req, res) => {
       }
     });
 
-    // Owner credit transaction (if ownerCoinLimit > 0)
     if (ownerCoinLimit > 0) {
       await prisma.coinTransaction.create({
         data: {
@@ -182,7 +178,6 @@ export const accessContact = async (req, res) => {
       });
     }
 
-    // Get owner contact info
     const owner = await prisma.user.findUnique({
       where: { id: listing.ownerId },
       select: {
@@ -194,7 +189,6 @@ export const accessContact = async (req, res) => {
       }
     });
 
-    // Create notification for owner (if ownerCoinLimit > 0)
     if (ownerCoinLimit > 0) {
       await prisma.notification.create({
         data: {
@@ -279,7 +273,6 @@ export const getMyAccesses = async (req, res) => {
   }
 };
 
-//  ADMIN CONTACT ACCESS CONTROLLERS 
 
 export const adminGetAllAccesses = async (req, res) => {
   try {

@@ -10,7 +10,6 @@ import {
   findTransactionById
 } from '../services/coinTransaction.service.js';
 
-//  HELPER FUNCTIONS 
 
 const formatTransactionResponse = (transaction, includeUser = false) => {
   const baseData = {
@@ -35,7 +34,6 @@ const formatTransactionResponse = (transaction, includeUser = false) => {
   return baseData;
 };
 
-//  USER COIN TRANSACTION CONTROLLERS 
 
 export const getMyTransactions = async (req, res) => {
   try {
@@ -83,7 +81,6 @@ export const getMyTransactionById = async (req, res) => {
   }
 };
 
-//  ADMIN COIN TRANSACTION CONTROLLERS 
 
 export const adminGetAllTransactions = async (req, res) => {
   try {
