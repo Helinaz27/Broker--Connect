@@ -1,7 +1,5 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -52,8 +50,6 @@ export default function Login() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
-      <Header />
-
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-[400px] animate-fade-in">
           <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
@@ -165,7 +161,6 @@ export default function Login() {
         </div>
       </main>
 
-      <Footer />
       <Chat />
     </div>
   );
