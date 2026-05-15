@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { Coins, Edit, Lock, LogOut, Plus, ChevronRight } from "lucide-react";
@@ -17,7 +15,8 @@ export default function Profile() {
     coins: 5000,
     level: 1,
     joinedDate: "Jan 15, 2026",
-    profileImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
+    profileImage:
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
   });
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -36,14 +35,13 @@ export default function Profile() {
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.03),transparent_50%)]" />
-      <Header />
 
       <main className="flex-1 py-12 md:py-20 relative z-10">
         <div className="container mx-auto px-4 max-w-5xl animate-fade-in">
           {/* Profile Header */}
           <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-8 md:p-12 mb-10 shadow-2xl shadow-black/5 overflow-hidden group">
             <div className="absolute top-0 right-0 h-64 w-64 bg-primary/5 blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
-            
+
             <div className="grid md:grid-cols-[240px_1fr] gap-12 items-center relative z-10">
               {/* Avatar */}
               <div className="flex flex-col items-center gap-6">
@@ -58,7 +56,9 @@ export default function Profile() {
                     <Edit className="h-4 w-4" />
                   </button>
                 </div>
-                <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${badge.color} border-current/20`}>
+                <div
+                  className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${badge.color} border-current/20`}
+                >
                   <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                   {badge.label}
                 </div>
@@ -67,24 +67,35 @@ export default function Profile() {
               {/* User Info */}
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">{user.name}</h1>
+                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+                    {user.name}
+                  </h1>
                   <p className="text-muted-foreground font-bold text-sm flex items-center gap-2">
-                    Member since <span className="text-foreground">{user.joinedDate}</span>
+                    Member since{" "}
+                    <span className="text-foreground">{user.joinedDate}</span>
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-6 border-t border-border/40">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Contact Email</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      Contact Email
+                    </p>
                     <p className="font-bold text-foreground/90">{user.email}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mobile Link</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      Mobile Link
+                    </p>
                     <p className="font-bold text-foreground/90">{user.phone}</p>
                   </div>
                 </div>
-                
-                <Button variant="outline" className="rounded-2xl border-border/60 font-bold text-xs h-12 px-8 hover:bg-muted/50 transition-all" asChild>
+
+                <Button
+                  variant="outline"
+                  className="rounded-2xl border-border/60 font-bold text-xs h-12 px-8 hover:bg-muted/50 transition-all"
+                  asChild
+                >
                   <Link href="/settings">Edit personal details</Link>
                 </Button>
               </div>
@@ -98,24 +109,37 @@ export default function Profile() {
               <div className="relative z-10 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-8">
                   <div className="space-y-1">
-                    <h2 className="text-2xl font-black italic tracking-tight">Financial Balance</h2>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Available Credits</p>
+                    <h2 className="text-2xl font-black italic tracking-tight">
+                      Financial Balance
+                    </h2>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                      Available Credits
+                    </p>
                   </div>
                   <div className="h-14 w-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
                     <Coins className="h-7 w-7 text-primary" />
                   </div>
                 </div>
-                
+
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-6xl font-black tracking-tighter">{user.coins.toLocaleString()}</span>
-                  <span className="text-xl font-bold text-slate-500 uppercase">Birr</span>
+                  <span className="text-6xl font-black tracking-tighter">
+                    {user.coins.toLocaleString()}
+                  </span>
+                  <span className="text-xl font-bold text-slate-500 uppercase">
+                    Birr
+                  </span>
                 </div>
                 <p className="text-slate-400 text-sm font-medium mb-10 max-w-md">
-                  1 Coin = 1 Birr. These credits enable premium listings and direct broker connections.
+                  1 Coin = 1 Birr. These credits enable premium listings and
+                  direct broker connections.
                 </p>
-                
+
                 <div className="mt-auto">
-                  <Button variant="secondary" size="lg" className="h-14 px-10 rounded-2xl text-base font-black gap-3 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all bg-white text-slate-950 hover:bg-slate-100">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="h-14 px-10 rounded-2xl text-base font-black gap-3 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all bg-white text-slate-950 hover:bg-slate-100"
+                  >
                     <Plus className="h-5 w-5" />
                     Recharge Balance
                   </Button>
@@ -126,32 +150,46 @@ export default function Profile() {
             {/* Quick Stats */}
             <div className="space-y-6">
               <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2rem] p-8 shadow-sm group hover:border-primary/20 transition-all duration-500">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Market Presence</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">
+                  Market Presence
+                </p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-foreground tracking-tighter group-hover:text-primary transition-colors">3</p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Posts</p>
+                  <p className="text-4xl font-black text-foreground tracking-tighter group-hover:text-primary transition-colors">
+                    3
+                  </p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    Active Posts
+                  </p>
                 </div>
                 <div className="h-1.5 w-full bg-muted rounded-full mt-6 overflow-hidden">
                   <div className="h-full bg-primary rounded-full w-[30%]" />
                 </div>
               </div>
-              
+
               <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2rem] p-8 shadow-sm group hover:border-amber-200 transition-all duration-500">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Broker Authority</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">
+                  Broker Authority
+                </p>
                 <div className="flex items-center gap-2">
-                  <p className="text-4xl font-black text-foreground tracking-tighter group-hover:text-amber-500 transition-colors">4.8</p>
+                  <p className="text-4xl font-black text-foreground tracking-tighter group-hover:text-amber-500 transition-colors">
+                    4.8
+                  </p>
                   <div className="flex text-amber-500">
                     <span className="text-xl">★</span>
                   </div>
                 </div>
-                <p className="text-xs font-bold text-muted-foreground mt-4 italic">Top 5% in Addis Ababa</p>
+                <p className="text-xs font-bold text-muted-foreground mt-4 italic">
+                  Top 5% in Addis Ababa
+                </p>
               </div>
             </div>
           </div>
 
           {/* Security & Settings */}
           <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-10 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-            <h2 className="text-2xl font-black text-foreground tracking-tight italic mb-8">Security Console.</h2>
+            <h2 className="text-2xl font-black text-foreground tracking-tight italic mb-8">
+              Security Console.
+            </h2>
 
             <div className="grid gap-4">
               {/* Change Password */}
@@ -182,13 +220,17 @@ export default function Profile() {
                     <div className="h-2 w-2 rounded-full bg-current animate-pulse" />
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-foreground">Account verified</p>
+                    <p className="font-bold text-foreground">
+                      Account verified
+                    </p>
                     <p className="text-xs text-muted-foreground font-medium mt-1">
                       Identity verified • Full access to list and message
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-green-600 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">Active</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-green-600 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
+                  Active
+                </span>
               </div>
 
               {/* Delete Account */}
@@ -198,9 +240,12 @@ export default function Profile() {
                     <LogOut className="h-5 w-5" />
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-foreground">Termination Zone</p>
+                    <p className="font-bold text-foreground">
+                      Termination Zone
+                    </p>
                     <p className="text-xs text-muted-foreground font-medium mt-1">
-                      Permanently wipe your broker profile and all digital assets
+                      Permanently wipe your broker profile and all digital
+                      assets
                     </p>
                   </div>
                 </div>
@@ -210,7 +255,6 @@ export default function Profile() {
               </button>
             </div>
           </div>
-
         </div>
       </main>
 
@@ -218,18 +262,24 @@ export default function Profile() {
       {showPasswordModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-card rounded-[2.5rem] max-w-md w-full p-10 border border-border/50 shadow-2xl animate-in zoom-in-95 duration-300">
-            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic">Reset Access.</h2>
+            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic">
+              Reset Access.
+            </h2>
 
             <div className="space-y-6 mb-10">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Current Protocol</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  Current Protocol
+                </label>
                 <PasswordInput
                   placeholder="••••••••"
                   className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">New Protocol</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  New Protocol
+                </label>
                 <PasswordInput
                   placeholder="••••••••"
                   className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
@@ -245,16 +295,16 @@ export default function Profile() {
               >
                 Cancel
               </Button>
-              <Button className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => setShowPasswordModal(false)}>
+              <Button
+                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
+                onClick={() => setShowPasswordModal(false)}
+              >
                 Confirm Reset
               </Button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <Footer />
 
       {/* Chat Component */}
       <Chat />

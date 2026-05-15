@@ -1,7 +1,5 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -94,8 +92,6 @@ export default function ForgottenPassword() {
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/30">
-      <Header />
-
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-2xl p-8 shadow-xl">
@@ -108,7 +104,9 @@ export default function ForgottenPassword() {
             </Link>
 
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Reset Password</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Reset Password
+              </h1>
               <p className="text-muted-foreground">
                 {step === "email"
                   ? "Enter your email address to receive an OTP"
@@ -142,10 +140,15 @@ export default function ForgottenPassword() {
                     }`}
                   />
                   {errors.email && (
-                    <p className="text-red-500 text-xs mt-2 font-medium">{errors.email}</p>
+                    <p className="text-red-500 text-xs mt-2 font-medium">
+                      {errors.email}
+                    </p>
                   )}
                 </div>
-                <Button type="submit" className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                <Button
+                  type="submit"
+                  className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                >
                   Send Verification Code
                 </Button>
               </form>
@@ -170,10 +173,15 @@ export default function ForgottenPassword() {
                     }`}
                   />
                   {errors.otp && (
-                    <p className="text-red-500 text-xs mt-2 font-medium">{errors.otp}</p>
+                    <p className="text-red-500 text-xs mt-2 font-medium">
+                      {errors.otp}
+                    </p>
                   )}
                 </div>
-                <Button type="submit" className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                <Button
+                  type="submit"
+                  className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                >
                   Verify Code
                 </Button>
                 <button
@@ -204,7 +212,9 @@ export default function ForgottenPassword() {
                       }`}
                     />
                     {errors.newPassword && (
-                      <p className="text-red-500 text-xs mt-2 font-medium">{errors.newPassword}</p>
+                      <p className="text-red-500 text-xs mt-2 font-medium">
+                        {errors.newPassword}
+                      </p>
                     )}
                   </div>
 
@@ -218,16 +228,23 @@ export default function ForgottenPassword() {
                       onChange={handleChange}
                       placeholder="••••••••"
                       className={`w-full px-4 py-3 bg-muted/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        errors.confirmPassword ? "border-red-500" : "border-border"
+                        errors.confirmPassword
+                          ? "border-red-500"
+                          : "border-border"
                       }`}
                     />
                     {errors.confirmPassword && (
-                      <p className="text-red-500 text-xs mt-2 font-medium">{errors.confirmPassword}</p>
+                      <p className="text-red-500 text-xs mt-2 font-medium">
+                        {errors.confirmPassword}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                <Button
+                  type="submit"
+                  className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                >
                   Update Password
                 </Button>
               </form>
@@ -236,7 +253,6 @@ export default function ForgottenPassword() {
         </div>
       </main>
 
-      <Footer />
       <Chat />
     </div>
   );
