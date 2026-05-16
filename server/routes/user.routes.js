@@ -11,6 +11,8 @@ import {
   updateUserStatusValidator 
 } from '../validators/user.validator.js';
 
+import { can } from '../middleware/can.js';
+
 const router = express.Router();
 
 //  AUTHENTICATION 
@@ -21,13 +23,13 @@ router.post('/forgot-password', forgotPasswordValidator, userController.forgotPa
 router.post('/reset-password', resetPasswordValidator, userController.resetPassword);
 router.post('/change-password', protect, changePasswordValidator, userController.changePassword);
 
-router.get('/profile', protect, userController.getProfile);
-router.put('/profile', protect, updateProfileValidator, userController.updateProfile);
+router.get('/profile', can('user', 'read'), userController.getProfile);
+router.put('/profile', can('user', 'update'), updateProfileValidator, userController.updateProfile);
 
-router.get('/:userId', protect, userController.getUserById);
+router.get('/:userId', can('user', 'read'), userController.getUserById);
 
-router.get('/admin/all', protect, admin, userController.getAllUsers);
-router.put('/admin/:userId/status', protect, admin, updateUserStatusValidator, userController.updateUserStatus);
-router.delete('/admin/:userId', protect, admin, userController.deleteUserByAdmin);
+router.get('/admin/all', can('user', 'manage'), userController.getAllUsers);
+router.put('/admin/:userId/status', can('user', 'manage'), updateUserStatusValidator, userController.updateUserStatus);
+router.delete('/admin/:userId', can('user', 'manage'), userController.deleteUserByAdmin);
 
 export default router;

@@ -54,7 +54,7 @@ async function checkAdmin() {
       },
     });
     
-    console.log(`✅ Created admin: ${adminEmail}`);
+    console.log(` Created admin: ${adminEmail}`);
     console.log("Admin seeding completed successfully");
   } catch (err) {
     console.error("Error during admin seeding:", err);

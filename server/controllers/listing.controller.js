@@ -4,8 +4,7 @@ import { successResponse, errorResponse } from '../utils/helpers.js';
 import {
   createListing,
   getListingById,
-  getAllListings,
-  getAllActiveListings,
+  getPaginatedListings,
   updateListing
 } from '../services/listing.service.js';
 
@@ -81,32 +80,17 @@ const formatListingResponse = (listing, isOwner = false, isAdmin = false) => {
     base.updatedAt = listing.updatedAt;
     base.isExpired = listing.paidUntil ? new Date() > new Date(listing.paidUntil) : false;
     base.daysRemaining = listing.paidUntil
-      ? Math.ceil((new Date(listing.paidUntil) - new Date()) / (1000 * 60 * 60 * 24))
+      ? Math.max(0, Math.ceil((new Date(listing.paidUntil) - new Date()) / (1000 * 60 * 60 * 24)))
       : 0;
   }
 
   return base;
 };
 
-export const createListingCtrl = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const userFullName = `${req.user.firstName} ${req.user.lastName}`;
-    const {
-      listingType, listingMode, title, description, price, location, contactCoinLimit, durationDays,
-      houseType, bedrooms, bathrooms, area_sqm, tanker, parking, rentalPeriod,
-      carType, condition, brand, carModel,
-      serviceType
-    } = req.body;
-
-    if (!durationDays || durationDays < 1) {
-      return errorResponse(res, 'Duration days is required and must be at least 1 day', null, 400);
-    }
-
 const parseLocation = (raw) => {
   const parsed = typeof raw === 'string' ? JSON.parse(raw.trim()) : raw;
   const { city, subCity, placeName, coordinates } = parsed;
-  
+
   let parsedCoordinates = undefined;
   if (coordinates) {
     parsedCoordinates = {
@@ -114,15 +98,41 @@ const parseLocation = (raw) => {
       lng: typeof coordinates.lng === 'string' ? parseFloat(coordinates.lng) : coordinates.lng
     };
   }
-  
-  return { 
-    city, 
-    ...(subCity && { subCity }), 
-    ...(placeName && { placeName }), 
+
+  return {
+    city,
+    ...(subCity && { subCity }),
+    ...(placeName && { placeName }),
     ...(parsedCoordinates && { coordinates: parsedCoordinates })
   };
 };
-const parsedLocation = location ? parseLocation(location) : null;
+
+const parseBool = (val) => {
+  if (typeof val === 'boolean') return val;
+  if (val === 'true' || val === '1') return true;
+  if (val === 'false' || val === '0') return false;
+  return Boolean(val);
+};
+
+
+export const createListingCtrl = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userFullName = `${req.user.firstName} ${req.user.lastName}`;
+    const {
+      listingType, listingMode, title, description, price, location,
+      contactCoinLimit, durationDays,
+      houseType, bedrooms, bathrooms, area_sqm, tanker, parking, rentalPeriod,
+      carType, condition, brand, carModel,
+      serviceType
+    } = req.body;
+
+    if (!durationDays || parseInt(durationDays) < 1) {
+      return errorResponse(res, 'Duration days is required and must be at least 1 day', null, 400);
+    }
+
+    const parsedLocation = location ? parseLocation(location) : null;
+
     let imageUrls = [];
     if (req.files && req.files.length > 0) {
       imageUrls = await uploadImagesToCloudinary(req.files);
@@ -133,7 +143,11 @@ const parsedLocation = location ? parseLocation(location) : null;
     });
 
     if (!postingFee) {
-      return errorResponse(res, `No active posting fee found for ${listingType} listings. Please contact admin.`, null, 400);
+      return errorResponse(
+        res,
+        `No active posting fee found for ${listingType} listings. Please contact admin.`,
+        null, 400
+      );
     }
 
     const contactAccessFee = await prisma.platformFee.findFirst({
@@ -141,38 +155,53 @@ const parsedLocation = location ? parseLocation(location) : null;
     });
 
     if (!contactAccessFee) {
-      return errorResponse(res, `No active contact access fee found for ${listingType} listings. Please contact admin.`, null, 400);
+      return errorResponse(
+        res,
+        `No active contact access fee found for ${listingType} listings. Please contact admin.`,
+        null, 400
+      );
     }
 
-    const platformContactFee = contactAccessFee.coinAmount;
+    const platformContactFee = contactAccessFee.price;
     const parsedContactCoinLimit = contactCoinLimit ? parseInt(contactCoinLimit) : null;
     const resolvedContactCoinLimit =
       parsedContactCoinLimit && parsedContactCoinLimit > platformContactFee
         ? parsedContactCoinLimit
         : platformContactFee;
 
-    const totalCoinsNeeded = parseInt(durationDays) * postingFee.coinAmount;
+    const totalCoinsNeeded = parseInt(durationDays) * postingFee.price;
 
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { coins: true } });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true }
+    });
 
     if (!user || user.coins < totalCoinsNeeded) {
-      return errorResponse(res, `Insufficient coins. Need ${totalCoinsNeeded} coins for ${durationDays} days. Please buy coins first.`, null, 400);
+      return errorResponse(
+        res,
+        `Insufficient coins. You need ${totalCoinsNeeded} coins for ${durationDays} days but have ${user?.coins ?? 0}. Please buy more coins.`,
+        null, 400
+      );
     }
 
     const paidUntil = new Date();
     paidUntil.setDate(paidUntil.getDate() + parseInt(durationDays));
 
-    await prisma.user.update({ where: { id: userId }, data: { coins: { decrement: totalCoinsNeeded } } });
-
-    await prisma.coinTransaction.create({
-      data: {
-        userId,
-        type: 'debit',
-        amount: totalCoinsNeeded,
-        reason: 'posting_fee',
-        description: `Paid ${totalCoinsNeeded} coins for ${durationDays} days of ${listingType} listing`
-      }
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { coins: { decrement: totalCoinsNeeded } }
+      }),
+      prisma.coinTransaction.create({
+        data: {
+          userId,
+          type: 'debit',
+          amount: totalCoinsNeeded,
+          reason: 'posting_fee',
+          description: `Paid ${totalCoinsNeeded} coins for ${durationDays} days of ${listingType} listing`
+        }
+      })
+    ]);
 
     const listingData = {
       ownerId: userId,
@@ -191,16 +220,11 @@ const parsedLocation = location ? parseLocation(location) : null;
         bedrooms: parseInt(bedrooms),
         bathrooms: parseInt(bathrooms),
         area_sqm: parseInt(area_sqm),
-        tanker: Boolean(tanker),
-        parking: parking !== undefined ? parseInt(parking) : null,
+        tanker: parseBool(tanker),
+        parking: parking !== undefined && parking !== null ? parseInt(parking) : null,
         rentalPeriod: rentalPeriod || null
       }),
-      ...(listingType === 'car' && {
-        carType,
-        condition,
-        brand,
-        carModel
-      }),
+      ...(listingType === 'car' && { carType, condition, brand, carModel }),
       ...(listingType === 'service' && { serviceType })
     };
 
@@ -210,17 +234,19 @@ const parsedLocation = location ? parseLocation(location) : null;
       where: { id: userId },
       select: { id: true, firstName: true, lastName: true, phone: true, email: true }
     });
-
     listing.owner = owner;
 
-    const formattedResponse = formatListingResponse(listing, true, false);
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true }
+    });
 
     return successResponse(
       res,
       `Dear ${userFullName}, your ${listingType} listing '${title}' has been posted successfully for ${durationDays} days.`,
       {
         listing: {
-          ...formattedResponse,
+          ...formatListingResponse(listing, true, false),
           postingDetails: {
             durationDays: parseInt(durationDays),
             totalCoinsPaid: totalCoinsNeeded,
@@ -228,18 +254,17 @@ const parsedLocation = location ? parseLocation(location) : null;
             expiresIn: `${durationDays} days`,
             isActive: true
           },
-          currentCoinsRemaining: user.coins - totalCoinsNeeded
+          currentCoinsRemaining: updatedUser.coins
         }
       },
       201
     );
-
-    
   } catch (error) {
     console.error('Create listing error:', error);
     return errorResponse(res, 'Server error', error.message);
   }
 };
+
 
 export const updateListingCtrl = async (req, res) => {
   try {
@@ -254,11 +279,7 @@ export const updateListingCtrl = async (req, res) => {
     } = req.body;
 
     const existingListing = await getListingById(id);
-
-    if (!existingListing) {
-      return errorResponse(res, 'Listing not found', null, 404);
-    }
-
+    if (!existingListing) return errorResponse(res, 'Listing not found', null, 404);
     if (!isAdmin && existingListing.ownerId !== userId) {
       return errorResponse(res, 'You are not authorized to update this listing', null, 403);
     }
@@ -271,7 +292,7 @@ export const updateListingCtrl = async (req, res) => {
     if (status !== undefined) updateData.status = status;
     if (contactCoinLimit !== undefined) updateData.contactCoinLimit = parseInt(contactCoinLimit);
     if (location !== undefined) {
-      updateData.location = typeof location === 'string' ? JSON.parse(location) : location;
+      updateData.location = parseLocation(location);
     }
 
     if (existingListing.listingType === 'house') {
@@ -279,7 +300,7 @@ export const updateListingCtrl = async (req, res) => {
       if (bedrooms !== undefined) updateData.bedrooms = parseInt(bedrooms);
       if (bathrooms !== undefined) updateData.bathrooms = parseInt(bathrooms);
       if (area_sqm !== undefined) updateData.area_sqm = parseInt(area_sqm);
-      if (tanker !== undefined) updateData.tanker = Boolean(tanker);
+      if (tanker !== undefined) updateData.tanker = parseBool(tanker);
       if (parking !== undefined) updateData.parking = parseInt(parking);
       if (rentalPeriod !== undefined) updateData.rentalPeriod = rentalPeriod;
     }
@@ -303,11 +324,16 @@ export const updateListingCtrl = async (req, res) => {
     const updatedListing = await updateListing(id, updateData);
     const formatted = formatListingResponse(updatedListing, !isAdmin, isAdmin);
 
-    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, your listing has been updated successfully`, { listing: formatted });
+    return successResponse(
+      res,
+      `Dear ${req.user.firstName} ${req.user.lastName}, your listing has been updated successfully`,
+      { listing: formatted }
+    );
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
+
 
 export const updateListingStatusCtrl = async (req, res) => {
   try {
@@ -321,11 +347,7 @@ export const updateListingStatusCtrl = async (req, res) => {
     }
 
     const existingListing = await getListingById(id);
-
-    if (!existingListing) {
-      return errorResponse(res, 'Listing not found', null, 404);
-    }
-
+    if (!existingListing) return errorResponse(res, 'Listing not found', null, 404);
     if (!isAdmin && existingListing.ownerId !== userId) {
       return errorResponse(res, 'You are not authorized to update this listing status', null, 403);
     }
@@ -342,214 +364,189 @@ export const updateListingStatusCtrl = async (req, res) => {
   }
 };
 
+
 export const getAllListingsCtrl = async (req, res) => {
   try {
     const { page = 1, limit = 20, listingType } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    let listings = await getAllActiveListings();
-    if (listingType) listings = listings.filter(l => l.listingType === listingType);
+    const { listings, total } = await getPaginatedListings({
+      filters: {
+        status: 'active',
+        excludeExpired: true,
+        ...(listingType && { listingType })
+      },
+      page,
+      limit
+    });
 
-    const total = listings.length;
-    const paginated = listings.slice(skip, skip + parseInt(limit));
-    const formatted = paginated.map(l => formatListingResponse(l, false, false));
+    const formatted = listings.map(l => formatListingResponse(l, false, false));
 
     return successResponse(res, `Retrieved ${formatted.length} listings successfully`, {
       listings: formatted,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: {
+        page: parseInt(page), limit: parseInt(limit), total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
+
 
 export const getMyListingsCtrl = async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 20, listingType } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    let listings = await getAllListings();
-    listings = listings.filter(l => l.ownerId === userId);
-    if (listingType) listings = listings.filter(l => l.listingType === listingType);
-
-    const total = listings.length;
-    const paginated = listings.slice(skip, skip + parseInt(limit));
-    const formatted = paginated.map(l => formatListingResponse(l, true, false));
-
-    return successResponse(res, `Dear ${req.user.firstName} ${req.user.lastName}, you have ${formatted.length} of ${total} listings`, {
-      listings: formatted,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+    const { listings, total } = await getPaginatedListings({
+      filters: {
+        ownerId: userId,
+        ...(listingType && { listingType })
+      },
+      page,
+      limit
     });
+
+    const formatted = listings.map(l => formatListingResponse(l, true, false));
+
+    return successResponse(
+      res,
+      `Dear ${req.user.firstName} ${req.user.lastName}, you have ${formatted.length} of ${total} listings`,
+      {
+        listings: formatted,
+        pagination: {
+          page: parseInt(page), limit: parseInt(limit), total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    );
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
+
 
 export const adminGetAllListingsCtrl = async (req, res) => {
   try {
     const { page = 1, limit = 20, status, listingType } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    let listings = await getAllListings();
-    if (status && status !== 'all') listings = listings.filter(l => l.status === status);
-    if (listingType) listings = listings.filter(l => l.listingType === listingType);
+    const { listings, total } = await getPaginatedListings({
+      filters: {
+        ...(status && { status }),
+        ...(listingType && { listingType })
+      },
+      page,
+      limit
+    });
 
-    const total = listings.length;
-    const paginated = listings.slice(skip, skip + parseInt(limit));
-    const formatted = paginated.map(l => formatListingResponse(l, false, true));
+    const formatted = listings.map(l => formatListingResponse(l, false, true));
 
     return successResponse(res, `Retrieved ${formatted.length} listings successfully`, {
       listings: formatted,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: {
+        page: parseInt(page), limit: parseInt(limit), total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
+
 
 export const getListingByIdCtrl = async (req, res) => {
   try {
     const { id } = req.params;
     const listing = await getListingById(id);
 
-    if (!listing) {
-      return errorResponse(res, 'Listing not found', null, 404);
+    if (!listing) return errorResponse(res, 'Listing not found', null, 404);
+    if (listing.status !== 'active') return errorResponse(res, 'Listing not available', null, 404);
+
+    if (listing.paidUntil && new Date() > new Date(listing.paidUntil)) {
+      return errorResponse(res, 'Listing has expired', null, 404);
     }
 
-    if (listing.status !== 'active') {
-      return errorResponse(res, 'Listing not available', null, 404);
-    }
-
-    return successResponse(res, 'Listing retrieved successfully', { listing: formatListingResponse(listing, false, false) });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-export const searchListingsCtrl = async (req, res) => {
-  try {
-    const { page = 1, limit = 20, listingType, listingMode, city, minPrice, maxPrice, search,
-      houseType, bedrooms, bathrooms, minArea, maxArea,
-      carType, condition, brand, serviceType, rentalPeriod } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    let listings = await getAllActiveListings();
-
-    if (listingType) listings = listings.filter(l => l.listingType === listingType);
-    if (listingMode) listings = listings.filter(l => l.listingMode === listingMode);
-    if (city) listings = listings.filter(l => l.location?.city?.toLowerCase() === city.toLowerCase());
-    if (minPrice) listings = listings.filter(l => l.price >= parseFloat(minPrice));
-    if (maxPrice) listings = listings.filter(l => l.price <= parseFloat(maxPrice));
-    if (search) {
-      const s = search.toLowerCase();
-      listings = listings.filter(l => l.title.toLowerCase().includes(s) || l.description.toLowerCase().includes(s));
-    }
-    if (houseType) listings = listings.filter(l => l.houseType === houseType);
-    if (bedrooms !== undefined) listings = listings.filter(l => l.bedrooms === parseInt(bedrooms));
-    if (bathrooms !== undefined) listings = listings.filter(l => l.bathrooms === parseInt(bathrooms));
-    if (minArea) listings = listings.filter(l => l.area_sqm >= parseInt(minArea));
-    if (maxArea) listings = listings.filter(l => l.area_sqm <= parseInt(maxArea));
-    if (carType) listings = listings.filter(l => l.carType === carType);
-    if (condition) listings = listings.filter(l => l.condition === condition);
-    if (brand) listings = listings.filter(l => l.brand?.toLowerCase().includes(brand.toLowerCase()));
-    if (serviceType) listings = listings.filter(l => l.serviceType === serviceType);
-    if (rentalPeriod) listings = listings.filter(l => l.rentalPeriod === rentalPeriod);
-
-    const total = listings.length;
-    const paginated = listings.slice(skip, skip + parseInt(limit));
-    const formatted = paginated.map(l => formatListingResponse(l, false, false));
-
-    return successResponse(res, `Found ${formatted.length} listings`, {
-      listings: formatted,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+    return successResponse(res, 'Listing retrieved successfully', {
+      listing: formatListingResponse(listing, false, false)
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
+
+
+export const searchListingsCtrl = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, ...filters } = req.query;
+
+    const { listings, total } = await getPaginatedListings({
+      filters: { ...filters, status: 'active', excludeExpired: true },
+      page,
+      limit
+    });
+
+    const formatted = listings.map(l => formatListingResponse(l, false, false));
+
+    return successResponse(res, `Found ${total} listings`, {
+      listings: formatted,
+      pagination: {
+        page: parseInt(page), limit: parseInt(limit), total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
 
 export const searchUserListingsCtrl = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { page = 1, limit = 20, listingType, listingMode, city, minPrice, maxPrice, search,
-      houseType, bedrooms, bathrooms, minArea, maxArea,
-      carType, condition, brand, serviceType, rentalPeriod } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { page = 1, limit = 20, ...filters } = req.query;
 
-    let listings = await getAllListings();
-    listings = listings.filter(l => l.status === 'active' || l.ownerId === userId);
+   
+    const { listings, total } = await getPaginatedListings({
+      filters: { ...filters, excludeExpired: true },
+      page,
+      limit
+    });
 
-    if (listingType) listings = listings.filter(l => l.listingType === listingType);
-    if (listingMode) listings = listings.filter(l => l.listingMode === listingMode);
-    if (city) listings = listings.filter(l => l.location?.city?.toLowerCase() === city.toLowerCase());
-    if (minPrice) listings = listings.filter(l => l.price >= parseFloat(minPrice));
-    if (maxPrice) listings = listings.filter(l => l.price <= parseFloat(maxPrice));
-    if (search) {
-      const s = search.toLowerCase();
-      listings = listings.filter(l => l.title.toLowerCase().includes(s) || l.description.toLowerCase().includes(s));
-    }
-    if (houseType) listings = listings.filter(l => l.houseType === houseType);
-    if (bedrooms !== undefined) listings = listings.filter(l => l.bedrooms === parseInt(bedrooms));
-    if (bathrooms !== undefined) listings = listings.filter(l => l.bathrooms === parseInt(bathrooms));
-    if (minArea) listings = listings.filter(l => l.area_sqm >= parseInt(minArea));
-    if (maxArea) listings = listings.filter(l => l.area_sqm <= parseInt(maxArea));
-    if (carType) listings = listings.filter(l => l.carType === carType);
-    if (condition) listings = listings.filter(l => l.condition === condition);
-    if (brand) listings = listings.filter(l => l.brand?.toLowerCase().includes(brand.toLowerCase()));
-    if (serviceType) listings = listings.filter(l => l.serviceType === serviceType);
-    if (rentalPeriod) listings = listings.filter(l => l.rentalPeriod === rentalPeriod);
-
-    const total = listings.length;
-    const paginated = listings.slice(skip, skip + parseInt(limit));
-    const formatted = paginated.map(l => formatListingResponse(l, l.ownerId === userId, false));
+    const visible = listings.filter(l => l.status === 'active' || l.ownerId === userId);
+    const formatted = visible.map(l => formatListingResponse(l, l.ownerId === userId, false));
 
     return successResponse(res, `Found ${formatted.length} listings`, {
       listings: formatted,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: {
+        page: parseInt(page), limit: parseInt(limit), total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
+
 export const searchAdminListingsCtrl = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, listingType, listingMode, city, minPrice, maxPrice, search,
-      houseType, bedrooms, bathrooms, minArea, maxArea,
-      carType, condition, brand, serviceType, rentalPeriod } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { page = 1, limit = 20, ...filters } = req.query;
 
-    let listings = await getAllListings();
+    const { listings, total } = await getPaginatedListings({
+      filters, 
+      page,
+      limit
+    });
 
-    if (status && status !== 'all') listings = listings.filter(l => l.status === status);
-    if (listingType) listings = listings.filter(l => l.listingType === listingType);
-    if (listingMode) listings = listings.filter(l => l.listingMode === listingMode);
-    if (city) listings = listings.filter(l => l.location?.city?.toLowerCase() === city.toLowerCase());
-    if (minPrice) listings = listings.filter(l => l.price >= parseFloat(minPrice));
-    if (maxPrice) listings = listings.filter(l => l.price <= parseFloat(maxPrice));
-    if (search) {
-      const s = search.toLowerCase();
-      listings = listings.filter(l => l.title.toLowerCase().includes(s) || l.description.toLowerCase().includes(s));
-    }
-    if (houseType) listings = listings.filter(l => l.houseType === houseType);
-    if (bedrooms !== undefined) listings = listings.filter(l => l.bedrooms === parseInt(bedrooms));
-    if (bathrooms !== undefined) listings = listings.filter(l => l.bathrooms === parseInt(bathrooms));
-    if (minArea) listings = listings.filter(l => l.area_sqm >= parseInt(minArea));
-    if (maxArea) listings = listings.filter(l => l.area_sqm <= parseInt(maxArea));
-    if (carType) listings = listings.filter(l => l.carType === carType);
-    if (condition) listings = listings.filter(l => l.condition === condition);
-    if (brand) listings = listings.filter(l => l.brand?.toLowerCase().includes(brand.toLowerCase()));
-    if (serviceType) listings = listings.filter(l => l.serviceType === serviceType);
-    if (rentalPeriod) listings = listings.filter(l => l.rentalPeriod === rentalPeriod);
+    const formatted = listings.map(l => formatListingResponse(l, false, true));
 
-    const total = listings.length;
-    const paginated = listings.slice(skip, skip + parseInt(limit));
-    const formatted = paginated.map(l => formatListingResponse(l, false, true));
-
-    return successResponse(res, `Found ${formatted.length} listings`, {
+    return successResponse(res, `Found ${total} listings`, {
       listings: formatted,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+      pagination: {
+        page: parseInt(page), limit: parseInt(limit), total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);

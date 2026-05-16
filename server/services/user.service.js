@@ -40,7 +40,7 @@ export const registerUserService = async (userData) => {
         userId: newUser.id,
         type: 'credit',
         amount: COIN_RULES.WELCOME_BONUS,
-        Reason: 'welcome_bonus',
+        reason: 'welcome_bonus',
         description: `Welcome bonus of ${COIN_RULES.WELCOME_BONUS} coins`
       }
     });
