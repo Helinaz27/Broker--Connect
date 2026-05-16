@@ -8,6 +8,13 @@ import generateToken from "../utils/tokenGenerator.js";
 import jwt from "jsonwebtoken";
 import env from "../utils/env.js";
 import { COIN_RULES } from "../utils/constants.js";
+import { sendPasswordResetOtpEmail } from "../utils/email.js";
+
+const OTP_EXPIRY_MINUTES = 15;
+
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 export const registerUserService = async (userData) => {
   const { firstName, lastName, email, phone, password } = userData;
@@ -64,7 +71,7 @@ export const loginUserService = async (email, password) => {
   if (!user) {
     return {
       success: false,
-      message: "user not found already registered by this email ",
+      message: "User not found please register first.",
       status: 401,
     };
   }
@@ -72,8 +79,8 @@ export const loginUserService = async (email, password) => {
   if (!user.isActive) {
     return {
       success: false,
-      message: "Account deactivated. Contact admin.",
-      status: 401,
+      message: "Your account is not active please contact admin.",
+      status: 403,
     };
   }
 
@@ -81,7 +88,7 @@ export const loginUserService = async (email, password) => {
   if (!isPasswordMatch) {
     return {
       success: false,
-      message: "please try to use correct password",
+      message: "Invalid password please try again.",
       status: 401,
     };
   }
@@ -107,28 +114,119 @@ export const forgotPasswordUserService = async (email) => {
     return { success: false, message: "User not found.", status: 404 };
   }
 
-  const resetToken = jwt.sign({ id: user.id }, env.jwtSecret, {
-    expiresIn: "1h",
+  const otp = generateOtp();
+  const hashedOtp = await hashPassword(otp);
+  const passwordResetExpiry = new Date(
+    Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000,
+  );
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordResetCode: hashedOtp, passwordResetExpiry },
+  });
+
+  try {
+    await sendPasswordResetOtpEmail(user.email, user.firstName, otp);
+  } catch (err) {
+    console.error("Failed to send reset email:", err.message);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetCode: null, passwordResetExpiry: null },
+    });
+    return {
+      success: false,
+      message:
+        "Could not send verification email. Check EMAIL and EMAIL_PASSWORD in .env.",
+      status: 500,
+    };
+  }
+
+  return {
+    success: true,
+    message: "Verification code sent to your email.",
+    status: 200,
+  };
+};
+
+export const verifyResetOtpUserService = async (email, otp) => {
+  const user = await prisma.user.findFirst({ where: { email } });
+
+  if (!user?.passwordResetCode || !user?.passwordResetExpiry) {
+    return {
+      success: false,
+      message: "Invalid or expired verification code.",
+      status: 400,
+    };
+  }
+
+  if (new Date() > user.passwordResetExpiry) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetCode: null, passwordResetExpiry: null },
+    });
+    return {
+      success: false,
+      message: "Verification code has expired. Please request a new one.",
+      status: 400,
+    };
+  }
+
+  const isValidOtp = await comparePassword(otp, user.passwordResetCode);
+  if (!isValidOtp) {
+    return {
+      success: false,
+      message: "Invalid verification code.",
+      status: 400,
+    };
+  }
+
+  const resetToken = jwt.sign(
+    { id: user.id, purpose: "reset" },
+    env.jwtSecret,
+    {
+      expiresIn: "15m",
+    },
+  );
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordResetCode: null, passwordResetExpiry: null },
   });
 
   return {
     success: true,
-    message: "Password reset link sent.",
+    message: "Verification code confirmed.",
     data: { resetToken },
     status: 200,
   };
 };
 
 export const resetPasswordUserService = async (token, newPassword) => {
-  const decoded = jwt.verify(token, env.jwtSecret);
-  const hashedPassword = await hashPassword(newPassword);
+  try {
+    const decoded = jwt.verify(token, env.jwtSecret);
+    if (decoded.purpose !== "reset") {
+      return { success: false, message: "Invalid reset token.", status: 400 };
+    }
 
-  await prisma.user.update({
-    where: { id: decoded.id },
-    data: { password: hashedPassword },
-  });
+    const hashedPassword = await hashPassword(newPassword);
 
-  return { success: true, message: "Password reset successful.", status: 200 };
+    await prisma.user.update({
+      where: { id: decoded.id },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      success: true,
+      message: "Password reset successful.",
+      status: 200,
+    };
+  } catch {
+    return {
+      success: false,
+      message: "Invalid or expired reset token. Please start again.",
+      status: 400,
+    };
+  }
 };
 
 export const changePasswordUserService = async (
