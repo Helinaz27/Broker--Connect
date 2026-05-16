@@ -3,7 +3,9 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
-import StoreProvider from '@/store/storeProvider';
+import StoreProvider from "@/store/storeProvider";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -13,7 +15,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Digital Broker | Properties, Vehicles & Services",
-  description: "Professional marketplace for properties, vehicles, and services in Ethiopia. List, discover, and transact with confidence.",
+  description:
+    "Professional marketplace for properties, vehicles, and services in Ethiopia. List, discover, and transact with confidence.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -31,12 +34,13 @@ export default function RootLayout({
       >
         <StoreProvider>
           <FavoritesProvider>
+            <Header />
             {children}
-            <Toaster />
+            <Footer />
+            <Toaster position="top-right" offset={72} />
           </FavoritesProvider>
         </StoreProvider>
       </body>
     </html>
   );
 }
-

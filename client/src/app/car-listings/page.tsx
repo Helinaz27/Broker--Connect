@@ -1,10 +1,8 @@
 "use client";
 
-import Header from "@/components/Header";
 import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
@@ -22,15 +20,17 @@ export default function CarListings() {
   const filteredCars = cars.filter((car) => {
     const priceMatch =
       car.price >= filters.priceRange[0] && car.price <= filters.priceRange[1];
-    const locationMatch = !filters.location || car.location.toLowerCase().includes(filters.location.toLowerCase());
-    const searchMatch = !filters.search || car.title.toLowerCase().includes(filters.search.toLowerCase());
+    const locationMatch =
+      !filters.location ||
+      car.location.toLowerCase().includes(filters.location.toLowerCase());
+    const searchMatch =
+      !filters.search ||
+      car.title.toLowerCase().includes(filters.search.toLowerCase());
     return priceMatch && locationMatch && searchMatch;
   });
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-
       <main className="flex-1 py-8 md:py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -81,7 +81,6 @@ export default function CarListings() {
         </div>
       </main>
 
-      <Footer />
       <Chat />
     </div>
   );

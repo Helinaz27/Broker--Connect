@@ -6,6 +6,7 @@ import {
   loginValidator,
   updateProfileValidator,
   forgotPasswordValidator,
+  verifyResetOtpValidator,
   resetPasswordValidator,
   changePasswordValidator,
   updateUserStatusValidator 
@@ -20,6 +21,7 @@ router.post('/register', registerValidator, userController.register);
 router.post('/login', loginValidator, userController.login);
 router.post('/logout', userController.logout);
 router.post('/forgot-password', forgotPasswordValidator, userController.forgotPassword);
+router.post('/verify-reset-otp', verifyResetOtpValidator, userController.verifyResetOtp);
 router.post('/reset-password', resetPasswordValidator, userController.resetPassword);
 router.post('/change-password', protect, changePasswordValidator, userController.changePassword);
 
