@@ -185,7 +185,7 @@ model ContactAccess {
 
 enum Role {
   user
-  service_provider
+  client
   admin
 }
 

@@ -232,7 +232,7 @@ export const getKYCByIdService = async (requestId) => {
 export const approveKYCService = async (requestId, adminId, adminFullName) => {
   const kycRequest = await prisma.kYCRequest.findUnique({
     where: { id: requestId },
-    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } } }
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true,roles:true } } }
   });
 
   if (!kycRequest) {
@@ -243,6 +243,11 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
     return { success: false, message: 'This KYC has already been processed', status: 400 };
   }
 
+
+  const currentRoles = kycRequest.user.roles; 
+  const updatedRoles = Array.from(new Set([...currentRoles, 'client']));
+
+
   const approvedAt = new Date();
 
   await Promise.all([
@@ -250,14 +255,17 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
       where: { id: requestId },
       data: { status: 'approved', reviewedBy: adminId, reviewedAt: approvedAt }
     }),
-    prisma.user.update({
-      where: { id: kycRequest.userId },
-      data: { isKYCVerified: true }
-    }),
+   prisma.user.update({
+  where: { id: kycRequest.userId },
+  data: {
+    isKYCVerified: true,
+    roles: { set: updatedRoles }
+  }
+}),
     prisma.notification.create({
       data: {
         userId: kycRequest.userId,
-        Type: 'kyc_approved',
+        type: 'kyc_approved',
         title: 'KYC Approved',
         body: `Dear ${kycRequest.user.firstName}, your KYC request has been approved. You can now create listings.`,
         isRead: false
@@ -299,10 +307,20 @@ export const rejectKYCService = async (requestId, adminId, adminFullName, review
   const rejectedAt = new Date();
   const reason = reviewNote || 'Document image is blurry';
 
+
+  const updatedRoles = kycRequest.user.roles.filter(role => role !== 'client');
+
   await Promise.all([
     prisma.kYCRequest.update({
       where: { id: requestId },
       data: { status: 'rejected', reviewedBy: adminId, reviewNote: reason, reviewedAt: rejectedAt }
+    }),
+     prisma.user.update({
+      where: { id: kycRequest.userId },
+      data: {
+        isKYCVerified: false,      
+        roles: { set: updatedRoles } 
+      }
     }),
     prisma.notification.create({
       data: {

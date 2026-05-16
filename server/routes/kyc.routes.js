@@ -11,8 +11,8 @@ router.post('/submit', protect, uploadKYCImages, handleUploadError, submitKycVal
 router.get('/my-status', protect, kycController.getMyKYCStatus);
 
 //  ADMIN ROUTES 
-router.get('/', protect, admin, kycController.getAllKYC);  
-router.get('/getkyc/:requestId', protect, admin, kycController.getKYCById);
+router.get('/get-all', protect, admin, kycController.getAllKYC);  
+router.get('/:requestId/getkyc', protect, admin, kycController.getKYCById);
 router.put('/:requestId/approve', protect, admin, kycController.approveKYC); 
 router.patch('/:requestId/reject', protect, admin, kycController.rejectKYC);   
 
