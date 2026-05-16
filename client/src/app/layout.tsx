@@ -37,7 +37,7 @@ export default function RootLayout({
             <Header />
             {children}
             <Footer />
-            <Toaster />
+            <Toaster position="top-right" offset={72} />
           </FavoritesProvider>
         </StoreProvider>
       </body>

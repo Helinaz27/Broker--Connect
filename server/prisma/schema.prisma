@@ -18,7 +18,9 @@ model User {
   coins            Int               @default(0)
   isActive         Boolean           @default(true)
   isKYCVerified    Boolean           @default(false)
-  profileImage     String?
+  profileImage          String?
+  passwordResetCode     String?
+  passwordResetExpiry   DateTime?
   kycRequests      KYCRequest[]
   payments         Payment[]
   coinTransactions CoinTransaction[]

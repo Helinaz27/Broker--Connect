@@ -86,12 +86,19 @@ export const userApi = createApi({
       query: () => ({ url: "/users/logout", method: "POST" }),
       invalidatesTags: ["User", "Profile"],
     }),
-    forgotPassword: builder.mutation<
-      ApiResponse<{ resetToken: string }>,
-      { email: string }
-    >({
+    forgotPassword: builder.mutation<ApiResponse, { email: string }>({
       query: (body) => ({
         url: "/users/forgot-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    verifyResetOtp: builder.mutation<
+      ApiResponse<{ resetToken: string }>,
+      { email: string; otp: string }
+    >({
+      query: (body) => ({
+        url: "/users/verify-reset-otp",
         method: "POST",
         body,
       }),
@@ -159,6 +166,7 @@ export const {
   useLoginMutation,
   useLogoutMutation,
   useForgotPasswordMutation,
+  useVerifyResetOtpMutation,
   useResetPasswordMutation,
   useChangePasswordMutation,
   useGetProfileQuery,

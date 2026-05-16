@@ -83,6 +83,25 @@ export const forgotPasswordValidator = [
   handleValidationErrors,
 ];
 
+export const verifyResetOtpValidator = [
+  body("email")
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email")
+    .normalizeEmail(),
+
+  body("otp")
+    .notEmpty()
+    .withMessage("Verification code is required")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Verification code must be 6 digits")
+    .isNumeric()
+    .withMessage("Verification code must contain only numbers"),
+
+  handleValidationErrors,
+];
+
 export const resetPasswordValidator = [
   body("token")
     .notEmpty()

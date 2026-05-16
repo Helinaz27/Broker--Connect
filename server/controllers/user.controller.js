@@ -5,6 +5,7 @@ import {
   loginUserService,
   logoutUserService,
   forgotPasswordUserService,
+  verifyResetOtpUserService,
   resetPasswordUserService,
   changePasswordUserService,
   getProfileUserService,
@@ -49,6 +50,16 @@ export const logout = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
   const result = await forgotPasswordUserService(email);
+  return res.status(result.status).json({
+    success: result.success,
+    message: result.message,
+    ...(result.data && { data: result.data }),
+  });
+};
+
+export const verifyResetOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  const result = await verifyResetOtpUserService(email, otp);
   return res.status(result.status).json({
     success: result.success,
     message: result.message,
