@@ -14,12 +14,10 @@ const handleValidationErrors = (req, res, next) => {
 
 const LISTING_TYPES = ['house', 'car', 'service'];
 const LISTING_MODES = ['rent', 'sell'];
-const HOUSE_TYPES = ['condominium', 'villa', 'business', 'apartment', 'others'];
 const CAR_TYPES = ['electric', 'fuel'];
 const CAR_CONDITIONS = ['used', 'new'];
-const SERVICE_TYPES = ['electrician', 'plumber', 'catering', 'house_worker', 'other'];
 const PERIODS = ['daily', 'weekly', 'monthly', 'yearly'];
-const LISTING_STATUSES = ['active', 'inactive'];
+const LISTING_STATUSES = ['active', 'inactive',"occupied","sold"];
 
 const isHouse = (req) => req.body.listingType === 'house';
 const isCar = (req) => req.body.listingType === 'car';
@@ -29,12 +27,14 @@ const isHouseSell = (req) => isHouse(req) && req.body.listingMode === 'sell';
 
 export const createListingValidator = [
   body('listingType')
+    .trim()
     .notEmpty()
     .withMessage('Listing type is required')
     .isIn(LISTING_TYPES)
     .withMessage('Listing type must be house, car, or service'),
 
   body('listingMode')
+    .trim()
     .if((value, { req }) => isHouse(req) || isCar(req))
     .notEmpty()
     .withMessage('Listing mode is required for house and car listings')
@@ -42,18 +42,18 @@ export const createListingValidator = [
     .withMessage('Listing mode must be rent or sell'),
 
   body('title')
+    .trim()
     .notEmpty()
     .withMessage('Title is required')
     .isLength({ min: 5, max: 200 })
-    .withMessage('Title must be between 5 and 200 characters')
-    .trim(),
+    .withMessage('Title must be between 5 and 200 characters'),
 
   body('description')
+    .trim()
     .notEmpty()
     .withMessage('Description is required')
     .isLength({ min: 20, max: 5000 })
-    .withMessage('Description must be between 20 and 5000 characters')
-    .trim(),
+    .withMessage('Description must be between 20 and 5000 characters'),
 
   body('price')
     .notEmpty()
@@ -62,18 +62,18 @@ export const createListingValidator = [
     .withMessage('Price must be a positive number'),
 
   body('location.city')
+    .trim()
     .notEmpty()
-    .withMessage('City is required')
-    .trim(),
+    .withMessage('City is required'),
 
   body('location.subCity')
     .optional()
     .trim(),
 
   body('location.placeName')
+    .trim()
     .notEmpty()
-    .withMessage('Place name is required')
-    .trim(),
+    .withMessage('Place name is required'),
 
   body('location.coordinates.lat')
     .optional()
@@ -93,10 +93,9 @@ export const createListingValidator = [
 
   body('houseType')
     .if((value, { req }) => isHouse(req))
+    .trim()
     .notEmpty()
-    .withMessage('House type is required for house listings')
-    .isIn(HOUSE_TYPES)
-    .withMessage('Invalid house type'),
+    .withMessage('House type is required for house listings'),
 
   body('bedrooms')
     .if((value, { req }) => isHouse(req))
@@ -140,6 +139,7 @@ export const createListingValidator = [
 
   body('rentalPeriod')
     .if((value, { req }) => isHouseRent(req))
+    .trim()
     .notEmpty()
     .withMessage('Rental period is required for house rent listings')
     .isIn(PERIODS)
@@ -147,6 +147,7 @@ export const createListingValidator = [
 
   body('carType')
     .if((value, { req }) => isCar(req))
+    .trim()
     .notEmpty()
     .withMessage('Car type is required for car listings')
     .isIn(CAR_TYPES)
@@ -154,6 +155,7 @@ export const createListingValidator = [
 
   body('condition')
     .if((value, { req }) => isCar(req))
+    .trim()
     .notEmpty()
     .withMessage('Condition is required for car listings')
     .isIn(CAR_CONDITIONS)
@@ -161,22 +163,21 @@ export const createListingValidator = [
 
   body('brand')
     .if((value, { req }) => isCar(req))
+    .trim()
     .notEmpty()
-    .withMessage('Brand is required for car listings')
-    .trim(),
+    .withMessage('Brand is required for car listings'),
 
   body('carModel')
     .if((value, { req }) => isCar(req))
+    .trim()
     .notEmpty()
-    .withMessage('Car model is required for car listings')
-    .trim(),
+    .withMessage('Car model is required for car listings'),
 
   body('serviceType')
     .if((value, { req }) => isService(req))
+    .trim()
     .notEmpty()
-    .withMessage('Service type is required for service listings')
-    .isIn(SERVICE_TYPES)
-    .withMessage('Invalid service type'),
+    .withMessage('Service type is required for service listings'),
 
   handleValidationErrors,
 ];
@@ -184,15 +185,15 @@ export const createListingValidator = [
 export const updateListingValidator = [
   body('title')
     .optional()
+    .trim()
     .isLength({ min: 5, max: 200 })
-    .withMessage('Title must be between 5 and 200 characters')
-    .trim(),
+    .withMessage('Title must be between 5 and 200 characters'),
 
   body('description')
     .optional()
+    .trim()
     .isLength({ min: 20, max: 5000 })
-    .withMessage('Description must be between 20 and 5000 characters')
-    .trim(),
+    .withMessage('Description must be between 20 and 5000 characters'),
 
   body('price')
     .optional()
@@ -201,11 +202,13 @@ export const updateListingValidator = [
 
   body('listingMode')
     .optional()
+    .trim()
     .isIn(LISTING_MODES)
     .withMessage('Listing mode must be rent or sell'),
 
   body('status')
     .optional()
+    .trim()
     .isIn(LISTING_STATUSES)
     .withMessage('Status must be active or inactive'),
 
@@ -238,8 +241,7 @@ export const updateListingValidator = [
 
   body('houseType')
     .optional()
-    .isIn(HOUSE_TYPES)
-    .withMessage('Invalid house type'),
+    .trim(),
 
   body('bedrooms')
     .optional()
@@ -268,16 +270,19 @@ export const updateListingValidator = [
 
   body('rentalPeriod')
     .optional()
+    .trim()
     .isIn(PERIODS)
     .withMessage('Invalid rental period'),
 
   body('carType')
     .optional()
+    .trim()
     .isIn(CAR_TYPES)
     .withMessage('Car type must be electric or fuel'),
 
   body('condition')
     .optional()
+    .trim()
     .isIn(CAR_CONDITIONS)
     .withMessage('Condition must be used or new'),
 
@@ -291,8 +296,7 @@ export const updateListingValidator = [
 
   body('serviceType')
     .optional()
-    .isIn(SERVICE_TYPES)
-    .withMessage('Invalid service type'),
+    .trim(),
 
   handleValidationErrors,
 ];
@@ -300,11 +304,13 @@ export const updateListingValidator = [
 export const searchQueryValidator = [
   query('listingType')
     .optional()
+    .trim()
     .isIn(LISTING_TYPES)
     .withMessage('Listing type must be house, car, or service'),
 
   query('listingMode')
     .optional()
+    .trim()
     .isIn(LISTING_MODES)
     .withMessage('Listing mode must be rent or sell'),
 
@@ -342,13 +348,13 @@ export const searchQueryValidator = [
 
   query('status')
     .optional()
+    .trim()
     .isIn(['active', 'inactive', 'all'])
     .withMessage('Status must be active, inactive, or all'),
 
   query('houseType')
     .optional()
-    .isIn(HOUSE_TYPES)
-    .withMessage('Invalid house type'),
+    .trim(),
 
   query('bedrooms')
     .optional()
@@ -376,11 +382,13 @@ export const searchQueryValidator = [
 
   query('carType')
     .optional()
+    .trim()
     .isIn(CAR_TYPES)
     .withMessage('Car type must be electric or fuel'),
 
   query('condition')
     .optional()
+    .trim()
     .isIn(CAR_CONDITIONS)
     .withMessage('Condition must be used or new'),
 
@@ -390,11 +398,11 @@ export const searchQueryValidator = [
 
   query('serviceType')
     .optional()
-    .isIn(SERVICE_TYPES)
-    .withMessage('Invalid service type'),
+    .trim(),
 
   query('rentalPeriod')
     .optional()
+    .trim()
     .isIn(PERIODS)
     .withMessage('Invalid rental period'),
 
@@ -403,6 +411,7 @@ export const searchQueryValidator = [
 
 export const idParamValidator = [
   param('id')
+    .trim()
     .notEmpty()
     .withMessage('Listing ID is required')
     .isMongoId()

@@ -8,6 +8,7 @@ export const can = (resource, action) => {
     try {
       const token = req.headers.cookies;
       if (!token) {
+        console.log("No token provided in can middleware");
         return res.status(401).json({
           success: false,
           message: 'Not authorized: No token provided'
