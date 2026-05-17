@@ -134,12 +134,15 @@ export const createListingCtrl = async (req, res) => {
     const parsedLocation = location ? parseLocation(location) : null;
 
     let imageUrls = [];
+    if(!req.files || req.files.length === 0) {
+      return errorResponse(res, 'At least one image is required', null, 400);
+    }
     if (req.files && req.files.length > 0) {
       imageUrls = await uploadImagesToCloudinary(req.files);
     }
 
     const postingFee = await prisma.platformFee.findFirst({
-      where: { feeType: 'posting_fee', category: listingType, isActive: true }
+      where: { feeType: 'posting_fee', category: listingType, listingMode: listingMode, isActive: true }
     });
 
     if (!postingFee) {
@@ -169,7 +172,7 @@ export const createListingCtrl = async (req, res) => {
         ? parsedContactCoinLimit
         : platformContactFee;
 
-    const totalCoinsNeeded = parseInt(durationDays) * postingFee.price;
+    const totalCoinsNeeded = parseInt(durationDays) * postingFee.coinAmount;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
