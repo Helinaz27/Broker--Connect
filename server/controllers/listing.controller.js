@@ -151,7 +151,7 @@ export const createListingCtrl = async (req, res) => {
     }
 
     const contactAccessFee = await prisma.platformFee.findFirst({
-      where: { feeType: 'contact_access_fee', category: listingType, isActive: true }
+      where: { feeType: 'contact_access_fee', category: listingType, listingMode: listingMode, isActive: true }
     });
 
     if (!contactAccessFee) {
@@ -162,7 +162,7 @@ export const createListingCtrl = async (req, res) => {
       );
     }
 
-    const platformContactFee = contactAccessFee.price;
+    const platformContactFee = contactAccessFee.coinAmount;
     const parsedContactCoinLimit = contactCoinLimit ? parseInt(contactCoinLimit) : null;
     const resolvedContactCoinLimit =
       parsedContactCoinLimit && parsedContactCoinLimit > platformContactFee
