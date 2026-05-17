@@ -24,6 +24,8 @@ const LISTING_STATUSES = ['active', 'inactive'];
 const isHouse = (req) => req.body.listingType === 'house';
 const isCar = (req) => req.body.listingType === 'car';
 const isService = (req) => req.body.listingType === 'service';
+const isHouseRent = (req) => isHouse(req) && req.body.listingMode === 'rent';
+const isHouseSell = (req) => isHouse(req) && req.body.listingMode === 'sell';
 
 export const createListingValidator = [
   body('listingType')
@@ -118,9 +120,15 @@ export const createListingValidator = [
     .withMessage('Area must be a positive integer'),
 
   body('tanker')
-    .if((value, { req }) => isHouse(req))
+    .if((value, { req }) => isHouseRent(req))
     .notEmpty()
-    .withMessage('Tanker field is required for house listings')
+    .withMessage('Tanker field is required for house rent listings')
+    .isBoolean()
+    .withMessage('Tanker must be a boolean'),
+
+  body('tanker')
+    .if((value, { req }) => isHouseSell(req))
+    .optional()
     .isBoolean()
     .withMessage('Tanker must be a boolean'),
 
@@ -131,7 +139,7 @@ export const createListingValidator = [
     .withMessage('Parking must be a non-negative integer'),
 
   body('rentalPeriod')
-    .if((value, { req }) => isHouse(req) && req.body.listingMode === 'rent')
+    .if((value, { req }) => isHouseRent(req))
     .notEmpty()
     .withMessage('Rental period is required for house rent listings')
     .isIn(PERIODS)
