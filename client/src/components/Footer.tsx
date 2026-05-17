@@ -16,9 +16,9 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">Marketplace</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="/house-listings" className="hover:text-foreground transition-colors">Properties</Link></li>
-              <li><Link href="/car-listings" className="hover:text-foreground transition-colors">Vehicles</Link></li>
-              <li><Link href="/service-listings" className="hover:text-foreground transition-colors">Services</Link></li>
+              <li><Link href="/house-listings" className="hover:text-foreground transition-colors">house</Link></li>
+              <li><Link href="/car-listings" className="hover:text-foreground transition-colors">cars</Link></li>
+              <li><Link href="/service-listings" className="hover:text-foreground transition-colors">other services</Link></li>
             </ul>
           </div>
           <div className="space-y-4">

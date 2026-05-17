@@ -98,7 +98,7 @@
   }
 
   .animate-fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
+    animation: fadeIn 0.8s ease-out forwards;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -123,6 +123,15 @@
   code {
     overflow-x: auto;
     white-space: pre;
+  }
+
+  /* Custom Utilities */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

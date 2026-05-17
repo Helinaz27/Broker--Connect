@@ -35,15 +35,15 @@ export default function CarListings() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Vehicles</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2 uppercase tracking-tight">cars</h1>
+              <p className="text-muted-foreground font-medium">
                 {filteredCars.length} vehicles available
               </p>
             </div>
-            <Button size="lg" className="gap-2 w-fit" asChild>
+            <Button size="lg" className="gap-2 w-fit font-bold rounded-xl" asChild>
               <Link href="/dashboard">
                 <Plus className="h-5 w-5" />
-                Post a vehicle
+                Post a car
               </Link>
             </Button>
           </div>

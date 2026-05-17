@@ -11,8 +11,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Digital Broker | Properties, Vehicles & Services",
-  description: "Professional marketplace for properties, vehicles, and services in Ethiopia. List, discover, and transact with confidence.",
+  title: "Digital Broker | house, cars & other services",
+  description: "Professional marketplace for house, cars, and other services in Ethiopia. List, discover, and transact with confidence.",
   icons: {
     icon: "/favicon.svg",
   },

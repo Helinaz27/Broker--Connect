@@ -35,12 +35,12 @@ export default function HouseListings() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Properties</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2 uppercase tracking-tight">house</h1>
+              <p className="text-muted-foreground font-medium">
                 {filteredHouses.length} properties available
               </p>
             </div>
-            <Button size="lg" className="gap-2 w-fit" asChild>
+            <Button size="lg" className="gap-2 w-fit font-bold rounded-xl" asChild>
               <Link href="/dashboard">
                 <Plus className="h-5 w-5" />
                 Post a property

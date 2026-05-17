@@ -22,9 +22,13 @@ import {
   PlusCircle,
   List,
   Edit,
+  ShieldCheck,
+  Users,
+  Search,
+  Filter,
 } from "lucide-react";
 
-type DashboardTab = "dashboard" | "house_post" | "house_view" | "car_post" | "car_view" | "service_post" | "service_view";
+type DashboardTab = "dashboard" | "house_post" | "house_view" | "car_post" | "car_view" | "service_post" | "service_view" | "admin_kyc" | "admin_users";
 
 interface Listing {
   id: string;
@@ -32,6 +36,7 @@ interface Listing {
   price: number;
   location: string;
   status: "active" | "occupied" | "inactive";
+  type: "rent" | "sell";
   createdAt: string;
 }
 
@@ -42,6 +47,7 @@ const mockListings: Listing[] = [
     price: 15000,
     location: "Addis Ababa, Bole",
     status: "active",
+    type: "rent",
     createdAt: "2026-01-15",
   },
   {
@@ -50,6 +56,7 @@ const mockListings: Listing[] = [
     price: 25000,
     location: "Addis Ababa, Old Airport",
     status: "occupied",
+    type: "sell",
     createdAt: "2026-01-10",
   },
   {
@@ -58,6 +65,7 @@ const mockListings: Listing[] = [
     price: 500,
     location: "Addis Ababa, Bole",
     status: "active",
+    type: "rent",
     createdAt: "2026-01-20",
   },
 ];
@@ -66,6 +74,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const [dashboardFilter, setDashboardFilter] = useState<"all" | "rent" | "sell">("all");
   
   const [houseForm, setHouseForm] = useState({
     title: "",
@@ -168,9 +177,9 @@ export default function Dashboard() {
 
             {/* Categories */}
             {[
-              { id: "houses", label: "Properties", icon: Home, postTab: "house_post" as DashboardTab, viewTab: "house_view" as DashboardTab, color: "text-blue-500" },
-              { id: "cars", label: "Vehicles", icon: Car, postTab: "car_post" as DashboardTab, viewTab: "car_view" as DashboardTab, color: "text-indigo-500" },
-              { id: "services", label: "Services", icon: Wrench, postTab: "service_post" as DashboardTab, viewTab: "service_view" as DashboardTab, color: "text-violet-500" }
+              { id: "houses", label: "house", icon: Home, postTab: "house_post" as DashboardTab, viewTab: "house_view" as DashboardTab, color: "text-blue-500" },
+              { id: "cars", label: "cars", icon: Car, postTab: "car_post" as DashboardTab, viewTab: "car_view" as DashboardTab, color: "text-indigo-500" },
+              { id: "services", label: "other services", icon: Wrench, postTab: "service_post" as DashboardTab, viewTab: "service_view" as DashboardTab, color: "text-violet-500" }
             ].map((cat) => (
               <div key={cat.id} className="space-y-1">
                 <button
@@ -217,6 +226,39 @@ export default function Dashboard() {
                 )}
               </div>
             ))}
+
+            <div className="h-px bg-border/40 my-6 mx-2" />
+
+            {/* Admin Section */}
+            {!isSidebarCollapsed && (
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4 ml-4">Administration</p>
+            )}
+            
+            <button
+              onClick={() => setActiveTab("admin_kyc")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
+                activeTab === "admin_kyc"
+                  ? "bg-amber-500 text-white shadow-[0_10px_20px_-5px_rgba(245,158,11,0.4)]"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+              }`}
+              title="KYC Forms"
+            >
+              <ShieldCheck className={`h-5 w-5 flex-shrink-0 ${activeTab === "admin_kyc" ? "scale-110" : ""}`} />
+              {!isSidebarCollapsed && <span className="font-bold text-sm tracking-tight">KYC Verification</span>}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("admin_users")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
+                activeTab === "admin_users"
+                  ? "bg-slate-800 text-white shadow-[0_10px_20px_-5px_rgba(30,41,59,0.4)]"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+              }`}
+              title="User Management"
+            >
+              <Users className={`h-5 w-5 flex-shrink-0 ${activeTab === "admin_users" ? "scale-110" : ""}`} />
+              {!isSidebarCollapsed && <span className="font-bold text-sm tracking-tight">Users Management</span>}
+            </button>
           </nav>
           
           {/* User info at bottom */}
@@ -282,20 +324,39 @@ export default function Dashboard() {
 
               {/* Recent Activity Table */}
               <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2.5rem] shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-                <div className="p-8 border-b border-border/40 flex items-center justify-between bg-card/30">
+                <div className="p-8 border-b border-border/40 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-card/30">
                   <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-primary" />
                     <h2 className="text-xl font-black tracking-tight italic">Recent Portfolio Activity</h2>
                   </div>
-                  <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-4 rounded-xl" onClick={() => setActiveTab("house_view")}>
-                    Analyze All <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                  </Button>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
+                      {(["all", "rent", "sell"] as const).map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => setDashboardFilter(filter)}
+                          className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                            dashboardFilter === filter 
+                              ? "bg-card text-primary shadow-sm" 
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                    </div>
+                    <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-4 rounded-xl" onClick={() => setActiveTab("house_view")}>
+                      Analyze All <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[800px]">
                     <thead>
                       <tr className="bg-muted/30 border-b border-border/40">
                         <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Listing Portfolio</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Type</th>
                         <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Valuation</th>
                         <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">District</th>
                         <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
@@ -303,10 +364,19 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
-                      {mockListings.map((listing) => (
+                      {mockListings
+                        .filter(l => dashboardFilter === "all" || l.type === dashboardFilter)
+                        .map((listing) => (
                         <tr key={listing.id} className="hover:bg-primary/[0.02] transition-colors group">
                           <td className="py-6 px-8">
                             <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{listing.title}</span>
+                          </td>
+                          <td className="py-6 px-8">
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                              listing.type === "rent" ? "bg-blue-500/10 text-blue-600" : "bg-emerald-500/10 text-emerald-600"
+                            }`}>
+                              {listing.type}
+                            </span>
                           </td>
                           <td className="py-6 px-8">
                             <span className="font-black text-sm tracking-tight">{listing.price.toLocaleString()} <span className="text-[10px] text-muted-foreground uppercase">Br</span></span>
@@ -333,16 +403,116 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Admin KYC Tab */}
+          {activeTab === "admin_kyc" && (
+            <div className="space-y-12 max-w-7xl mx-auto animate-fade-in">
+              <div>
+                <h1 className="text-4xl font-black text-foreground tracking-tight italic">KYC Verification Hub.</h1>
+                <p className="text-muted-foreground font-medium mt-1">Review and approve user identity documents.</p>
+              </div>
+
+              <div className="grid gap-6">
+                {[
+                  { name: "Abebe Kebede", date: "2026-05-15", status: "pending", type: "National ID" },
+                  { name: "Sara Tekle", date: "2026-05-14", status: "reviewed", type: "Passport" },
+                  { name: "Dawit Haile", date: "2026-05-12", status: "pending", type: "Driver's License" },
+                ].map((form, i) => (
+                  <div key={i} className="bg-card border border-border rounded-2xl p-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {form.name[0]}
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground">{form.name}</p>
+                        <p className="text-xs text-muted-foreground">{form.type} • Submitted on {form.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                        form.status === "pending" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" : "bg-green-500/10 text-green-600 border border-green-500/20"
+                      }`}>
+                        {form.status}
+                      </span>
+                      <Button variant="outline" size="sm" className="rounded-xl font-bold text-xs h-9">
+                        Review Form
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Admin Users Tab */}
+          {activeTab === "admin_users" && (
+            <div className="space-y-12 max-w-7xl mx-auto animate-fade-in">
+              <div className="flex items-end justify-between">
+                <div>
+                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">User Management.</h1>
+                  <p className="text-muted-foreground font-medium mt-1">Global registry of DigitalBroker users.</p>
+                </div>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    className="w-full pl-10 pr-4 py-2 bg-muted/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border">
+                      <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">User</th>
+                      <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Role</th>
+                      <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Joined</th>
+                      <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {[
+                      { name: "Helina Zeleke", email: "helina.zeleke@example.com", role: "Admin", date: "Jan 15, 2026" },
+                      { name: "John Doe", email: "john@example.com", role: "Broker", date: "Feb 10, 2026" },
+                      { name: "Marta Alemu", email: "marta@example.com", role: "User", date: "Mar 05, 2026" },
+                    ].map((user, i) => (
+                      <tr key={i} className="hover:bg-muted/10 transition-colors">
+                        <td className="py-4 px-6">
+                          <p className="font-bold text-sm">{user.name}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                            user.role === "Admin" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-xs font-medium text-muted-foreground">{user.date}</td>
+                        <td className="py-4 px-6">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Posting Tabs */}
           {(activeTab === "house_post" || activeTab === "car_post" || activeTab === "service_post") && (
             <div className="max-w-4xl mx-auto">
               <div className="mb-8">
                 <h1 className="text-3xl font-bold mb-2">
-                  {activeTab === "house_post" && "Post a House"}
-                  {activeTab === "car_post" && "Post a Car"}
-                  {activeTab === "service_post" && "Offer a Service"}
+                  {activeTab === "house_post" && "Post a house"}
+                  {activeTab === "car_post" && "Post a car"}
+                  {activeTab === "service_post" && "Offer a service"}
                 </h1>
-                <p className="text-muted-foreground">Fill in the details to list your property or service</p>
+                <p className="text-muted-foreground">Fill in the details to list your house, car or other services</p>
               </div>
 
               <form
@@ -559,7 +729,7 @@ export default function Dashboard() {
                   <h1 className="text-3xl font-bold text-foreground">
                     {activeTab === "house_view" && "Your Houses"}
                     {activeTab === "car_view" && "Your Cars"}
-                    {activeTab === "service_view" && "Your Services"}
+                    {activeTab === "service_view" && "Your other services"}
                   </h1>
                   <p className="text-muted-foreground">Manage and update your active listings</p>
                 </div>

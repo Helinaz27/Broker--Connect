@@ -46,50 +46,72 @@ export default function Index() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative bg-background pt-14 pb-20 md:pt-20 md:pb-28" id="hero">
+      <section className="relative bg-background pt-20 pb-24 md:pt-32 md:pb-40 overflow-hidden" id="hero">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.05),transparent_50%)]" />
         <div className="container relative mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="flex flex-col gap-6 max-w-xl">
-              <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-foreground tracking-tight">
-                Properties, vehicles &amp; services in one place
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="flex flex-col gap-8 max-w-2xl animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest w-fit">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                Addis Ababa's Premier Marketplace
+              </div>
+              <h1 className="text-5xl md:text-7xl font-black leading-[1.1] text-foreground tracking-tighter italic">
+                Connect. <br />
+                <span className="text-primary">Discover.</span> <br />
+                Acquire.
               </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                List and discover properties, vehicles, and professional services in Addis Ababa with a secure, professional marketplace.
+              <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">
+                The most trusted digital bridge for premium real estate, high-end vehicles, and professional services in Ethiopia.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button size="lg" className="font-medium" asChild>
-                  <Link href="#listings">Explore listings</Link>
-                </Button>
-                <Button variant="outline" size="lg" className="font-medium" asChild>
-                  <Link href="/register">List your property</Link>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="h-14 px-10 rounded-2xl text-base font-black gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-white hover:bg-primary/90" asChild>
+                  <Link href="#listings">
+                    Explore Assets
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
                 </Button>
               </div>
-              <div className="grid grid-cols-3 gap-6 pt-6 border-t border-border">
+              
+              <div className="grid grid-cols-3 gap-8 pt-10 border-t border-border/40">
                 <div>
-                  <p className="text-2xl font-semibold text-foreground">{houses.length}+</p>
-                  <p className="text-xs font-medium text-muted-foreground mt-0.5">Properties</p>
+                  <p className="text-3xl font-black text-foreground tracking-tighter italic">{houses.length}+</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">house</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold text-foreground">{cars.length}+</p>
-                  <p className="text-xs font-medium text-muted-foreground mt-0.5">Vehicles</p>
+                  <p className="text-3xl font-black text-foreground tracking-tighter italic">{cars.length}+</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">cars</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold text-foreground">{services.length}+</p>
-                  <p className="text-xs font-medium text-muted-foreground mt-0.5">Services</p>
+                  <p className="text-3xl font-black text-foreground tracking-tighter italic">{services.length}+</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">other services</p>
                 </div>
               </div>
             </div>
-            <div className="relative hidden lg:block">
-              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                <div className="aspect-[4/3] rounded-lg bg-muted/50 flex items-center justify-center">
-                  <Home className="h-20 w-20 text-muted-foreground/40" />
+            
+            <div className="relative hidden lg:block animate-fade-in animation-delay-300">
+              <div className="relative z-10 rounded-[3rem] border border-border/50 bg-card/50 backdrop-blur-sm p-8 shadow-2xl shadow-black/5 overflow-hidden group">
+                <div className="absolute top-0 right-0 h-64 w-64 bg-primary/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                <div className="aspect-[4/3] rounded-[2rem] bg-muted/30 flex items-center justify-center border border-border/50 relative overflow-hidden">
+                  <Home className="h-24 w-24 text-primary/20 group-hover:scale-110 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent" />
                 </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="h-9 w-24 rounded bg-muted" />
-                  <div className="h-9 w-9 rounded bg-muted" />
+                <div className="mt-8 flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 rounded-full bg-muted/60" />
+                    <div className="h-3 w-24 rounded-full bg-muted/40" />
+                  </div>
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  </div>
                 </div>
               </div>
+              {/* Decorative elements */}
+              <div className="absolute -top-6 -right-6 h-24 w-24 bg-blue-500/10 rounded-full blur-2xl" />
+              <div className="absolute -bottom-10 -left-10 h-40 w-40 bg-indigo-500/10 rounded-full blur-3xl" />
             </div>
           </div>
         </div>
@@ -108,12 +130,12 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Properties */}
+      {/* house */}
       <section className="py-16 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-foreground tracking-tight">Properties</h2>
+              <h2 className="text-2xl font-semibold text-foreground tracking-tight uppercase">house</h2>
               <p className="text-muted-foreground max-w-md text-sm">Homes and apartments for rent or sale in Addis Ababa.</p>
             </div>
             <Link href="/house-listings">
@@ -122,20 +144,22 @@ export default function Index() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex overflow-x-auto pb-6 gap-6 snap-x scrollbar-hide">
             {filteredHouses.map((listing) => (
-              <ListingCard key={listing.id} {...listing} />
+              <div key={listing.id} className="min-w-[300px] md:min-w-[350px] snap-start">
+                <ListingCard {...listing} />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Vehicles */}
+      {/* cars */}
       <section className="py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-foreground tracking-tight">Vehicles</h2>
+              <h2 className="text-2xl font-semibold text-foreground tracking-tight uppercase">cars</h2>
               <p className="text-muted-foreground max-w-md text-sm">Cars and SUVs for rent or hire.</p>
             </div>
             <Link href="/car-listings">
@@ -144,20 +168,22 @@ export default function Index() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex overflow-x-auto pb-6 gap-6 snap-x scrollbar-hide">
             {filteredCars.map((listing) => (
-              <ListingCard key={listing.id} {...listing} />
+              <div key={listing.id} className="min-w-[300px] md:min-w-[350px] snap-start">
+                <ListingCard {...listing} />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Services */}
+      {/* other services */}
       <section className="py-16 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-foreground tracking-tight">Services</h2>
+              <h2 className="text-2xl font-semibold text-foreground tracking-tight uppercase">other services</h2>
               <p className="text-muted-foreground max-w-md text-sm">Professional services for home and business.</p>
             </div>
             <Link href="/service-listings">
@@ -166,9 +192,11 @@ export default function Index() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex overflow-x-auto pb-6 gap-6 snap-x scrollbar-hide">
             {filteredServices.map((listing) => (
-              <ListingCard key={listing.id} {...listing} />
+              <div key={listing.id} className="min-w-[300px] md:min-w-[350px] snap-start">
+                <ListingCard {...listing} />
+              </div>
             ))}
           </div>
         </div>
@@ -184,12 +212,9 @@ export default function Index() {
             <p className="text-primary-foreground/90 mt-3 max-w-xl mx-auto text-sm md:text-base">
               Join thousands of users. Create an account and start listing in minutes.
             </p>
-            <div className="flex flex-wrap justify-center gap-3 mt-8">
+            <div className="flex justify-center gap-3 mt-8">
               <Button size="lg" variant="secondary" className="font-medium" asChild>
-                <Link href="/register">Create account</Link>
-              </Button>
-              <Button size="lg" variant="outline" className="font-medium border-white/30 text-primary-foreground hover:bg-white/10" asChild>
-                <Link href="/login">Sign in</Link>
+                <Link href="/login">Login to Get Started</Link>
               </Button>
             </div>
           </div>

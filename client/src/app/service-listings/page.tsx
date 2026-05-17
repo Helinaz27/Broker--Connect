@@ -35,12 +35,12 @@ export default function ServiceListings() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Services</h1>
-              <p className="text-muted-foreground">
-                {filteredServices.length} services available
+              <h1 className="text-3xl md:text-4xl font-bold mb-2 uppercase tracking-tight">other services</h1>
+              <p className="text-muted-foreground font-medium">
+                {filteredServices.length} other services available
               </p>
             </div>
-            <Button size="lg" className="gap-2 w-fit" asChild>
+            <Button size="lg" className="gap-2 w-fit font-bold rounded-xl" asChild>
               <Link href="/dashboard">
                 <Plus className="h-5 w-5" />
                 Offer a service
@@ -74,7 +74,7 @@ export default function ServiceListings() {
           ) : (
             <div className="text-center py-12 bg-muted/30 rounded-lg">
               <p className="text-muted-foreground text-lg">
-                No services found matching your filters.
+                No other services found matching your filters.
               </p>
             </div>
           )}

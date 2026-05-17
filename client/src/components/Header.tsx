@@ -49,9 +49,9 @@ export default function Header() {
                 onMouseLeave={() => setCategoriesOpen(false)}
               >
                 {[
-                  { href: "/house-listings", label: "Houses", desc: "Properties & rentals" },
-                  { href: "/car-listings", label: "Cars", desc: "Vehicles" },
-                  { href: "/service-listings", label: "Services", desc: "Professional services" }
+                  { href: "/house-listings", label: "house", desc: "house & rentals" },
+                  { href: "/car-listings", label: "cars", desc: "cars" },
+                  { href: "/service-listings", label: "other services", desc: "other services" }
                 ].map((item) => (
                   <Link
                     key={item.href}
@@ -66,6 +66,9 @@ export default function Header() {
               </div>
             )}
           </div>
+          <Link href="/about" className="text-sm font-medium px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            About Us
+          </Link>
           <Link href="/favorites" className="text-sm font-medium px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             Favorites
           </Link>
@@ -74,12 +77,7 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-2">
           <Link href="/login">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-              Sign in
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="sm" className="font-medium">
-              List property
+              Login
             </Button>
           </Link>
           <HoverCard openDelay={0} closeDelay={200}>
@@ -151,21 +149,28 @@ export default function Header() {
               className="text-sm font-semibold hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Houses
+              house
             </Link>
             <Link
               href="/car-listings"
               className="text-sm font-semibold hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Cars
+              cars
             </Link>
             <Link
               href="/service-listings"
               className="text-sm font-semibold hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Services
+              other services
+            </Link>
+            <Link
+              href="/about"
+              className="text-sm font-semibold hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About Us
             </Link>
             <div className="h-px bg-border" />
             <Link
@@ -182,9 +187,6 @@ export default function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Login
-            </Link>
-            <Link href="/register" className="block" onClick={() => setMobileMenuOpen(false)}>
-              <Button className="w-full font-bold">List property</Button>
             </Link>
           </nav>
         </div>

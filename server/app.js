@@ -24,8 +24,7 @@ app.use("/api", router);
 (async () => {
   const isConnected = await checkDbConnection();
   if (!isConnected) {
-    console.error("Database connection failed.");
-    process.exit(1);
+    console.warn("Database connection failed. Some features may not work, but server will continue to run.");
   }
 
   await checkAdmin();
