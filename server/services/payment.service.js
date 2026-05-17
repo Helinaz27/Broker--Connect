@@ -1,142 +1,65 @@
 import { prisma } from '../config/db.config.js';
 
-// ─── EXISTING SERVICES (unchanged) ───────────────────────────────────────────
-
-export const savePaymentToDatabase = async (paymentData) => {
-  return await prisma.payment.create({ data: paymentData });
-};
-
-export const findPaymentById = async (id) => {
-  return await prisma.payment.findUnique({
-    where: { id },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
+export const createPendingPayment = async ({ userId, amountBirr, coinsReceived, transactionId }) => {
+  return await prisma.payment.create({
+    data: {
+      userId,
+      amountBirr,
+      coinsReceived,
+      paymentMethod: 'chapa',
+      transactionId,
+      status: 'pending',
     },
   });
 };
 
-export const findPaymentByIdAndUser = async (id, userId) => {
-  return await prisma.payment.findFirst({
-    where: { id, userId },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
-    },
-  });
-};
-
-export const findPaymentsByUser = async (userId, skip, take, status) => {
-  const where = { userId };
-  if (status && status !== 'all') where.status = status;
-  return await prisma.payment.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
-    },
-  });
-};
-
-export const countPaymentsByUser = async (userId, status) => {
-  const where = { userId };
-  if (status && status !== 'all') where.status = status;
-  return await prisma.payment.count({ where });
-};
-
-export const findAllPayments = async (skip, take, where) => {
-  return await prisma.payment.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
-    },
-  });
-};
-
-export const countAllPayments = async (where) => {
-  return await prisma.payment.count({ where });
-};
-
-export const updatePaymentInDatabase = async (id, updateData) => {
-  return await prisma.payment.update({
-    where: { id },
-    data: updateData,
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
-    },
-  });
-};
-
-// ─── NEW CHAPA-SPECIFIC SERVICES ─────────────────────────────────────────────
-
-// Find payment by transactionId (tx_ref) — used in Chapa callback
-export const findPaymentByTransactionId = async (transactionId) => {
+export const getPaymentByTxRef = async (transactionId) => {
   return await prisma.payment.findUnique({
     where: { transactionId },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
-    },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, coins: true } } },
   });
 };
 
-// Credit coins + create CoinTransaction + create Notification — all in one Prisma transaction
-export const creditCoinsAfterPayment = async (payment) => {
+export const creditCoinsToUser = async ({ transactionId, userId, coinsReceived, amountBirr }) => {
   return await prisma.$transaction([
-    // 1. Update user coins
-    prisma.user.update({
-      where: { id: payment.userId },
-      data: { coins: { increment: payment.coinsReceived } },
+    prisma.payment.update({
+      where: { transactionId },
+      data: { status: 'success', completedAt: new Date() },
     }),
-
-    // 2. Record coin transaction
+    prisma.user.update({
+      where: { id: userId },
+      data: { coins: { increment: coinsReceived } },
+    }),
     prisma.coinTransaction.create({
       data: {
-        userId: payment.userId,
+        userId,
         type: 'credit',
-        amount: payment.coinsReceived,
-        reason: 'purchase',
-        description: `Purchased ${payment.coinsReceived} coins for ${payment.amountBirr} Birr via Chapa`,
+        amount: coinsReceived,
+        reason: 'coin_purchase',
+        description: `Purchased ${coinsReceived} coins via Chapa for ${amountBirr} ETB`,
       },
-    }),
-
-    // 3. Notify user
-    prisma.notification.create({
-      data: {
-        userId: payment.userId,
-        type: 'payment_success',
-        title: 'Payment Successful',
-        body: `You have successfully purchased ${payment.coinsReceived} coins via Chapa payment.`,
-        isRead: false,
-      },
-    }),
-
-    // 4. Mark payment as success
-    prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: 'success', completedAt: new Date() },
     }),
   ]);
 };
 
-// Mark payment as failed
-export const markPaymentFailed = async (paymentId) => {
+export const markPaymentFailed = async (transactionId) => {
   return await prisma.payment.update({
-    where: { id: paymentId },
-    data: { status: 'failed', completedAt: new Date() },
+    where: { transactionId },
+    data: { status: 'failed' },
   });
+};
+
+export const getPaginatedPayments = async ({ filters = {}, page = 1, limit = 20 }) => {
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      where: filters,
+      include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: parseInt(limit),
+    }),
+    prisma.payment.count({ where: filters }),
+  ]);
+  return { payments, total };
 };

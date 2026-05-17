@@ -1,28 +1,23 @@
 import express from 'express';
-import { protect, admin } from '../middleware/auth.js';
+import { can } from '../middleware/can.js';
 import * as paymentController from '../controllers/payment.controller.js';
 import {
-  createPaymentValidator,
   updatePaymentValidator,
   initiateChapaValidator,
 } from '../validators/payment.validator.js';
 
 const router = express.Router();
 
-//  CHAPA (direct integration) 
-router.post('/chapa/initiate', protect, initiateChapaValidator, initiateChapaPayment);
-router.get('/chapa/callback',chapaCallback);
-router.get('/chapa/verify/:tx_ref', protect, verifyChapaPayment);
+router.post('/initiate', can('payment', 'createOwn'), initiateChapaValidator, paymentController.initiateChapa);
+router.get('/verify/:tx_ref', can('payment', 'readOwn'), paymentController.verifyChapa);
+router.post('/webhook', paymentController.chapaWebhook);
 
-//  USER 
-router.post('/', protect, createPaymentValidator, createPayment);
-router.get('/my-payments', protect, getMyPayments);
-router.get('/check-balance', protect, getCoinBalance);
+router.get('/my-payments', can('payment', 'readOwn'), paymentController.getMyPayments);
+router.get('/check-balance', can('payment', 'readOwn'), paymentController.getCoinBalance);
 
-//  ADMIN 
-router.get('/all-payments', protect, admin, getAllPayments);
-router.get('/search-payment', protect, admin, searchPayment); 
-router.patch('/update-payment/:id', protect, admin, updatePaymentValidator,updatePaymentStatus);
-router.delete('/delete-payment/:id', protect, admin,deletePayment);
+router.get('/admin/all', can('payment', 'manage'), paymentController.getAllPayments);
+router.get('/admin/search', can('payment', 'manage'), paymentController.searchPayment);
+router.patch('/admin/update/:id', can('payment', 'manage'), updatePaymentValidator, paymentController.updatePaymentStatus);
+router.delete('/admin/delete/:id', can('payment', 'manage'), paymentController.deletePayment);
 
 export default router;
