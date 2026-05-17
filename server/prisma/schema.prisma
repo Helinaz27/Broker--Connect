@@ -63,7 +63,7 @@ model Listing {
   postingFeeId     String?           @db.ObjectId
   paidUntil        DateTime?
 
-  houseType        HouseType?
+  houseType        String?
   bedrooms         Int?
   bathrooms        Int?
   area_sqm         Int?
@@ -76,7 +76,7 @@ model Listing {
   brand            String?
   carModel         String?
 
-  serviceType      ServiceType?
+  serviceType      String?
 
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -90,7 +90,7 @@ model Listing {
 model PlatformFee {
   id           String          @id @default(auto()) @map("_id") @db.ObjectId
   feeType      FeeType
-  category     ListingCategory?
+  category     ListingType?
   listingMode  ListingMode?
   durationDays Int?
   coinAmount   Int?
@@ -124,7 +124,7 @@ model CoinTransaction {
   userId      String          @db.ObjectId
   type        TransactionType
   amount      Int
-  reason      CoinReason
+  reason      String
   description String?
   createdAt   DateTime        @default(now())
   user        User            @relation(fields: [userId], references: [id])
@@ -148,7 +148,7 @@ model Message {
   listingId   String        @db.ObjectId
   messageType MessageType   @default(text)
   content     String
-  readBy      ReadReceipt[]
+  isRead      Boolean
   createdAt   DateTime      @default(now())
   listing     Listing       @relation(fields: [listingId], references: [id])
 
@@ -158,10 +158,11 @@ model Message {
 model Notification {
   id        String            @id @default(auto()) @map("_id") @db.ObjectId
   userId    String            @db.ObjectId
-  type      NotificationType
+  type      String
   title     String
   body      String
-  data      NotificationData?
+  path        String?
+  referenceId String? @db.ObjectId
   isRead    Boolean           @default(false)
   createdAt DateTime          @default(now())
 
@@ -212,13 +213,6 @@ enum ListingMode {
   sell
 }
 
-enum HouseType {
-  condominium
-  villa
-  business
-  apartment
-  others
-}
 
 enum Period {
   daily
@@ -237,27 +231,14 @@ enum CarConditionType {
   new
 }
 
-enum ServiceType {
-  electrician
-  plumber
-  catering
-  house_worker
-  other
-}
 
 enum ListingStatus {
   active
   inactive
   occupied
   sold
-  done
 }
 
-enum ListingCategory {
-  house
-  car
-  service
-}
 
 enum PaymentMethod {
   telebirr
@@ -266,6 +247,7 @@ enum PaymentMethod {
 
 enum PaymentStatus {
   pending
+  processing
   success
   failed
 }
@@ -275,15 +257,6 @@ enum TransactionType {
   debit
 }
 
-enum CoinReason {
-  kyc_bonus
-  welcome_bonus
-  purchase
-  posting_fee
-  contact_access
-  user_transfer
-  refund
-}
 
 enum MessageType {
   text
@@ -291,16 +264,6 @@ enum MessageType {
   file
 }
 
-enum NotificationType {
-  message
-  payment_success
-  kyc_approved
-  kyc_rejected
-  post_expired
-  insufficient_coins
-  new_contact
-  system
-}
 
 enum FeeType {
   posting_fee
@@ -317,14 +280,4 @@ type LocationData {
   subCity     String?
   placeName   String?
   coordinates Coordinates?
-}
-
-type ReadReceipt {
-  userId String   @db.ObjectId
-  readAt DateTime
-}
-
-type NotificationData {
-  path        String?
-  referenceId String? @db.ObjectId
 }

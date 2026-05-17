@@ -60,11 +60,18 @@ const buildWhereClause = (filters = {}) => {
 
   return where;
 };
-
 export const createListing = async (listingData) => {
-  return await prisma.listing.create({ data: listingData });
+  const { ownerId, ...restData } = listingData;
+  
+  const data = ownerId 
+    ? { 
+        owner: { connect: { id: ownerId } },
+        ...restData 
+      }
+    : restData;
+  
+  return await prisma.listing.create({ data });
 };
-
 export const getListingById = async (id) => {
   return await prisma.listing.findUnique({
     where: { id },
