@@ -14,7 +14,7 @@ router.put('/:id/status', can('listing', 'updateOwn'), listingController.updateL
 
 router.get('/get-all', listingController.getAllListingsCtrl);
 router.get('/get-my-listings', can('listing', 'readOwn'), listingController.getMyListingsCtrl);
-router.get('/admin/all', can('listing', 'manage'), admin, listingController.adminGetAllListingsCtrl);
+router.get('/admin/all', can('listing', 'manage'), listingController.adminGetAllListingsCtrl);
 router.get('/search', listingController.searchListingsCtrl);
 router.get('/dashboard/search', can('listing', 'readOwn'), listingController.searchUserListingsCtrl);
 router.get('/admin/search', can('listing', 'manage'), listingController.searchAdminListingsCtrl);
