@@ -93,8 +93,7 @@ model PlatformFee {
   category     ListingType?
   listingMode  ListingMode?
   durationDays Int?
-  coinAmount   Int?
-  price        Float?
+  coinAmount   Int
   description  String?
   isActive     Boolean         @default(true)
   createdBy    String          @db.ObjectId
@@ -278,6 +277,6 @@ type Coordinates {
 type LocationData {
   city        String
   subCity     String?
-  placeName   String?
+  placeName   String
   coordinates Coordinates?
 }

@@ -69,7 +69,8 @@ export const createListingValidator = [
     .trim(),
 
   body('location.placeName')
-    .optional()
+    .notEmpty()
+    .withMessage('Place name is required')
     .trim(),
 
   body('location.coordinates.lat')

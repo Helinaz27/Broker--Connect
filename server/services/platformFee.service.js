@@ -8,11 +8,11 @@ const buildPagination = (page, limit, total) => ({
 });
 
 const buildUniquenessWhere = (feeType, category, listingMode) => {
-  const needsMode =(category === 'house' || category === 'car') && listingMode;
+  const needsMode = (category === 'house' || category === 'car') && listingMode;
 
   return {
     feeType,
-    category:    category ?? null,
+    category: category ?? null,
     listingMode: needsMode ? listingMode : null,
   };
 };
@@ -38,35 +38,27 @@ const checkForDuplicate = async (feeType, category, listingMode, excludeId = nul
   }
 };
 
-//  CREATE 
-
 export const createPlatformFee = async ({
   feeType, category, listingMode, durationDays,
-  price, coinAmount, description, adminId,
+  coinAmount, description, adminId,
 }) => {
   const isPosting = feeType === 'posting_fee';
   const isContact = feeType === 'contact_access_fee';
 
-  if (isPosting && (category === 'house' || category === 'car') && !listingMode) {
-    const error = new Error('Listing mode is required for house and car posting fees');
+  if ((isPosting || isContact) && (category === 'house' || category === 'car') && !listingMode) {
+    const error = new Error('Listing mode is required for house and car fees');
     error.statusCode = 400;
     throw error;
   }
 
-  if (isContact && (category === 'house' || category === 'car') && !listingMode) {
-    const error = new Error('Listing mode is required for house and car contact access fees');
+  if (isPosting && !durationDays) {
+    const error = new Error('Duration days is required for posting fees');
     error.statusCode = 400;
     throw error;
   }
 
-  if (isPosting && (!price || !durationDays)) {
-    const error = new Error('Price and duration days are required for posting fees');
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (isContact && coinAmount === undefined) {
-    const error = new Error('Coin amount is required for contact access fees');
+  if (coinAmount === undefined || coinAmount === null) {
+    const error = new Error('Coin amount is required');
     error.statusCode = 400;
     throw error;
   }
@@ -76,19 +68,16 @@ export const createPlatformFee = async ({
   return await prisma.platformFee.create({
     data: {
       feeType,
-      category:     category     ?? null,
-      listingMode:  listingMode  ?? null,
+      category: category ?? null,
+      listingMode: listingMode ?? null,
       durationDays: durationDays ? parseInt(durationDays) : null,
-      price:        price        ? parseFloat(price)      : null,
-      coinAmount:   coinAmount   !== undefined ? parseInt(coinAmount) : null,
-      description:  description  ?? null,
-      isActive:     true,
-      createdBy:    adminId,
+      coinAmount: parseInt(coinAmount),
+      description: description ?? null,
+      isActive: true,
+      createdBy: adminId,
     },
   });
 };
-
-//  READ 
 
 export const getAllPlatformFees = async ({ page = 1, limit = 20 }) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -109,28 +98,26 @@ export const searchPlatformFees = async ({
   const take = parseInt(limit);
 
   const where = {};
-  if (feeType)                where.feeType     = feeType;
-  if (category)               where.category    = category;
-  if (listingMode)            where.listingMode = listingMode;
-  if (isActive !== undefined) where.isActive    = isActive === 'true' || isActive === true;
+  if (feeType) where.feeType = feeType;
+  if (category) where.category = category;
+  if (listingMode) where.listingMode = listingMode;
+  if (isActive !== undefined) where.isActive = isActive === 'true' || isActive === true;
 
-  // Fetch with exact filters
   let platformFees = await prisma.platformFee.findMany({
     where,
     orderBy: { createdAt: 'desc' },
   });
 
-  // Keyword search in JavaScript (case-insensitive, partial match)
   if (q) {
     const regex = new RegExp(q, 'i');
     platformFees = platformFees.filter(fee =>
       regex.test(fee.description ?? '') ||
-      regex.test(fee.feeType     ?? '') ||
-      regex.test(fee.category    ?? '')
+      regex.test(fee.feeType ?? '') ||
+      regex.test(fee.category ?? '')
     );
   }
 
-  const total     = platformFees.length;
+  const total = platformFees.length;
   const paginated = platformFees.slice(skip, skip + take);
 
   return { platformFees: paginated, pagination: buildPagination(page, limit, total) };
@@ -146,8 +133,6 @@ export const getPlatformFeeById = async (id) => {
   return platformFee;
 };
 
-//  UPDATE 
-
 export const updatePlatformFee = async (id, body) => {
   const existing = await prisma.platformFee.findUnique({ where: { id } });
   if (!existing) {
@@ -156,13 +141,13 @@ export const updatePlatformFee = async (id, body) => {
     throw error;
   }
 
-  const newFeeType     = body.feeType     ?? existing.feeType;
-  const newCategory    = body.category    ?? existing.category;
+  const newFeeType = body.feeType ?? existing.feeType;
+  const newCategory = body.category ?? existing.category;
   const newListingMode = body.listingMode ?? existing.listingMode;
 
   const combinationChanged =
-    newFeeType     !== existing.feeType     ||
-    newCategory    !== existing.category    ||
+    newFeeType !== existing.feeType ||
+    newCategory !== existing.category ||
     newListingMode !== existing.listingMode;
 
   if (combinationChanged) {
@@ -170,19 +155,16 @@ export const updatePlatformFee = async (id, body) => {
   }
 
   const updateData = {};
-  if (body.category     !== undefined) updateData.category     = body.category;
-  if (body.listingMode  !== undefined) updateData.listingMode  = body.listingMode;
+  if (body.category !== undefined) updateData.category = body.category;
+  if (body.listingMode !== undefined) updateData.listingMode = body.listingMode;
   if (body.durationDays !== undefined) updateData.durationDays = parseInt(body.durationDays);
-  if (body.price        !== undefined) updateData.price        = parseFloat(body.price);
-  if (body.coinAmount   !== undefined) updateData.coinAmount   = parseInt(body.coinAmount);
-  if (body.description  !== undefined) updateData.description  = body.description;
-  if (body.isActive     !== undefined) updateData.isActive     = body.isActive;
+  if (body.coinAmount !== undefined) updateData.coinAmount = parseInt(body.coinAmount);
+  if (body.description !== undefined) updateData.description = body.description;
+  if (body.isActive !== undefined) updateData.isActive = body.isActive;
   updateData.updatedAt = new Date();
 
   return await prisma.platformFee.update({ where: { id }, data: updateData });
 };
-
-//  DELETE 
 
 export const deletePlatformFee = async (id) => {
   const existing = await prisma.platformFee.findUnique({ where: { id } });

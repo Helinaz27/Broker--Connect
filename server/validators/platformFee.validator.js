@@ -36,10 +36,10 @@ export const createPlatformFeeValidator = [
   body('listingMode')
     .if((value, { req }) => {
       const cat = req.body.category;
-      return isPostingFee(req) && (cat === 'house' || cat === 'car');
+      return (isPostingFee(req) || isContactAccessFee(req)) && (cat === 'house' || cat === 'car');
     })
     .notEmpty()
-    .withMessage('Listing mode is required for house and car posting fees')
+    .withMessage('Listing mode is required for house and car fees')
     .isIn(LISTING_MODES)
     .withMessage('Listing mode must be rent or sell'),
 
@@ -50,17 +50,9 @@ export const createPlatformFeeValidator = [
     .isInt({ min: 1, max: 365 })
     .withMessage('Duration days must be between 1 and 365'),
 
-  body('price')
-    .if((value, { req }) => isPostingFee(req))
-    .notEmpty()
-    .withMessage('Price is required for posting fees')
-    .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
-
   body('coinAmount')
-    .if((value, { req }) => isContactAccessFee(req))
     .notEmpty()
-    .withMessage('Coin amount is required for contact access fees')
+    .withMessage('Coin amount is required')
     .isInt({ min: 0 })
     .withMessage('Coin amount must be a non-negative integer'),
 
@@ -94,11 +86,6 @@ export const updatePlatformFeeValidator = [
     .optional()
     .isInt({ min: 1, max: 365 })
     .withMessage('Duration days must be between 1 and 365'),
-
-  body('price')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
 
   body('coinAmount')
     .optional()
