@@ -141,9 +141,17 @@ export const createListingCtrl = async (req, res) => {
       imageUrls = await uploadImagesToCloudinary(req.files);
     }
 
-    const postingFee = await prisma.platformFee.findFirst({
-      where: { feeType: 'posting_fee', category: listingType, listingMode: listingMode, isActive: true }
-    });
+    const resolvedListingMode = listingMode || null;
+
+
+const postingFee = await prisma.platformFee.findFirst({
+  where: {
+    feeType: 'posting_fee',
+    category: listingType,
+    ...(resolvedListingMode && { listingMode: resolvedListingMode }),
+    isActive: true
+  }
+});
 
     if (!postingFee) {
       return errorResponse(
@@ -153,9 +161,14 @@ export const createListingCtrl = async (req, res) => {
       );
     }
 
-    const contactAccessFee = await prisma.platformFee.findFirst({
-      where: { feeType: 'contact_access_fee', category: listingType, listingMode: listingMode, isActive: true }
-    });
+const contactAccessFee = await prisma.platformFee.findFirst({
+  where: {
+    feeType: 'contact_access_fee',
+    category: listingType,
+    ...(resolvedListingMode && { listingMode: resolvedListingMode }),
+    isActive: true
+  }
+});
 
     if (!contactAccessFee) {
       return errorResponse(
@@ -172,7 +185,7 @@ export const createListingCtrl = async (req, res) => {
         ? parsedContactCoinLimit
         : platformContactFee;
 
-    const totalCoinsNeeded = parseInt(durationDays) * postingFee.coinAmount;
+    const totalCoinsNeeded = (parseInt(durationDays) * postingFee.coinAmount)/postingFee.durationDays;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -233,11 +246,7 @@ export const createListingCtrl = async (req, res) => {
 
     const listing = await createListing(listingData);
 
-    const owner = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, firstName: true, lastName: true, phone: true, email: true }
-    });
-    listing.owner = owner;
+
 
     const updatedUser = await prisma.user.findUnique({
       where: { id: userId },
@@ -273,7 +282,6 @@ export const updateListingCtrl = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const isAdmin = (req.user.roles || []).includes('admin');
     const {
       title, description, price, listingMode, location, contactCoinLimit, status,
       houseType, bedrooms, bathrooms, area_sqm, tanker, parking, rentalPeriod,
@@ -283,7 +291,7 @@ export const updateListingCtrl = async (req, res) => {
 
     const existingListing = await getListingById(id);
     if (!existingListing) return errorResponse(res, 'Listing not found', null, 404);
-    if (!isAdmin && existingListing.ownerId !== userId) {
+    if ( existingListing.ownerId !== userId) {
       return errorResponse(res, 'You are not authorized to update this listing', null, 403);
     }
 
@@ -325,7 +333,7 @@ export const updateListingCtrl = async (req, res) => {
     }
 
     const updatedListing = await updateListing(id, updateData);
-    const formatted = formatListingResponse(updatedListing, !isAdmin, isAdmin);
+    const formatted = formatListingResponse(updatedListing);
 
     return successResponse(
       res,
@@ -345,9 +353,7 @@ export const updateListingStatusCtrl = async (req, res) => {
     const isAdmin = (req.user.roles || []).includes('admin');
     const { status } = req.body;
 
-    if (!status || !['active', 'inactive'].includes(status)) {
-      return errorResponse(res, 'Status must be active or inactive', null, 400);
-    }
+
 
     const existingListing = await getListingById(id);
     if (!existingListing) return errorResponse(res, 'Listing not found', null, 404);

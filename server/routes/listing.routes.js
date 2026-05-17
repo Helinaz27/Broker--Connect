@@ -17,7 +17,7 @@ router.get('/get-my-listings', can('listing', 'readOwn'), listingController.getM
 router.get('/admin/all', can('listing', 'manage'), admin, listingController.adminGetAllListingsCtrl);
 router.get('/search', listingController.searchListingsCtrl);
 router.get('/dashboard/search', can('listing', 'readOwn'), listingController.searchUserListingsCtrl);
-router.get('/admin/search', can('listing', 'manage'), protect, admin, listingController.searchAdminListingsCtrl);
+router.get('/admin/search', can('listing', 'manage'), listingController.searchAdminListingsCtrl);
 
 router.get('/:id/single-listing', listingController.getListingByIdCtrl);
 
