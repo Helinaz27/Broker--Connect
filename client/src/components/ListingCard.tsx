@@ -1,7 +1,6 @@
 "use client";
 
-import { Heart, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, MapPin, Star, ArrowUpRight } from "lucide-react";
 import { useFavorites } from "@/lib/FavoritesContext";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +25,7 @@ export default function ListingCard({
   price,
   location,
   category,
-  rating = 0,
+  rating = 4.8,
   contactLimit = 0,
 }: ListingCardProps) {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
@@ -53,63 +52,65 @@ export default function ListingCard({
   };
 
   return (
-    <div className="group rounded-3xl overflow-hidden bg-card border border-border/50 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 animate-in fade-in slide-in-from-bottom-2">
-      <div className="relative h-56 bg-muted overflow-hidden">
+    <div className="group rounded-[2rem] overflow-hidden bg-card border border-border hover:border-primary/50 hover:shadow-modern hover:-translate-y-1.5 transition-all duration-500 animate-in">
+      <div className="relative h-60 bg-muted overflow-hidden">
         <img
           src={image}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
+        
+        {/* Category Badge */}
         <div className="absolute top-4 left-4">
-          <span className="bg-background/80 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full text-foreground border border-white/20 shadow-xl">
-            {category === "car" ? "cars" : category === "service" ? "other services" : "house"}
+          <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
+            {category === "car" ? "Car" : category === "service" ? "Service" : "House"}
           </span>
         </div>
 
         {/* Like Button */}
         <button
           onClick={handleLike}
-          className="absolute top-4 right-4 bg-background/80 backdrop-blur-md p-2.5 rounded-full shadow-xl hover:bg-white z-10 transition-all active:scale-90 border border-white/20"
+          className="absolute top-4 right-4 bg-background/80 backdrop-blur-md p-2.5 rounded-xl shadow-sm hover:bg-background z-10 transition-all active:scale-90 border border-white/20 group/heart"
         >
           <Heart
-            className={`h-4 w-4 transition-colors ${
-              liked ? "fill-red-500 text-red-500" : "text-slate-600"
+            className={`h-4 w-4 transition-colors duration-300 ${
+              liked ? "fill-destructive text-destructive" : "text-muted-foreground group-hover/heart:text-destructive"
             }`}
           />
         </button>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </div>
 
       <div className="p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center gap-0.5 text-amber-500">
-            {[...Array(5)].map((_, i) => (
-              <svg key={i} className={`h-3 w-3 ${i < Math.floor(rating) ? "fill-current" : "fill-muted text-muted"}`} viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-1 text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">
+            <Star className="h-3 w-3 fill-current" />
+            <span className="text-[11px] font-bold">{rating}</span>
           </div>
-          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{rating > 0 ? rating : "Unrated"}</span>
+          <div className="h-1 w-1 rounded-full bg-border" />
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="line-clamp-1">{location.split(",")[1] || location}</span>
+          </div>
         </div>
         
-        <h3 className="font-black text-foreground line-clamp-1 text-base tracking-tight italic group-hover:text-primary transition-colors">
+        <h3 className="font-bold text-foreground line-clamp-1 text-lg tracking-tight mb-5 group-hover:text-primary transition-colors">
           {title}
         </h3>
         
-        <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-bold mt-2 mb-6">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/60" />
-          <span className="line-clamp-1">{location}</span>
-        </div>
-        
-        <div className="flex items-center justify-between pt-5 border-t border-border/40">
+        <div className="flex items-center justify-between pt-5 border-t border-border/50">
           <div className="flex flex-col">
-            <span className="text-xl font-black text-foreground tracking-tighter">{price.toLocaleString()}</span>
-            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground -mt-1">
-              {category === "service" ? "Birr / Hour" : "Total Birr"}
+            <span className="text-xl font-bold text-foreground tracking-tight">{price.toLocaleString()} Br</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+              {category === "service" ? "Per Project" : "Total Price"}
             </span>
           </div>
-          <Button variant="outline" size="sm" className="rounded-xl border-border/60 font-black text-[10px] uppercase tracking-widest px-4 h-10 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm" asChild>
-            <Link href={getListingPath(category, id)}>View</Link>
-          </Button>
+          <Link href={getListingPath(category, id)}>
+            <div className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center text-foreground group-hover:bg-primary group-hover:border-primary group-hover:text-white transition-all duration-300 shadow-sm">
+              <ArrowUpRight className="h-4 w-4" />
+            </div>
+          </Link>
         </div>
       </div>
     </div>
