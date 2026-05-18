@@ -1,151 +1,97 @@
 import Link from "next/link";
-import { Twitter, Facebook, Instagram } from "lucide-react";
+import { Twitter, Facebook, Instagram, Linkedin, Github } from "lucide-react";
 import Logo from "@/components/Logo";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-200 border-t border-gray-200 py-8">
-      <div className="container px-4 mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
-          {/* Brand Section */}
-          <div className="md:col-span-5 space-y-2">
-            <Logo
-              size="sm"
-              showText={true}
-              className="[&_span]:text-gray-900"
-            />
-            <p className="text-xs text-gray-500 leading-relaxed max-w-[280px]">
-              Ethiopia's trusted marketplace for houses, vehicles, and other
-              services.
+    <footer className="border-t border-border bg-card py-20">
+      <div className="container px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-16">
+          <div className="lg:col-span-2 space-y-8">
+            <Logo size="md" showText={true} />
+            <p className="text-base text-muted-foreground leading-relaxed max-w-sm font-medium">
+              Ethiopia's premier digital bridge for high-end real estate, premium vehicles, and vetted professional services. Built for the modern success.
             </p>
-          </div>
-
-          {/* Marketplace Links */}
-          <div className="md:col-span-2 space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-950">
-              Marketplace
-            </h3>
-            <ul className="space-y-1.5 text-xs">
-              <li>
-                <Link
-                  href="/house-listings"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Houses
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/car-listings"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Vehicles
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/service-listings"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Other services
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Support Links */}
-          <div className="md:col-span-2 space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-950">
-              Support
-            </h3>
-            <ul className="space-y-1.5 text-xs">
-              <li>
-                <Link
-                  href="/help"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/terms"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Terms of Service
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Social Section */}
-          <div className="md:col-span-3 space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-950">
-              Follow Us
-            </h3>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {[
-                {
-                  Icon: Twitter,
-                  href: "https://twitter.com",
-                  label: "Twitter",
-                },
-                {
-                  Icon: Facebook,
-                  href: "https://facebook.com",
-                  label: "Facebook",
-                },
-                {
-                  Icon: Instagram,
-                  href: "https://instagram.com",
-                  label: "Instagram",
-                },
-              ].map(({ Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-7 w-7 rounded-full border border-gray-300 bg-white flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 hover:bg-gray-100 transition-all"
-                  aria-label={label}
+                { icon: Twitter, href: "#" },
+                { icon: Facebook, href: "#" },
+                { icon: Instagram, href: "#" },
+                { icon: Linkedin, href: "#" }
+              ].map((item, i) => (
+                <a 
+                  key={i} 
+                  href={item.href} 
+                  className="h-10 w-10 rounded-xl border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/20 hover:shadow-soft transition-all duration-300"
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <item.icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
           </div>
-        </div>
+          
+          <div className="space-y-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Marketplace</h3>
+            <ul className="space-y-3">
+              {[
+                { label: "Houses", href: "/house-listings" },
+                { label: "Cars", href: "/car-listings" },
+                { label: "Services", href: "/service-listings" },
+                { label: "Featured Deals", href: "/#listings" }
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Copyright Bar - Centered */}
-        <div className="pt-4 border-t border-gray-200 flex flex-col items-center gap-2 text-xs text-gray-600 text-center">
-          <p>© 2026 Digital Broker. All rights reserved.</p>
-          <div className="flex gap-5">
-            <Link
-              href="/privacy"
-              className="text-gray-950 hover:text-gray-900 transition-colors"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/terms"
-              className="text-gray-950 hover:text-gray-900 transition-colors"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/contact"
-              className="text-gray-950 hover:text-gray-900 transition-colors"
-            >
-              Contact
-            </Link>
+          <div className="space-y-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Platform</h3>
+            <ul className="space-y-3">
+              {[
+                { label: "Dashboard", href: "/dashboard" },
+                { label: "My Profile", href: "/profile" },
+                { label: "Favorites", href: "/favorites" },
+                { label: "Settings", href: "/settings" }
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="space-y-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Support</h3>
+            <ul className="space-y-3">
+              {[
+                { label: "Help Center", href: "/help" },
+                { label: "Terms of Service", href: "/terms" },
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Contact Us", href: "/contact" }
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-xs font-medium text-muted-foreground">
+            © {new Date().getFullYear()} BrokerConnect. All rights reserved.
+          </p>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10">
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/80">Systems Active</span>
           </div>
         </div>
       </div>

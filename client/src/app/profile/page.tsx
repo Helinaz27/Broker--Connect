@@ -185,74 +185,33 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Security & Settings */}
+          {/* Unlocked Listings */}
           <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-10 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-            <h2 className="text-2xl font-black text-foreground tracking-tight italic mb-8">
-              Security Console.
-            </h2>
+            <h2 className="text-2xl font-black text-foreground tracking-tight italic mb-8">Unlocked Listings.</h2>
 
             <div className="grid gap-4">
-              {/* Change Password */}
-              <button
-                onClick={() => setShowPasswordModal(true)}
-                className="group w-full flex items-center justify-between p-6 bg-muted/20 border border-border/50 rounded-[1.5rem] hover:bg-muted/40 transition-all duration-300"
-              >
-                <div className="flex items-center gap-5">
-                  <div className="h-12 w-12 rounded-xl bg-card border border-border/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                    <Lock className="h-5 w-5" />
+              {[
+                { title: "Modern Villa in Bole", date: "Unlocked on May 12, 2026", price: "45,000 Br", type: "house" },
+                { title: "Toyota Corolla 2022", date: "Unlocked on May 10, 2026", price: "2,500 Br/day", type: "cars" },
+                { title: "Legal Consultant - Corporate", date: "Unlocked on May 08, 2026", price: "1,200 Br", type: "other services" },
+              ].map((item, idx) => (
+                <div key={idx} className="group w-full flex items-center justify-between p-6 bg-muted/20 border border-border/50 rounded-[1.5rem] hover:bg-muted/40 transition-all duration-300">
+                  <div className="flex items-center gap-5">
+                    <div className="h-12 w-12 rounded-xl bg-card border border-border/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                      <ChevronRight className="h-5 w-5" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground font-medium mt-1">
+                        {item.date} • <span className="text-primary">{item.price}</span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="font-bold text-foreground">Access Protocol</p>
-                    <p className="text-xs text-muted-foreground font-medium mt-1">
-                      Manage your encrypted password and login security
-                    </p>
-                  </div>
+                  <Button variant="outline" size="sm" className="rounded-xl border-border/60 font-bold text-[10px] uppercase tracking-widest px-4 h-9 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+                    View Details
+                  </Button>
                 </div>
-                <div className="h-10 w-10 rounded-full border border-border/50 flex items-center justify-center group-hover:border-primary/40 group-hover:text-primary transition-all">
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </div>
-              </button>
-
-              {/* KYC Status */}
-              <div className="w-full flex items-center justify-between p-6 bg-muted/20 border border-border/50 rounded-[1.5rem]">
-                <div className="flex items-center gap-5">
-                  <div className="h-12 w-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-600">
-                    <div className="h-2 w-2 rounded-full bg-current animate-pulse" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold text-foreground">
-                      Account verified
-                    </p>
-                    <p className="text-xs text-muted-foreground font-medium mt-1">
-                      Identity verified • Full access to list and message
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-green-600 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
-                  Active
-                </span>
-              </div>
-
-              {/* Delete Account */}
-              <button className="group w-full flex items-center justify-between p-6 bg-destructive/5 border border-destructive/10 rounded-[1.5rem] hover:bg-destructive/10 transition-all duration-300">
-                <div className="flex items-center gap-5">
-                  <div className="h-12 w-12 rounded-xl bg-card border border-destructive/10 flex items-center justify-center text-destructive/60 group-hover:text-destructive transition-colors">
-                    <LogOut className="h-5 w-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold text-foreground">
-                      Termination Zone
-                    </p>
-                    <p className="text-xs text-muted-foreground font-medium mt-1">
-                      Permanently wipe your broker profile and all digital
-                      assets
-                    </p>
-                  </div>
-                </div>
-                <div className="h-10 w-10 rounded-full border border-destructive/20 flex items-center justify-center group-hover:bg-destructive group-hover:text-white transition-all">
-                  <ChevronRight className="h-4 w-4" />
-                </div>
-              </button>
+              ))}
             </div>
           </div>
         </div>

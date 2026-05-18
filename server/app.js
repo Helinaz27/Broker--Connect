@@ -34,22 +34,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-const startServer = async () => {
-  try {
-    const isConnected = await checkDbConnection();
-    if (!isConnected) {
-      console.error("Database connection failed.");
-      process.exit(1);
-    }
-    await checkAdmin();
-    app.listen(env.port, () => {
-      console.log(`Server running on port ${env.port}`);
-      console.log(`Environment: ${env.NODE_ENV || "development"}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
+(async () => {
+  const isConnected = await checkDbConnection();
+  if (!isConnected) {
+    console.warn("Database connection failed. Some features may not work, but server will continue to run.");
   }
 };
 

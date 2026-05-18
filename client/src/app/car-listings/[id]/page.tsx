@@ -17,10 +17,8 @@ export default function CarDetailPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <main className="flex-1 container px-4 py-16 text-center">
-          <p className="text-muted-foreground mb-4">Vehicle not found.</p>
-          <Button variant="outline" onClick={() => router.back()}>
-            Go back
-          </Button>
+          <p className="text-muted-foreground mb-4">Car not found.</p>
+          <Button variant="outline" onClick={() => router.back()}>Go back</Button>
         </main>
       </div>
     );
@@ -30,22 +28,13 @@ export default function CarDetailPage() {
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 py-8 md:py-12">
         <div className="container mx-auto px-4 max-w-4xl">
-          <Link
-            href="/car-listings"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to vehicles
+          <Link href="/car-listings" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+            <ArrowLeft className="h-4 w-4" /> Back to cars
           </Link>
           <div className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
             <div className="aspect-[16/10] bg-muted relative">
-              <img
-                src={car.image}
-                alt={car.title}
-                className="w-full h-full object-cover"
-              />
-              <span className="absolute top-3 left-3 bg-background/90 text-xs font-medium uppercase tracking-wider px-2 py-1 rounded">
-                Vehicle
-              </span>
+              <img src={car.image} alt={car.title} className="w-full h-full object-cover" />
+              <span className="absolute top-3 left-3 bg-background/90 text-xs font-medium uppercase tracking-wider px-2 py-1 rounded">Car</span>
             </div>
             <div className="p-6 md:p-8">
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
