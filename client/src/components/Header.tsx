@@ -77,7 +77,6 @@ export default function Header() {
   };
 
   const navLinks = [
-    { href: "/", label: "Home" },
     { href: "/about", label: "About Us" },
     { href: "/favorites", label: "Favorites" },
   ];
@@ -314,16 +313,23 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl py-8 animate-in slide-in-from-top-4 duration-300">
           <nav className="container flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-base font-semibold text-foreground px-4 py-3 rounded-xl hover:bg-muted transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-base font-semibold px-4 py-3 rounded-xl transition-all ${
+                    isActive
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:bg-muted"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <div className="h-px bg-border/50 my-4 mx-2" />
             <p className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
               Categories
