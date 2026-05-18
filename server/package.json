@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "description": "web-based digital broker",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
+<<<<<<< HEAD
     "start": "node app.js",
     "dev": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+=======
+    "start": "app.js",
+    "dev": "nodemon app.js"
+>>>>>>> 88d1f72 (chat and message done)
   },
   "repository": {
     "type": "git",

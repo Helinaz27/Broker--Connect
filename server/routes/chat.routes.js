@@ -1,19 +1,15 @@
 import express from 'express';
-import { protect, admin } from '../middleware/auth.js';
+import { can } from '../middleware/can.js';
 import * as chatController from '../controllers/chat.controller.js';
-import { createChatValidator, sendMessageValidator } from '../validators/chat.validator.js';
+import { createRoomValidator } from '../validators/chat.validator.js';
 
 const router = express.Router();
 
-//  USER CHAT ROUTES 
-router.post('/', protect, createChatValidator, chatController.createChat);
-router.get('/my-chats', protect, chatController.getMyChats);
-router.get('/:roomId/messages', protect, chatController.getChatMessages);
-router.post('/:roomId/messages', protect, sendMessageValidator, chatController.sendMessage);
-router.put('/:roomId/messages/:messageId/read', protect, chatController.markMessageAsRead);
+router.post('/', can('chatRoom', 'createOwn'), createRoomValidator, chatController.createRoom);
+router.get('/', can('chatRoom', 'readOwn'), chatController.getMyRooms);
+router.get('/:roomId', can('chatRoom', 'readOwn'), chatController.getRoomById);
 
-//  ADMIN CHAT ROUTES 
-router.get('/admin/all', protect, admin, chatController.adminGetAllChats);
-router.delete('/admin/:roomId', protect, admin, chatController.adminDeleteChat);
+router.get('/admin/all', can('chatRoom', 'manage'), chatController.adminGetAllRooms);
+router.get('/admin/:roomId', can('chatRoom', 'manage'), chatController.adminGetRoomById);
 
 export default router;

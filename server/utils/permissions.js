@@ -56,7 +56,7 @@ export const permissions = {
 
   message: {
     admin: ['manage'],
-    client: ['createOwn', 'readOwn', 'deleteOwn'],
-    user: ['createOwn', 'readOwn', 'deleteOwn']
+    client: ['createOwn', 'readOwn', ],
+    user: ['createOwn', 'readOwn', ]
   },
 };
