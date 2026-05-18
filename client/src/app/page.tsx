@@ -110,7 +110,7 @@ export default function Index() {
               <div className="relative z-10 rounded-[2.5rem] border border-white/20 bg-white/10 backdrop-blur-md p-4 shadow-glass overflow-hidden group">
                 <div className="aspect-[4/3] rounded-[2rem] overflow-hidden relative">
                   <img 
-                    src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop" 
+                    src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=1200&q=80" 
                     alt="Premium Assets"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
                   />
@@ -122,7 +122,7 @@ export default function Index() {
                       </div>
                       <div className="text-white">
                         <p className="text-base font-bold tracking-tight">Luxury Estate</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider opacity-80">Addis Ababa, ET</p>
+                        <p className="text-[10px] font-medium uppercase tracking-wider opacity-80">Bole Atlas, Addis Ababa</p>
                       </div>
                     </div>
                   </div>
@@ -155,19 +155,19 @@ export default function Index() {
             {[
               { 
                 title: "Houses", 
-                img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop",
-                desc: "High-yield real estate and luxury living spaces.",
+                img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
+                desc: "High-yield real estate and luxury living spaces in Addis.",
                 href: "/house-listings"
               },
               { 
                 title: "Cars", 
-                img: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=2070&auto=format&fit=crop",
+                img: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&q=80",
                 desc: "Premium mobility for professional excellence.",
                 href: "/car-listings"
               },
               { 
                 title: "Services", 
-                img: "https://images.unsplash.com/photo-1581578731548-c64695ce6958?q=80&w=2070&auto=format&fit=crop",
+                img: "https://images.unsplash.com/photo-1581578731548-c64695ce6958?w=800&q=80",
                 desc: "Bespoke services for technical & creative needs.",
                 href: "/service-listings"
               }

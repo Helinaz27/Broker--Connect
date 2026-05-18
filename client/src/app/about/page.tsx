@@ -65,8 +65,8 @@ export default function AboutPage() {
               </div>
               <div className="rounded-[2.5rem] overflow-hidden border border-border shadow-glass aspect-video">
                 <img 
-                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Team collaboration" 
+                  src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80" 
+                  alt="Modern Office in Addis Ababa" 
                   className="w-full h-full object-cover"
                 />
               </div>

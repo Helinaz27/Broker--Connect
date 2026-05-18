@@ -141,6 +141,10 @@ export default function Profile() {
                   <Button
                     variant="secondary"
                     size="lg"
+                    onClick={() => {
+                      const amount = prompt("Enter amount to recharge (ETB):", "1000");
+                      if (amount) alert(`Redirecting to payment gateway for ${amount} Birr...`);
+                    }}
                     className="h-14 px-10 rounded-2xl text-base font-black gap-3 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all bg-white text-slate-950 hover:bg-slate-100"
                   >
                     <Plus className="h-5 w-5" />
@@ -237,7 +241,14 @@ export default function Profile() {
               </button>
 
               {/* Delete Account */}
-              <button className="group w-full flex items-center justify-between p-6 bg-destructive/5 border border-destructive/10 rounded-[1.5rem] hover:bg-destructive/10 transition-all duration-300">
+              <button 
+                onClick={() => {
+                  if (confirm("Are you sure you want to PERMANENTLY delete your account? This action cannot be undone.")) {
+                    alert("Account deletion request submitted.");
+                  }
+                }}
+                className="group w-full flex items-center justify-between p-6 bg-destructive/5 border border-destructive/10 rounded-[1.5rem] hover:bg-destructive/10 transition-all duration-300"
+              >
                 <div className="flex items-center gap-5">
                   <div className="h-12 w-12 rounded-xl bg-card border border-destructive/10 flex items-center justify-center text-destructive/60 group-hover:text-destructive transition-colors">
                     <LogOut className="h-5 w-5" />
