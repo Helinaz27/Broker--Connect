@@ -8,7 +8,8 @@ interface FavoriteItem {
   image: string;
   price: number;
   location: string;
-  category: "house" | "car" | "service";
+  category: "house" | "car" | "service" | "otherService";
+  rating?: number;
 }
 
 interface FavoritesContextType {
@@ -62,9 +63,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useFavorites = () => {
   const context = useContext(FavoritesContext);
-  if (context === undefined) {
-    throw new Error("useFavorites must be used within a FavoritesProvider");
+  if (!context) {
+    throw new Error("useFavorites must be used within FavoritesProvider");
   }
   return context;
 };
-
