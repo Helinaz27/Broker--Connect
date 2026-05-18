@@ -63,22 +63,24 @@ export default function Register() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.05),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.03),transparent_50%)]" />
       <Header />
 
-      <main className="flex-1 flex items-center justify-center py-12 px-4 relative z-10">
+      <main className="flex-1 flex items-center justify-center py-12 md:py-20 px-4 relative z-10">
         <div className="w-full max-w-2xl animate-fade-in">
-          <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-10 shadow-2xl shadow-black/5">
-            <div className="mb-10 text-center md:text-left">
-              <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">Join Digital Broker</h1>
-              <p className="text-muted-foreground font-medium">Create your account to list or find properties, vehicles, and services.</p>
+          <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-10 md:p-14 shadow-2xl shadow-black/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 blur-[60px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
+            
+            <div className="mb-12 relative z-10">
+              <h1 className="text-4xl font-black text-foreground tracking-tight italic mb-2">Create Account.</h1>
+              <p className="text-muted-foreground font-medium">Join the professional marketplace for house, cars, and other services.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* First Name */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     First Name
                   </label>
                   <input
@@ -87,7 +89,7 @@ export default function Register() {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="John"
-                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium ${
+                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium placeholder:text-muted-foreground/50 ${
                       errors.firstName ? "border-destructive" : "border-border/60"
                     }`}
                   />
@@ -98,7 +100,7 @@ export default function Register() {
 
                 {/* Last Name */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     Last Name
                   </label>
                   <input
@@ -107,7 +109,7 @@ export default function Register() {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Doe"
-                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium ${
+                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium placeholder:text-muted-foreground/50 ${
                       errors.lastName ? "border-destructive" : "border-border/60"
                     }`}
                   />
@@ -117,10 +119,10 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Email */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     Email Address
                   </label>
                   <input
@@ -129,7 +131,7 @@ export default function Register() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="john@example.com"
-                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium ${
+                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium placeholder:text-muted-foreground/50 ${
                       errors.email ? "border-destructive" : "border-border/60"
                     }`}
                   />
@@ -140,7 +142,7 @@ export default function Register() {
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     Phone Number
                   </label>
                   <input
@@ -149,7 +151,7 @@ export default function Register() {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+251 912 345 678"
-                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium ${
+                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium placeholder:text-muted-foreground/50 ${
                       errors.phone ? "border-destructive" : "border-border/60"
                     }`}
                   />
@@ -159,10 +161,10 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Password */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     Password
                   </label>
                   <input
@@ -171,7 +173,7 @@ export default function Register() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium ${
+                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium placeholder:text-muted-foreground/50 ${
                       errors.password ? "border-destructive" : "border-border/60"
                     }`}
                   />
@@ -182,7 +184,7 @@ export default function Register() {
 
                 {/* Confirm Password */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     Confirm Password
                   </label>
                   <PasswordInput
@@ -190,7 +192,7 @@ export default function Register() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium ${
+                    className={`w-full px-5 py-4 bg-muted/30 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium placeholder:text-muted-foreground/50 ${
                       errors.confirmPassword ? "border-destructive" : "border-border/60"
                     }`}
                   />
@@ -198,6 +200,36 @@ export default function Register() {
                     <p className="text-destructive text-[11px] mt-1.5 font-bold ml-1">{errors.confirmPassword}</p>
                   )}
                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 ml-1">
+                <input
+                  type="checkbox"
+                  name="agreeToTerms"
+                  id="agreeToTerms"
+                  checked={formData.agreeToTerms}
+                  onChange={handleChange}
+                  className="w-5 h-5 border-border/60 rounded-lg text-primary focus:ring-primary transition-all cursor-pointer"
+                />
+                <label htmlFor="agreeToTerms" className="text-[11px] text-muted-foreground font-black uppercase tracking-widest cursor-pointer select-none">
+                  I agree to the <Link href="/terms" className="text-primary hover:text-primary/80 transition-colors">Marketplace Terms</Link>
+                </label>
+              </div>
+
+              <Button type="submit" className="w-full h-14 rounded-2xl text-base font-black shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                Register Account
+              </Button>
+            </form>
+
+            <p className="text-center text-xs text-muted-foreground mt-12 font-bold uppercase tracking-widest relative z-10">
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:text-primary/80 transition-colors ml-1">
+                Sign In
+              </Link>
+            </p>
+          </div>
+        </div>
+      </main>
               </div>
 
               {/* Terms & Conditions */}
