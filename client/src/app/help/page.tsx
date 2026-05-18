@@ -1,9 +1,14 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Link from "next/link";
-import { Home, Car, Wrench, MessageCircle, Shield, FileText } from "lucide-react";
+import {
+  Home,
+  Car,
+  Wrench,
+  MessageCircle,
+  Shield,
+  FileText,
+} from "lucide-react";
 
 const helpSections = [
   {
@@ -51,10 +56,12 @@ const quickLinks = [
 export default function HelpPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
       <main className="flex-1 container px-4 py-12 md:py-16 max-w-3xl">
         <div className="mb-8">
-          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             ← Back to home
           </Link>
         </div>
@@ -81,12 +88,18 @@ export default function HelpPage() {
         <div className="space-y-10">
           {helpSections.map((section) => (
             <section key={section.title}>
-              <h2 className="text-lg font-semibold text-foreground mb-4">{section.title}</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                {section.title}
+              </h2>
               <ul className="space-y-6">
                 {section.items.map((item) => (
                   <li key={item.q}>
-                    <h3 className="font-medium text-foreground mb-1.5">{item.q}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{item.a}</p>
+                    <h3 className="font-medium text-foreground mb-1.5">
+                      {item.q}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {item.a}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -95,16 +108,21 @@ export default function HelpPage() {
         </div>
 
         <div className="mt-12 p-6 rounded-lg bg-muted/50 border border-border">
-          <h3 className="font-semibold text-foreground mb-2">Still need help?</h3>
+          <h3 className="font-semibold text-foreground mb-2">
+            Still need help?
+          </h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Contact us at support@digitalbroker.example.com or use the in-app chat for general inquiries.
+            Contact us at support@digitalbroker.example.com or use the in-app
+            chat for general inquiries.
           </p>
-          <Link href="/" className="text-primary font-medium text-sm hover:underline">
+          <Link
+            href="/"
+            className="text-primary font-medium text-sm hover:underline"
+          >
             Return to home
           </Link>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

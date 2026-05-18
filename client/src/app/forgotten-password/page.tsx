@@ -65,6 +65,7 @@ export default function ForgottenPassword() {
     </div>
   );
 
+export default function ForgottenPasswordPage() {
   return (
     <div className="flex flex-col min-h-screen bg-muted/30">
       <Header />

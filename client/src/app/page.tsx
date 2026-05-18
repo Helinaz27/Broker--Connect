@@ -1,10 +1,8 @@
 "use client";
 
-import Header from "@/components/Header";
 import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
@@ -22,23 +20,28 @@ export default function Index() {
   const filterBySearch = (items: any[]) => {
     return items.filter((item) => {
       const priceMatch =
-        item.price >= filters.priceRange[0] && item.price <= filters.priceRange[1];
-      const searchMatch = !filters.search || item.title.toLowerCase().includes(filters.search.toLowerCase());
-      const locationMatch = !filters.location || item.location.toLowerCase().includes(filters.location.toLowerCase());
+        item.price >= filters.priceRange[0] &&
+        item.price <= filters.priceRange[1];
+      const searchMatch =
+        !filters.search ||
+        item.title.toLowerCase().includes(filters.search.toLowerCase());
+      const locationMatch =
+        !filters.location ||
+        item.location.toLowerCase().includes(filters.location.toLowerCase());
       return priceMatch && searchMatch && locationMatch;
     });
   };
 
   const filteredHouses = filterBySearch(
-    filters.type === "all" || filters.type === "house" ? houses : []
+    filters.type === "all" || filters.type === "house" ? houses : [],
   );
 
   const filteredCars = filterBySearch(
-    filters.type === "all" || filters.type === "car" ? cars : []
+    filters.type === "all" || filters.type === "car" ? cars : [],
   );
 
   const filteredServices = filterBySearch(
-    filters.type === "all" || filters.type === "service" ? services : []
+    filters.type === "all" || filters.type === "service" ? services : [],
   );
 
   return (

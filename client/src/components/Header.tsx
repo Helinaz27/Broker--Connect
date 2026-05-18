@@ -29,11 +29,19 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const user = {
-    name: "Helina Zeleke",
-    email: "helina.zeleke@example.com",
-    coins: 5000,
-    profileImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      dispatch(clearUser());
+      toast.success("Logged out successfully");
+      setMobileMenuOpen(false);
+      router.push("/login");
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { data?: { message?: string } })?.data?.message ||
+        "Logout failed. Please try again.";
+      toast.error(errorMessage);
+    }
   };
 
   const navLinks = [
@@ -146,6 +154,18 @@ export default function Header() {
                   <p className="text-[12px] font-semibold text-foreground leading-none mb-0.5">{user.name}</p>
                   <p className="text-[10px] font-medium text-primary uppercase tracking-tight">{user.coins.toLocaleString()} Br</p>
                 </div>
+              </HoverCardContent>
+            </HoverCard>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-900 hover:bg-gray-200"
+                >
+                  Sign in
+                </Button>
               </Link>
             </HoverCardTrigger>
             <HoverCardContent className="w-64 p-2 mt-2 glass-card rounded-2xl" align="end">

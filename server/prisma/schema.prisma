@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  firstName        String
+  lastName         String
+  phone            String
+  email            String            @unique
+  password         String
+  roles            Role[]
+  coins            Int               @default(0)
+  isActive         Boolean           @default(true)
+  isKYCVerified    Boolean           @default(false)
+  profileImage          String?
+  passwordResetCode     String?
+  passwordResetExpiry   DateTime?
+  kycRequests      KYCRequest[]
+  payments         Payment[]
+  coinTransactions CoinTransaction[]
+  listings         Listing[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("users")
+}
+
+model KYCRequest {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String       @db.ObjectId
+  documentType   DocumentType
+  documentNumber String
+  frontSideImage String
+  backSideImage  String?
+  status         KYCStatus    @default(pending)
+  reviewedBy     String?      @db.ObjectId
+  reviewNote     String?
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@map("kyc_requests")
+}
+
+model Listing {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String            @db.ObjectId
+  listingType      ListingType
+  listingMode      ListingMode?
+  title            String
+  description      String
+  images           String[]
+  price            Float
+  location         LocationData
+  status           ListingStatus     @default(active)
+  contactCoinLimit Int
+  postingFeeId     String?           @db.ObjectId
+  paidUntil        DateTime?
+
+  houseType        String?
+  bedrooms         Int?
+  bathrooms        Int?
+  area_sqm         Int?
+  tanker           Boolean?
+  parking          Int?
+  rentalPeriod     Period?
+
+  carType          CarType?
+  condition        CarConditionType?
+  brand            String?
+  carModel         String?
+
+  serviceType      String?
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  owner            User              @relation(fields: [ownerId], references: [id])
+  contactAccesses  ContactAccess[]
+  messages         Message[]
+
+  @@map("listings")
+}
+
+model PlatformFee {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  feeType      FeeType
+  category     ListingType?
+  listingMode  ListingMode?
+  durationDays Int?
+  coinAmount   Int
+  description  String?
+  isActive     Boolean         @default(true)
+  createdBy    String          @db.ObjectId
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime?
+
+  @@map("platform_fees")
+}
+
+model Payment {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String        @db.ObjectId
+  amountBirr    Float
+  coinsReceived Int
+  paymentMethod PaymentMethod
+  transactionId String        @unique
+  status        PaymentStatus @default(pending)
+  createdAt     DateTime      @default(now())
+  completedAt   DateTime?
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model CoinTransaction {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String          @db.ObjectId
+  type        TransactionType
+  amount      Int
+  reason      String
+  description String?
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@map("coin_transactions")
+}
+
+model ChatRoom {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  participants String[] @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("chat_rooms")
+}
+
+model Message {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  roomId      String        @db.ObjectId
+  senderId    String        @db.ObjectId
+  listingId   String        @db.ObjectId
+  messageType MessageType   @default(text)
+  content     String
+  isRead      Boolean
+  createdAt   DateTime      @default(now())
+  listing     Listing       @relation(fields: [listingId], references: [id])
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String            @db.ObjectId
+  type      String
+  title     String
+  body      String
+  path        String?
+  referenceId String? @db.ObjectId
+  isRead    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model ContactAccess {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  viewerId  String   @db.ObjectId
+  ownerId   String   @db.ObjectId
+  listingId String   @db.ObjectId
+  coinsPaid Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id])
+
+  @@map("contact_accesses")
+}
+
+enum Role {
+  user
+  client
+  admin
+}
+
+enum DocumentType {
+  national_id
+  passport
+  driving_license
+}
+
+enum KYCStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ListingType {
+  car
+  house
+  service
+}
+
+enum ListingMode {
+  rent
+  sell
+}
+
+
+enum Period {
+  daily
+  weekly
+  monthly
+  yearly
+}
+
+enum CarType {
+  electric
+  fuel
+}
+
+enum CarConditionType {
+  used
+  new
+}
+
+
+enum ListingStatus {
+  active
+  inactive
+  occupied
+  sold
+}
+
+
+enum PaymentMethod {
+  telebirr
+  CBE
+  chapa
+}
+
+enum PaymentStatus {
+  pending
+  processing
+  success
+  failed
+}
+
+enum TransactionType {
+  credit
+  debit
+}
+
+
+enum MessageType {
+  text
+  image
+  file
+}
+
+
+enum FeeType {
+  posting_fee
+  contact_access_fee
+}
+
+type Coordinates {
+  lat Float
+  lng Float
+}
+
+type LocationData {
+  city        String
+  subCity     String?
+  placeName   String
+  coordinates Coordinates?
+}
