@@ -14,14 +14,16 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               {[
-                { icon: Twitter, href: "#" },
-                { icon: Facebook, href: "#" },
-                { icon: Instagram, href: "#" },
-                { icon: Linkedin, href: "#" }
+                { icon: Twitter, href: "https://twitter.com" },
+                { icon: Facebook, href: "https://facebook.com" },
+                { icon: Instagram, href: "https://instagram.com" },
+                { icon: Linkedin, href: "https://linkedin.com" }
               ].map((item, i) => (
                 <a 
                   key={i} 
                   href={item.href} 
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="h-10 w-10 rounded-xl border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/20 hover:shadow-soft transition-all duration-300"
                 >
                   <item.icon className="h-4 w-4" />
@@ -85,13 +87,14 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-xs font-medium text-muted-foreground">
-            © {new Date().getFullYear()} BrokerConnect. All rights reserved.
+        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            © 2026 Digital Broker Connect. All rights reserved.
           </p>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/80">Systems Active</span>
+          <div className="flex gap-8">
+            <Link href="/privacy" className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors">Terms</Link>
+            <Link href="/help" className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors">Help</Link>
           </div>
         </div>
       </div>

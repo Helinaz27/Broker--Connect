@@ -1,21 +1,38 @@
 {
-  "name": "server",
+  "name": "final_year_project",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
+  "description": "web-based digital broker",
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/netsanetabuhay/FINAL_YEAR_PROJECT.git"
+  },
+  "author": "Netsanet",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "chapa-nodejs": "^2.1.1",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
-    "final-year": "file:../..",
-    "mongoose": "^9.4.1"
+    "express-validator": "^7.3.2",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.1.0",
+    "mongoose": "^9.4.1",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.7",
+    "prisma": "^6.19.3",
+    "uuid": "^14.0.0"
   }
 }

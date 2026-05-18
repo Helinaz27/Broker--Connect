@@ -4,6 +4,7 @@ import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import StoreProvider from "@/store/storeProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -12,8 +13,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Digital Broker | house, cars & other services",
-  description: "Professional marketplace for house, cars, and other services in Ethiopia. List, discover, and transact with confidence.",
+  title: "Digital Broker | Houses, Cars & Services",
+  description: "Professional marketplace for houses, cars, and services in Ethiopia. List, discover, and transact with confidence.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -29,19 +30,20 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} font-sans antialiased text-foreground`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <FavoritesProvider>
-            {children}
-            <Toaster />
-          </FavoritesProvider>
-        </ThemeProvider>
+        <StoreProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <FavoritesProvider>
+              {children}
+              <Toaster position="top-right" offset={72} />
+            </FavoritesProvider>
+          </ThemeProvider>
+        </StoreProvider>
       </body>
     </html>
   );
 }
-

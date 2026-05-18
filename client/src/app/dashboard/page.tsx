@@ -19,6 +19,7 @@ import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
 import { InventoryTable } from "@/components/dashboard/InventoryTable";
 import { AssetForm } from "@/components/dashboard/AssetForm";
+import Chat from "@/components/Chat";
 
 type DashboardTab = "dashboard" | "house_post" | "house_view" | "car_post" | "car_view" | "service_post" | "service_view" | "admin_kyc" | "admin_users";
 
@@ -152,6 +153,7 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
+      <Chat />
     </div>
   );
 }

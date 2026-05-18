@@ -1,35 +1,59 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const { checkDbConnection, checkAdmin } = require("./config/db.config");
-const router = require("./routes/index");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+
+import { checkDbConnection, checkAdmin } from "./config/db.config.js";
+import env from "./utils/env.js";
+import router from "./routes/index.js";
 const app = express();
 
-const envFile = ".env";
-dotenv.config({ path: envFile });
-const port = process.env.PORT || 5500;
-
-const corsOptions = {
-  origin: [process.env.FRONTEND_URL],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
+// Middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:3000",
+  }),
+);
 
 app.use("/api", router);
 
-(async () => {
-  const isConnected = await checkDbConnection();
-  if (!isConnected) {
-    console.warn("Database connection failed. Some features may not work, but server will continue to run.");
-  }
-
-  await checkAdmin();
-
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
   });
-})();
+});
+
+app.use((err, req, res, next) => {
+  console.error("Server error:", err.stack);
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+  });
+});
+
+// Start server
+const startServer = async () => {
+  try {
+    const isConnected = await checkDbConnection();
+    if (!isConnected) {
+      console.error("Database connection failed.");
+      process.exit(1);
+    }
+    await checkAdmin();
+    const port = env.port || 5500;
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+      console.log(`Environment: ${env.NODE_ENV || "development"}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+export default app;
