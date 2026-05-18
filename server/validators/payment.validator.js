@@ -12,27 +12,19 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-export const initiateChapaPaymentValidator = [
-  body('amountBirr')
-    .notEmpty().withMessage('Amount in Birr is required')
-    .isFloat({ min: 10 }).withMessage('Amount must be at least 10 Birr'),
+export const initiateChapaValidator = [
+  body('coinsRequested')
+    .notEmpty().withMessage('Coins amount is required')
+    .isInt({ min: 1 }).withMessage('Coins must be a positive integer'),
   handleValidationErrors,
 ];
+
 export const updatePaymentValidator = [
   param('id')
     .notEmpty().withMessage('Payment ID is required')
     .isMongoId().withMessage('Invalid payment ID format'),
   body('status')
     .notEmpty().withMessage('Status is required')
-    .isIn(['pending', 'success', 'failed']).withMessage('Status must be pending, success, or failed'),
-  handleValidationErrors,
-];
-
-// Validate tx_ref from Chapa callback
-export const chapaCallbackValidator = [
-  query('trx_ref')
-    .optional(),
-  query('status')
-    .optional(),
+    .isIn(['pending', 'processing', 'success', 'failed']).withMessage('Invalid payment status'),
   handleValidationErrors,
 ];

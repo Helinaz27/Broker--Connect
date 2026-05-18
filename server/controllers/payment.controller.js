@@ -1,273 +1,279 @@
-import { successResponse, errorResponse } from '../utils/helpers.js';
+import axios from 'axios';
+import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
+import https from 'https';
 import { prisma } from '../config/db.config.js';
+import { successResponse, errorResponse } from '../utils/helpers.js';
 import { COIN_RULES } from '../utils/constants.js';
 import {
-  savePaymentToDatabase,
-  findPaymentById,
-  findPaymentByIdAndUser,
-  findPaymentsByUser,
-  countPaymentsByUser,
-  findAllPayments,
-  countAllPayments,
-  updatePaymentInDatabase
+  createPendingPayment,
+  getPaymentByTxRef,
+  creditCoinsToUser,
+  markPaymentFailed,
+  getPaginatedPayments,
 } from '../services/payment.service.js';
 
-const EXCHANGE_RATE = COIN_RULES.COIN_PRICE_IN_BIRR; 
-
-
-const formatPaymentResponse = (payment, includeUser = false) => {
-  const baseData = {
-    id: payment.id,
-    amountBirr: payment.amountBirr,
-    paymentMethod: payment.paymentMethod,
-    transactionId: payment.transactionId,
-    status: payment.status,
-    createdAt: payment.createdAt,
-    completedAt: payment.completedAt
-  };
-
-  if (includeUser && payment.user) {
-    baseData.user = {
-      id: payment.user.id,
-      firstName: payment.user.firstName,
-      lastName: payment.user.lastName,
-      email: payment.user.email,
-      phone: payment.user.phone
-    };
-  }
-
-  return baseData;
-};
-
-
-export const createPayment = async (req, res) => {
+export const initiateChapa = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userFullName = `${req.user.firstName} ${req.user.lastName}`;
-    const { amountBirr, paymentMethod, transactionId } = req.body;
+    const { coinsRequested } = req.body;
+    const user = req.user;
 
-    const existingTransaction = await prisma.payment.findFirst({
-      where: {
-        transactionId: transactionId,
-        paymentMethod: paymentMethod
-      }
+    const amountBirr = coinsRequested * COIN_RULES.COIN_PRICE_IN_BIRR;
+    const tx_ref = `ch-${user.id}-${uuidv4().split('-')[0]}`;
+
+    const payment = await createPendingPayment({
+      userId:        user.id,
+      amountBirr,
+      coinsReceived: coinsRequested,
+      transactionId: tx_ref,
     });
 
-    if (existingTransaction) {
-      return errorResponse(res, `Transaction ID ${transactionId} already exists for ${paymentMethod}. Please use a different transaction ID.`, null, 400);
-    }
-
-    const coinsReceived = amountBirr * EXCHANGE_RATE;
-
-    const paymentData = {
-      userId: userId,
-      amountBirr: parseFloat(amountBirr),
-      coinsReceived: coinsReceived,
-      paymentMethod: paymentMethod,
-      transactionId: transactionId,
-      purpose: 'buy_coins',
-      status: 'pending'
-    };
-
-    const payment = await savePaymentToDatabase(paymentData);
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { coins: true }
-    });
-
-    const formattedPayment = formatPaymentResponse(payment, false);
-
-    return successResponse(res, `Dear ${userFullName}, your payment of ${amountBirr} Birr for buying coins has been recorded. You will get ${coinsReceived} coins after admin verification.`, { 
-      payment: formattedPayment,
-      exchangeRate: `${EXCHANGE_RATE} Birr = 1 Coin`,
-      currentBalance: {
-        coins: user.coins,
-        pendingCoins: coinsReceived,
-        totalAfterConfirmation: user.coins + coinsReceived
+    const { data } = await axios.post(
+      'https://api.chapa.co/v1/transaction/initialize',
+      {
+        amount:       amountBirr.toString(),
+        currency:     'ETB',
+        email:        user.email,
+        first_name:   user.firstName,
+        last_name:    user.lastName,
+        phone_number: user.phone,
+        tx_ref,
+        return_url:   `${process.env.CLIENT_URL}/payment/verify?tx_ref=${tx_ref}`,
+        'customization[title]':       'Buy Coins',
+        'customization[description]': `Purchase of ${coinsRequested} coins`,
       },
-      nextSteps: {
-        status: "Awaiting admin verification",
-        message: "Admin will verify your payment and add coins to your account",
-        estimatedTime: "Within 24 hours"
+      {
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+        headers: {
+          Authorization:  `Bearer ${process.env.CHAPA_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
       }
+    );
+
+    return successResponse(res, 'Payment initiated successfully', {
+      checkout_url:  data.data.checkout_url,
+      tx_ref,
+      amountBirr,
+      coinsRequested,
+      paymentId: payment.id,
     }, 201);
   } catch (error) {
-    console.error('Create payment error:', error);
-    return errorResponse(res, 'Server error', error.message);
+    console.error('Chapa response:', JSON.stringify(error.response?.data, null, 2));
+    return errorResponse(res, 'Failed to initiate payment', error.response?.data?.message || error.message);
   }
 };
 
-
-export const getCoinBalance = async (req, res) => {
+export const verifyChapa = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { tx_ref } = req.params;
+    const user = req.user;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { coins: true }
-    });
-
-    if (!user) {
-      return errorResponse(res, 'User not found', null, 404);
+    const payment = await getPaymentByTxRef(tx_ref);
+    if (!payment) return errorResponse(res, 'Payment record not found', null, 404);
+    if (payment.userId !== user.id) return errorResponse(res, 'Unauthorized', null, 403);
+    if (payment.status === 'success') {
+      return successResponse(res, 'Payment already verified', { payment });
     }
 
-    return successResponse(res, 'Coin balance retrieved successfully', {
-      coins: user.coins
+    const { data } = await axios.get(
+      `https://api.chapa.co/v1/transaction/verify/${tx_ref}`,
+      {
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+        headers: { Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}` },
+      }
+    );
+
+    if (data.data.status !== 'success') {
+      await markPaymentFailed(tx_ref);
+      return errorResponse(res, 'Payment was not successful', null, 400);
+    }
+
+    const [updatedPayment, updatedUser] = await creditCoinsToUser({
+      transactionId: tx_ref,
+      userId:        payment.userId,
+      coinsReceived: payment.coinsReceived,
+      amountBirr:    payment.amountBirr,
     });
+
+    return successResponse(
+      res,
+      `Dear ${user.firstName} ${user.lastName}, ${payment.coinsReceived} coins have been added to your balance`,
+      {
+        coinsReceived:      payment.coinsReceived,
+        currentCoinBalance: updatedUser.coins,
+        payment:            updatedPayment,
+      }
+    );
   } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
+    console.error('Verify Chapa error:', error.response?.data || error.message);
+    return errorResponse(res, 'Failed to verify payment', error.response?.data?.message || error.message);
+  }
+};
+
+export const chapaWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-chapa-signature'];
+    const hash = crypto
+      .createHmac('sha256', process.env.CHAPA_ENCRYPTION_KEY)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (hash !== signature) return res.sendStatus(401);
+
+    const { trx_ref, status } = req.body;
+
+    const payment = await getPaymentByTxRef(trx_ref);
+    if (!payment) return res.sendStatus(200);
+    if (payment.status === 'success') return res.sendStatus(200);
+
+    if (status !== 'success') {
+      await markPaymentFailed(trx_ref);
+      return res.sendStatus(200);
+    }
+
+    await creditCoinsToUser({
+      transactionId: trx_ref,
+      userId:        payment.userId,
+      coinsReceived: payment.coinsReceived,
+      amountBirr:    payment.amountBirr,
+    });
+
+    return res.sendStatus(200);
+  } catch (error) {
+    console.error('Chapa webhook error:', error.message);
+    return res.sendStatus(200);
   }
 };
 
 export const getMyPayments = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { page = 1, limit = 20, status } = req.query;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit = 20 } = req.query;
+    const { payments, total } = await getPaginatedPayments({
+      filters: { userId: req.user.id },
+      page,
+      limit,
+    });
 
-    const [payments, total] = await Promise.all([
-      findPaymentsByUser(userId, parseInt(skip), parseInt(limit), status),
-      countPaymentsByUser(userId, status)
-    ]);
+    return successResponse(
+      res,
+      `Dear ${req.user.firstName} ${req.user.lastName}, you have ${total} payments`,
+      {
+        payments,
+        pagination: {
+          page:  parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      }
+    );
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
 
-const formattedPayments = payments.map(p => formatPaymentResponse(p, false));
+export const getCoinBalance = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where:  { id: req.user.id },
+      select: { coins: true, firstName: true, lastName: true },
+    });
 
-    return successResponse(res, `Retrieved ${formattedPayments.length} payments`, {
-      payments: formattedPayments,
+    return successResponse(
+      res,
+      `Dear ${user.firstName} ${user.lastName}, your current coin balance is ${user.coins}`,
+      { coins: user.coins }
+    );
+  } catch (error) {
+    return errorResponse(res, 'Server error', error.message);
+  }
+};
+
+export const getAllPayments = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, paymentMethod } = req.query;
+    const { payments, total } = await getPaginatedPayments({
+      filters: {
+        ...(status && { status }),
+        ...(paymentMethod && { paymentMethod }),
+      },
+      page,
+      limit,
+    });
+
+    return successResponse(res, `Retrieved ${payments.length} of ${total} payments`, {
+      payments,
       pagination: {
-        page: parseInt(page),
+        page:  parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const getPaymentById = async (req, res) => {
+export const searchPayment = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { transactionId, status, page = 1, limit = 20 } = req.query;
+    const { payments, total } = await getPaginatedPayments({
+      filters: {
+        ...(transactionId && { transactionId: { contains: transactionId } }),
+        ...(status && { status }),
+      },
+      page,
+      limit,
+    });
 
-    const payment = await findPaymentByIdAndUser(id, userId);
-
-    if (!payment) {
-      return errorResponse(res, 'Payment not found', null, 404);
-    }
-
-    const formattedPayment = formatPaymentResponse(payment, false);
-
-    return successResponse(res, 'Payment retrieved successfully', { payment: formattedPayment });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
-  }
-};
-
-
-export const adminGetAllPayments = async (req, res) => {
-  try {
-    const { page = 1, limit = 20, status } = req.query;
-    const skip = (page - 1) * limit;
-
-    const where = {};
-    if (status && status !== 'all') where.status = status;
-
-    const [payments, total] = await Promise.all([
-      findAllPayments(parseInt(skip), parseInt(limit), where),
-      countAllPayments(where)
-    ]);
-
-    const formattedPayments = payments.map(p => formatPaymentResponse(p, true));
-
-    return successResponse(res, `Retrieved ${formattedPayments.length} payments`, {
-      payments: formattedPayments,
+    return successResponse(res, `Found ${total} payments`, {
+      payments,
       pagination: {
-        page: parseInt(page),
+        page:  parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const adminGetPaymentById = async (req, res) => {
+export const updatePaymentStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    const { status, completedAt } = req.body;
 
-    const payment = await findPaymentById(id);
+    const payment = await prisma.payment.findUnique({ where: { id } });
+    if (!payment) return errorResponse(res, 'Payment not found', null, 404);
 
-    if (!payment) {
-      return errorResponse(res, 'Payment not found', null, 404);
-    }
+    const updated = await prisma.payment.update({
+      where: { id },
+      data: {
+        status,
+        ...(completedAt && { completedAt: new Date(completedAt) }),
+      },
+    });
 
-    const formattedPayment = formatPaymentResponse(payment, true);
-
-    return successResponse(res, 'Payment retrieved successfully', { payment: formattedPayment });
+    return successResponse(res, 'Payment status updated successfully', { payment: updated });
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }
 };
 
-export const adminUpdatePaymentStatus = async (req, res) => {
+export const deletePayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
 
-    const existingPayment = await findPaymentById(id);
+    const payment = await prisma.payment.findUnique({ where: { id } });
+    if (!payment) return errorResponse(res, 'Payment not found', null, 404);
 
-    if (!existingPayment) {
-      return errorResponse(res, 'Payment not found', null, 404);
-    }
+    await prisma.payment.delete({ where: { id } });
 
-    if (existingPayment.status !== 'pending') {
-      return errorResponse(res, 'This payment has already been processed', null, 400);
-    }
-
-    const updateData = {
-      status: status,
-      completedAt: status === 'success' ? new Date() : null
-    };
-
-    const updatedPayment = await updatePaymentInDatabase(id, updateData);
-
-    if (status === 'success') {
-      await prisma.user.update({
-        where: { id: existingPayment.userId },
-        data: { coins: { increment: existingPayment.coinsReceived } }
-      });
-
-      await prisma.coinTransaction.create({
-        data: {
-          userId: existingPayment.userId,
-          type: 'credit',
-          amount: existingPayment.coinsReceived,
-          Reason: 'purchase',
-          description: `Purchased ${existingPayment.coinsReceived} coins for ${existingPayment.amountBirr} Birr`
-        }
-      });
-
-      await prisma.notification.create({
-        data: {
-          userId: existingPayment.userId,
-          Type: 'payment_success',
-          title: 'Payment Successful',
-          body: `You have successfully purchased ${existingPayment.coinsReceived} coins.`,
-          isRead: false
-        }
-      });
-    }
-
-    const formattedPayment = formatPaymentResponse(updatedPayment, true);
-
-    return successResponse(res, `Payment status updated to ${status} successfully`, {
-      payment: formattedPayment
-    });
+    return successResponse(res, 'Payment deleted successfully', null);
   } catch (error) {
     return errorResponse(res, 'Server error', error.message);
   }

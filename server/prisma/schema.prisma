@@ -242,6 +242,7 @@ enum ListingStatus {
 enum PaymentMethod {
   telebirr
   CBE
+  chapa
 }
 
 enum PaymentStatus {
