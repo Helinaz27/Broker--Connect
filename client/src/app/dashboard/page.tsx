@@ -45,6 +45,7 @@ const mockListings: Listing[] = [
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [dashboardFilter, setDashboardFilter] = useState<"all" | "rent" | "sell">("all");
   
@@ -145,19 +146,37 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         <Sidebar 
           activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setIsMobileSidebarOpen(false);
+          }} 
           isSidebarCollapsed={isSidebarCollapsed} 
-          setIsSidebarCollapsed={setIsSidebarCollapsed} 
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          setIsMobileSidebarOpen={setIsMobileSidebarOpen}
           expandedMenus={expandedMenus} 
           toggleMenu={toggleMenu} 
           menuItems={menuItems} 
           adminItems={adminItems} 
         />
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar relative bg-muted/30">
-          <div className="max-w-7xl mx-auto space-y-10">
+        <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar relative bg-muted/30">
+          <div className="max-w-7xl mx-auto space-y-8 md:space-y-10">
+            {/* Mobile Sidebar Toggle */}
+            <div className="md:hidden flex items-center gap-4 mb-6">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-10 w-10 rounded-xl"
+                onClick={() => setIsMobileSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <h1 className="font-bold text-lg">Broker Console</h1>
+            </div>
+
             {activeTab === "dashboard" && (
               <div className="space-y-10 animate-in">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

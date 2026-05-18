@@ -68,12 +68,12 @@ export default function Index() {
               </div>
               
               <div className="space-y-6">
-                <h1 className="text-6xl md:text-8xl font-bold leading-[1.1] text-foreground tracking-tight">
+                <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] text-foreground tracking-tight">
                   Premium <br />
                   <span className="text-gradient">Marketplace</span> <br />
                   for Ethiopia.
                 </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">
                   Ethiopia's most trusted ecosystem for high-value real estate, premium automotive assets, and vetted professional services.
                 </p>
               </div>
