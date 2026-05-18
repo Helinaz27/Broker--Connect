@@ -9,6 +9,7 @@ import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
+import { getListingPath } from "@/data/listings";
 
 interface Listing {
   id: string;
