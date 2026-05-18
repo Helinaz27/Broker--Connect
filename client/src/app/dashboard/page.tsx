@@ -28,6 +28,7 @@ interface Listing {
   title: string;
   price: number;
   location: string;
+  image?: string;
   status: "active" | "occupied" | "inactive";
   type: "rent" | "sell";
   category: "house" | "car" | "service";
@@ -35,10 +36,10 @@ interface Listing {
 }
 
 const mockListings: Listing[] = [
-  { id: "1", title: "Beautiful Modern Apartment in Downtown", price: 15000, location: "Addis Ababa, Bole", status: "active", type: "rent", category: "house", createdAt: "2026-01-15" },
-  { id: "2", title: "Spacious Family Villa with Garden", price: 25000, location: "Addis Ababa, Old Airport", status: "occupied", type: "sell", category: "house", createdAt: "2026-01-10" },
-  { id: "3", title: "Professional Electrician Services", price: 500, location: "Addis Ababa, Bole", status: "active", type: "rent", category: "service", createdAt: "2026-01-20" },
-  { id: "4", title: "2024 Toyota Land Cruiser V8", price: 12000000, location: "Addis Ababa, Sarbet", status: "active", type: "sell", category: "car", createdAt: "2026-02-01" },
+  { id: "1", title: "Beautiful Modern Apartment in Downtown", price: 15000, location: "Addis Ababa, Bole", status: "active", type: "rent", category: "house", createdAt: "2026-01-15", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" },
+  { id: "2", title: "Spacious Family Villa with Garden", price: 25000, location: "Addis Ababa, Old Airport", status: "occupied", type: "sell", category: "house", createdAt: "2026-01-10", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800" },
+  { id: "3", title: "Professional Electrician Services", price: 500, location: "Addis Ababa, Bole", status: "active", type: "rent", category: "service", createdAt: "2026-01-20", image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?auto=format&fit=crop&q=80&w=800" },
+  { id: "4", title: "2024 Toyota Land Cruiser V8", price: 12000000, location: "Addis Ababa, Sarbet", status: "active", type: "sell", category: "car", createdAt: "2026-02-01", image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800" },
 ];
 
 export default function Dashboard() {
@@ -47,9 +48,55 @@ export default function Dashboard() {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [dashboardFilter, setDashboardFilter] = useState<"all" | "rent" | "sell">("all");
   
-  const [houseForm, setHouseForm] = useState({ title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", type: "apartment" as any, otherType: "", bedrooms: "", bathrooms: "", area: "", listingMode: "rent" as any });
-  const [carForm, setCarForm] = useState({ title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", brand: "", carModel: "", year: "", carType: "fuel" as any, condition: "used" as any, listingMode: "rent" as any });
-  const [serviceForm, setServiceForm] = useState({ title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", serviceType: "plumber", otherServiceType: "", experience: "" });
+  const [houseForm, setHouseForm] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    locationCity: "", 
+    locationPlaceName: "", 
+    locationSubCity: "", 
+    lat: "", 
+    lng: "",
+    type: "apartment" as any, 
+    bedrooms: "", 
+    bathrooms: "", 
+    area_sqm: "", 
+    listingMode: "rent" as "rent" | "sell",
+    tanker: false,
+    rentalPeriod: "monthly" as "daily" | "weekly" | "monthly" | "yearly",
+    parking: "",
+    images: [] as File[]
+  });
+  const [carForm, setCarForm] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    locationCity: "", 
+    locationPlaceName: "", 
+    locationSubCity: "", 
+    lat: "", 
+    lng: "",
+    brand: "", 
+    carModel: "", 
+    year: "", 
+    carType: "fuel" as "electric" | "fuel", 
+    condition: "used" as "used" | "new", 
+    listingMode: "rent" as "rent" | "sell",
+    images: [] as File[]
+  });
+  const [serviceForm, setServiceForm] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    locationCity: "", 
+    locationPlaceName: "", 
+    locationSubCity: "", 
+    lat: "", 
+    lng: "",
+    serviceType: "plumber", 
+    experience: "",
+    images: [] as File[]
+  });
 
   const stats = [
     { label: "Active Assets", value: "12", icon: Home, trend: "+2", color: "bg-primary/10 text-primary" },
@@ -79,9 +126,19 @@ export default function Dashboard() {
 
   const handlePostSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setHouseForm({ title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", type: "apartment", otherType: "", bedrooms: "", bathrooms: "", area: "", listingMode: "rent" });
-    setCarForm({ title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", brand: "", carModel: "", year: "", carType: "fuel", condition: "used", listingMode: "rent" });
-    setServiceForm({ title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", serviceType: "plumber", otherServiceType: "", experience: "" });
+    setHouseForm({ 
+      title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", 
+      lat: "", lng: "", type: "apartment", bedrooms: "", bathrooms: "", area_sqm: "", listingMode: "rent", 
+      tanker: false, rentalPeriod: "monthly", parking: "", images: [] 
+    });
+    setCarForm({ 
+      title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", 
+      lat: "", lng: "", brand: "", carModel: "", year: "", carType: "fuel", condition: "used", listingMode: "rent", images: [] 
+    });
+    setServiceForm({ 
+      title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", 
+      lat: "", lng: "", serviceType: "plumber", experience: "", images: [] 
+    });
     alert("Listing published successfully!");
   };
 

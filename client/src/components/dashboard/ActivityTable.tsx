@@ -42,8 +42,8 @@ export function ActivityTable({ listings, filter, setFilter }: ActivityTableProp
           ))}
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left min-w-[800px]">
           <thead>
             <tr className="bg-muted/30">
               {["Asset Details", "Valuation", "Type", "Status", "Actions"].map((h) => (
@@ -56,8 +56,12 @@ export function ActivityTable({ listings, filter, setFilter }: ActivityTableProp
               <tr key={listing.id} className="group hover:bg-muted/20 transition-colors">
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                      {listing.category === "house" ? <Home className="h-4 w-4" /> : listing.category === "car" ? <Car className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
+                    <div className="h-10 w-10 rounded-xl overflow-hidden bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                      {listing.image ? (
+                        <img src={listing.image} alt={listing.title} className="w-full h-full object-cover" />
+                      ) : (
+                        listing.category === "house" ? <Home className="h-4 w-4" /> : listing.category === "car" ? <Car className="h-4 w-4" /> : <Wrench className="h-4 w-4" />
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">{listing.title}</p>
