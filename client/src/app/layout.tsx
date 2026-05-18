@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -24,14 +25,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${plusJakarta.variable} font-sans antialiased text-foreground`}
       >
-        <FavoritesProvider>
-          {children}
-          <Toaster />
-        </FavoritesProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <FavoritesProvider>
+            {children}
+            <Toaster />
+          </FavoritesProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
