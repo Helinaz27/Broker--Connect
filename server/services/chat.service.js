@@ -1,108 +1,74 @@
 import { prisma } from '../config/db.config.js';
 
-//  CREATE 
-export const saveChatRoomToDatabase = async (chatRoomData) => {
-  return await prisma.chatRoom.create({
-    data: chatRoomData
-  });
-};
+export const createRoomService = async (creatorId, listingId, participantId) => {
+  const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+  if (!listing) throw { status: 404, message: 'Listing not found' };
 
-export const saveMessageToDatabase = async (messageData) => {
-  return await prisma.message.create({
-    data: messageData
-  });
-};
+  const participant = await prisma.user.findUnique({ where: { id: participantId } });
+  if (!participant) throw { status: 404, message: 'Participant not found' };
 
-//  READ 
-export const findChatRoomById = async (id) => {
-  return await prisma.chatRoom.findUnique({
-    where: { id }
-  });
-};
+  if (creatorId === participantId) throw { status: 400, message: 'You cannot create a chat room with yourself' };
 
-export const findChatRoomByParticipants = async (userId, participantId) => {
-  return await prisma.chatRoom.findFirst({
+  const existing = await prisma.chatRoom.findFirst({
     where: {
-      AND: [
-        { participants: { has: userId } },
-        { participants: { has: participantId } }
-      ]
-    }
-  });
-};
-
-export const findUserChatRooms = async (userId, skip, take) => {
-  return await prisma.chatRoom.findMany({
-    where: {
-      participants: { has: userId }
+      participants: { hasEvery: [creatorId, participantId] },
     },
-    skip,
-    take,
-    orderBy: { updatedAt: 'desc' }
   });
-};
+  if (existing) return existing;
 
-export const countUserChatRooms = async (userId) => {
-  return await prisma.chatRoom.count({
-    where: { participants: { has: userId } }
+  const room = await prisma.chatRoom.create({
+    data: {
+      participants: [creatorId, participantId],
+    },
   });
+
+  return room;
 };
 
-export const findMessagesByRoom = async (roomId, skip, take) => {
-  return await prisma.message.findMany({
-    where: { roomId },
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' }
-  });
+export const getMyRoomsService = async (userId, page, limit) => {
+  const skip = (page - 1) * limit;
+
+  const [rooms, total] = await Promise.all([
+    prisma.chatRoom.findMany({
+      where: { participants: { has: userId } },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.chatRoom.count({ where: { participants: { has: userId } } }),
+  ]);
+
+  return { rooms, total };
 };
 
-export const countMessagesByRoom = async (roomId) => {
-  return await prisma.message.count({ where: { roomId } });
+export const getRoomByIdService = async (userId, roomId) => {
+  const room = await prisma.chatRoom.findUnique({ where: { id: roomId } });
+  if (!room) throw { status: 404, message: 'Chat room not found' };
+
+  if (!room.participants.includes(userId)) {
+    throw { status: 403, message: 'You are not a participant of this room' };
+  }
+
+  return room;
 };
 
-export const findMessageById = async (id) => {
-  return await prisma.message.findUnique({
-    where: { id }
-  });
+export const adminGetAllRoomsService = async (page, limit) => {
+  const skip = (page - 1) * limit;
+
+  const [rooms, total] = await Promise.all([
+    prisma.chatRoom.findMany({
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.chatRoom.count(),
+  ]);
+
+  return { rooms, total };
 };
 
-export const findAllChatRooms = async (skip, take, orderBy) => {
-  return await prisma.chatRoom.findMany({
-    skip,
-    take,
-    orderBy
-  });
-};
-
-export const countAllChatRooms = async () => {
-  return await prisma.chatRoom.count();
-};
-
-//  UPDATE 
-export const updateChatRoomInDatabase = async (id, updateData) => {
-  return await prisma.chatRoom.update({
-    where: { id },
-    data: updateData
-  });
-};
-
-export const updateMessageInDatabase = async (id, updateData) => {
-  return await prisma.message.update({
-    where: { id },
-    data: updateData
-  });
-};
-
-//  DELETE 
-export const deleteMessagesByRoom = async (roomId) => {
-  return await prisma.message.deleteMany({
-    where: { roomId }
-  });
-};
-
-export const deleteChatRoomFromDatabase = async (id) => {
-  return await prisma.chatRoom.delete({
-    where: { id }
-  });
+export const adminGetRoomByIdService = async (roomId) => {
+  const room = await prisma.chatRoom.findUnique({ where: { id: roomId } });
+  if (!room) throw { status: 404, message: 'Chat room not found' };
+  return room;
 };

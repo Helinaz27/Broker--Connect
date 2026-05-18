@@ -1,165 +1,57 @@
-import { prisma } from '../config/db.config.js';
-import { successResponse, errorResponse } from '../utils/helpers.js';
+import {
+  sendMessageService,
+  getMessagesService,
+  adminGetAllMessagesService,
+  adminGetRoomMessagesService,
+} from '../services/message.service.js';
 
-
-export const getMessagesByRoom = async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const userId = req.user.id;
-    const { page = 1, limit = 50 } = req.query;
-    const skip = (page - 1) * limit;
-
-    // Verify user is in this chat room
-    const chatRoom = await prisma.chatRoom.findFirst({
-      where: {
-        id: roomId,
-        participants: { has: userId }
-      }
-    });
-
-    if (!chatRoom) {
-      return errorResponse(res, 'Chat room not found or unauthorized', null, 404);
-    }
-
-    const [messages, total] = await Promise.all([
-      prisma.message.findMany({
-        where: { roomId },
-        skip: parseInt(skip),
-        take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.message.count({ where: { roomId } })
-    ]);
-
-    return successResponse(res, `Retrieved ${messages.length} messages`, {
-      messages: messages.reverse(),
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
+const handleError = (res, error) => {
+  if (error.status) {
+    return res.status(error.status).json({ success: false, message: error.message });
   }
+  console.error(error);
+  return res.status(500).json({ success: false, message: 'Internal server error' });
 };
 
 export const sendMessage = async (req, res) => {
   try {
-    const { roomId } = req.params;
-    const userId = req.user.id;
-    const { content, messageType = 'text' } = req.body;
-
-    // Verify user is in this chat room
-    const chatRoom = await prisma.chatRoom.findFirst({
-      where: {
-        id: roomId,
-        participants: { has: userId }
-      }
-    });
-
-    if (!chatRoom) {
-      return errorResponse(res, 'Chat room not found or unauthorized', null, 404);
-    }
-
-    const message = await prisma.message.create({
-      data: {
-        roomId,
-        senderId: userId,
-        content,
-        messageType,
-        readBy: []
-      }
-    });
-
-    await prisma.chatRoom.update({
-      where: { id: roomId },
-      data: { updatedAt: new Date() }
-    });
-
-    const otherParticipants = chatRoom.participants.filter(p => p !== userId);
-    for (const participantId of otherParticipants) {
-      await prisma.notification.create({
-        data: {
-          userId: participantId,
-          Type: 'message',
-          title: 'New Message',
-          body: content.substring(0, 100),
-          data: {
-            chatRoomId: roomId,
-            messageId: message.id
-          },
-          isRead: false
-        }
-      });
-    }
-
-    return successResponse(res, 'Message sent successfully', { message }, 201);
+    const { content, messageType, listingId } = req.body;
+    const message = await sendMessageService(req.params.roomId, req.user.id, content, messageType, listingId);
+    return res.status(201).json({ success: true, data: message });
   } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
+    return handleError(res, error);
   }
 };
 
-export const markAsRead = async (req, res) => {
+export const getMessages = async (req, res) => {
   try {
-    const { messageId } = req.params;
-    const userId = req.user.id;
-
-    const message = await prisma.message.findUnique({
-      where: { id: messageId }
-    });
-
-    if (!message) {
-      return errorResponse(res, 'Message not found', null, 404);
-    }
-
-    if (message.senderId === userId) {
-      return errorResponse(res, 'Cannot mark your own message as read', null, 400);
-    }
-
-    const alreadyRead = message.readBy.some(read => read.userId === userId);
-    
-    if (!alreadyRead) {
-      await prisma.message.update({
-        where: { id: messageId },
-        data: {
-          readBy: {
-            push: { userId, readAt: new Date() }
-          }
-        }
-      });
-    }
-
-    return successResponse(res, 'Message marked as read');
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const { messages, total } = await getMessagesService(req.user.id, req.params.roomId, page, limit);
+    return res.status(200).json({ success: true, data: messages, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
   } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
+    return handleError(res, error);
   }
 };
 
-export const deleteMessage = async (req, res) => {
+export const adminGetAllMessages = async (req, res) => {
   try {
-    const { messageId } = req.params;
-    const userId = req.user.id;
-
-    const message = await prisma.message.findUnique({
-      where: { id: messageId }
-    });
-
-    if (!message) {
-      return errorResponse(res, 'Message not found', null, 404);
-    }
-
-    if (message.senderId !== userId) {
-      return errorResponse(res, 'You can only delete your own messages', null, 403);
-    }
-
-    await prisma.message.delete({
-      where: { id: messageId }
-    });
-
-    return successResponse(res, 'Message deleted successfully');
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const { messages, total } = await adminGetAllMessagesService(page, limit);
+    return res.status(200).json({ success: true, data: messages, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
   } catch (error) {
-    return errorResponse(res, 'Server error', error.message);
+    return handleError(res, error);
+  }
+};
+
+export const adminGetRoomMessages = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const { messages, total } = await adminGetRoomMessagesService(req.params.roomId, page, limit);
+    return res.status(200).json({ success: true, data: messages, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
