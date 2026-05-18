@@ -1,17 +1,16 @@
 import express from 'express';
-import { protect, admin } from '../middleware/auth.js';
+import { can } from '../middleware/can.js';
 import * as coinTransactionController from '../controllers/coinTransaction.controller.js';
-import { transactionQueryValidator, idParamValidator, userIdParamValidator } from '../validators/coinTransaction.validator.js';
 
 const router = express.Router();
 
-//  USER COIN TRANSACTION ROUTES 
-router.get('/my-transactions', protect, transactionQueryValidator, coinTransactionController.getMyTransactions);
-router.get('/my-transaction/:id', protect, idParamValidator, coinTransactionController.getMyTransactionById);
+router.get('/my', can('coinTransaction', 'readOwn'), coinTransactionController.getMyTransactions);
 
-//  ADMIN COIN TRANSACTION ROUTES 
-router.get('/admin/all', protect, admin, transactionQueryValidator, coinTransactionController.adminGetAllTransactions);
-router.get('/admin/transaction/:id', protect, admin, idParamValidator, coinTransactionController.adminGetTransactionById);
-router.get('/admin/user/:userId', protect, admin, userIdParamValidator, transactionQueryValidator, coinTransactionController.adminGetTransactionsByUser);
+router.get('/admin/all', can('coinTransaction', 'manage'), coinTransactionController.adminGetAllTransactions);
+
+router.get('/admin/transaction/:id', can('coinTransaction', 'manage'), coinTransactionController.adminGetTransactionById);
+
+router.get('/admin/user/:userId', can('coinTransaction', 'manage'), coinTransactionController.adminGetTransactionsByUser);
+
 
 export default router;
