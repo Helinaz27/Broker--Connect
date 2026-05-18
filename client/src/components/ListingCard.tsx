@@ -1,7 +1,6 @@
 "use client";
 
-import { Heart, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, MapPin, Star, ArrowUpRight } from "lucide-react";
 import { useFavorites } from "@/lib/FavoritesContext";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -14,7 +13,7 @@ interface ListingCardProps {
   image: string;
   price: number;
   location: string;
-  category: "house" | "car" | "service";
+  category: "house" | "car" | "service" | "otherService";
   rating?: number;
   contactLimit?: number;
 }
@@ -26,7 +25,7 @@ export default function ListingCard({
   price,
   location,
   category,
-  rating = 0,
+  rating = 4.8,
   contactLimit = 0,
 }: ListingCardProps) {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
@@ -52,61 +51,72 @@ export default function ListingCard({
     }
   };
 
+  const href = getListingPath(category, id);
+
   return (
-    <div className="group rounded-lg overflow-hidden bg-card border border-border hover:border-border hover:shadow-md transition-all duration-200">
-      <div className="relative h-48 bg-muted overflow-hidden">
-        <img
-          src={image}
-          alt={title}
-          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-        />
-        <div className="absolute top-2.5 left-2.5">
-          <span className="bg-background/90 text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded text-foreground">
-            {category}
-          </span>
-        </div>
-
-        {/* Like Button */}
-        <button
-          onClick={handleLike}
-          className="absolute top-2.5 right-2.5 bg-background/90 p-2 rounded-full shadow-sm hover:bg-background z-10 transition-colors"
-        >
-          <Heart
-            className={`h-4 w-4 transition-colors ${
-              liked ? "fill-red-500 text-red-500" : "text-gray-600"
-            }`}
+    <Link href={href}>
+      <div className="group rounded-[2rem] overflow-hidden bg-card border border-border hover:border-primary/50 hover:shadow-modern hover:-translate-y-1.5 transition-all duration-500 animate-in">
+        <div className="relative h-60 bg-muted overflow-hidden">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
-        </button>
-      </div>
+          
+          {/* Category Badge */}
+          <div className="absolute top-4 left-4">
+            <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
+              {category === "car" ? "Car" : category === "service" || category === "otherService" ? "Service" : "House"}
+            </span>
+          </div>
 
-      <div className="p-4">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <div className="flex items-center gap-0.5 text-amber-600">
-            {[...Array(5)].map((_, i) => (
-              <svg key={i} className={`h-3 w-3 ${i < Math.floor(rating) ? "fill-current" : "fill-muted text-muted"}`} viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
-          </div>
-          <span className="text-xs text-muted-foreground">{rating > 0 ? rating : "New"}</span>
+          {/* Like Button */}
+          <button
+            onClick={handleLike}
+            className="absolute top-4 right-4 bg-background/80 backdrop-blur-md p-2.5 rounded-xl shadow-sm hover:bg-background z-10 transition-all active:scale-90 border border-white/20 group/heart"
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors duration-300 ${
+                liked ? "fill-destructive text-destructive" : "text-muted-foreground group-hover/heart:text-destructive"
+              }`}
+            />
+          </button>
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </div>
-        <h3 className="font-medium text-foreground line-clamp-1 text-sm">
-          {title}
-        </h3>
-        <div className="flex items-center gap-1 text-muted-foreground text-xs mt-1 mb-3">
-          <MapPin className="h-3 w-3 shrink-0 opacity-70" />
-          <span className="line-clamp-1">{location}</span>
-        </div>
-        <div className="flex items-center justify-between pt-3 border-t border-border">
-          <div>
-            <span className="text-lg font-semibold text-foreground">{price.toLocaleString()}</span>
-            <span className="text-xs text-muted-foreground ml-1">{category === "service" ? "Birr/hr" : "Birr/mo"}</span>
+
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-1 text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">
+              <Star className="h-3 w-3 fill-current" />
+              <span className="text-[11px] font-bold">{rating}</span>
+            </div>
+            <div className="h-1 w-1 rounded-full bg-border" />
+            <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
+              <MapPin className="h-3.5 w-3.5 text-primary" />
+              <span className="line-clamp-1">{location.split(",")[1] || location}</span>
+            </div>
           </div>
-          <Button variant="outline" size="sm" className="text-xs font-medium h-8" asChild>
-            <Link href={getListingPath(category, id)}>View details</Link>
-          </Button>
+          
+          <h3 className="font-bold text-foreground line-clamp-1 text-lg tracking-tight mb-5 group-hover:text-primary transition-colors">
+            {title}
+          </h3>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Price</p>
+              <p className="text-xl font-bold text-foreground">${price.toLocaleString()}</p>
+            </div>
+            <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+          </div>
+
+          {contactLimit > 0 && (
+            <div className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+              {contactLimit} contact{contactLimit !== 1 ? "s" : ""} available
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

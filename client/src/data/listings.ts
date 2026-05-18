@@ -1,9 +1,10 @@
-export type ListingCategory = "house" | "car" | "service";
+export type ListingCategory = "house" | "car" | "otherService" | "service";
 
 export interface BaseListing {
   id: string;
   title: string;
   image: string;
+  images?: string[];
   price: number;
   location: string;
   rating: number;
@@ -36,22 +37,22 @@ export const cars: (BaseListing & { category: "car" })[] = [
   { id: "car-10", title: "Hyundai Starex – Van", image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=500&h=300&fit=crop", price: 2000, location: "Addis Ababa, Kazanchis", rating: 4.6, category: "car", description: "9-seater van for family or group. Airport pickup available." },
 ];
 
-export const services: (BaseListing & { category: "service" })[] = [
+export const otherServices: (BaseListing & { category: "otherService" })[] = [
   // Plumber
-  { id: "service-1", title: "Professional Plumber – Repairs & Installation", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&h=300&fit=crop", price: 400, location: "Addis Ababa, Kazanchis", rating: 4.8, category: "service", description: "Pipe repair, taps, toilets, water heaters. Same-day service in Addis." },
-  { id: "service-2", title: "Plumber – Emergency Leak & Blockage", image: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=500&h=300&fit=crop", price: 450, location: "Addis Ababa, Kirkos", rating: 4.6, category: "service", description: "Leak repair, blockage clearing. Quick response in Addis." },
-  { id: "service-3", title: "Licensed Plumber – Bole", image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&h=300&fit=crop", price: 420, location: "Addis Ababa, Bole", rating: 4.9, category: "service", description: "Bathroom and kitchen installations. Water heater setup and repair." },
-  { id: "service-4", title: "Plumber – Installation & Maintenance", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&h=300&fit=crop", price: 380, location: "Addis Ababa, Nifas Silk-Lafto", rating: 4.7, category: "service", description: "New plumbing, pipe replacement. Regular maintenance contracts." },
+  { id: "service-1", title: "Professional Plumber – Repairs & Installation", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&h=300&fit=crop", price: 400, location: "Addis Ababa, Kazanchis", rating: 4.8, category: "otherService", description: "Pipe repair, taps, toilets, water heaters. Same-day service in Addis." },
+  { id: "service-2", title: "Plumber – Emergency Leak & Blockage", image: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=500&h=300&fit=crop", price: 450, location: "Addis Ababa, Kirkos", rating: 4.6, category: "otherService", description: "Leak repair, blockage clearing. Quick response in Addis." },
+  { id: "service-3", title: "Licensed Plumber – Bole", image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&h=300&fit=crop", price: 420, location: "Addis Ababa, Bole", rating: 4.9, category: "otherService", description: "Bathroom and kitchen installations. Water heater setup and repair." },
+  { id: "service-4", title: "Plumber – Installation & Maintenance", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&h=300&fit=crop", price: 380, location: "Addis Ababa, Nifas Silk-Lafto", rating: 4.7, category: "otherService", description: "New plumbing, pipe replacement. Regular maintenance contracts." },
   // Electrician
-  { id: "service-5", title: "Licensed Electrician – Addis Ababa", image: "https://images.unsplash.com/photo-1621905167918-48416bd8575a?w=500&h=300&fit=crop", price: 500, location: "Addis Ababa, Bole", rating: 4.9, category: "service", description: "Wiring, repairs, installations. Residential and commercial. Certified." },
-  { id: "service-6", title: "Electrician – Wiring & Generator Setup", image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=500&h=300&fit=crop", price: 550, location: "Addis Ababa, Bole", rating: 4.8, category: "service", description: "Home and office. Generator installation and repair." },
-  { id: "service-7", title: "Professional Electrician – Kazanchis", image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&h=300&fit=crop", price: 480, location: "Addis Ababa, Kazanchis", rating: 4.7, category: "service", description: "Electrical panels, lighting, socket installation. Same-day call-out." },
-  { id: "service-8", title: "Electrician – Home & Office", image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=500&h=300&fit=crop", price: 520, location: "Addis Ababa, Summit", rating: 4.8, category: "service", description: "Full rewiring, fault finding. Certified and insured." },
+  { id: "service-5", title: "Licensed Electrician – Addis Ababa", image: "https://images.unsplash.com/photo-1621905167918-48416bd8575a?w=500&h=300&fit=crop", price: 500, location: "Addis Ababa, Bole", rating: 4.9, category: "otherService", description: "Wiring, repairs, installations. Residential and commercial. Certified." },
+  { id: "service-6", title: "Electrician – Wiring & Generator Setup", image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=500&h=300&fit=crop", price: 550, location: "Addis Ababa, Bole", rating: 4.8, category: "otherService", description: "Home and office. Generator installation and repair." },
+  { id: "service-7", title: "Professional Electrician – Kazanchis", image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=500&h=300&fit=crop", price: 480, location: "Addis Ababa, Kazanchis", rating: 4.7, category: "otherService", description: "Electrical panels, lighting, socket installation. Same-day call-out." },
+  { id: "service-8", title: "Electrician – Home & Office", image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=500&h=300&fit=crop", price: 520, location: "Addis Ababa, Summit", rating: 4.8, category: "otherService", description: "Full rewiring, fault finding. Certified and insured." },
   // Catering
-  { id: "service-9", title: "Catering for Events – Ethiopian & International", image: "https://images.unsplash.com/photo-1555939594-58d7cb561821?w=500&h=300&fit=crop", price: 1000, location: "Addis Ababa, Nifas Silk-Lafto", rating: 4.9, category: "service", description: "Weddings, meetings, parties. Per person or full service." },
-  { id: "service-10", title: "Wedding & Event Catering", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=300&fit=crop", price: 1200, location: "Addis Ababa, Bole", rating: 4.9, category: "service", description: "Full wedding menus. Traditional Ethiopian and international options." },
-  { id: "service-11", title: "Corporate Catering – Addis Ababa", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&h=300&fit=crop", price: 850, location: "Addis Ababa, Kazanchis", rating: 4.8, category: "service", description: "Meetings, conferences, office events. Punctual delivery." },
-  { id: "service-12", title: "Ethiopian Catering – Traditional & Modern", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&h=300&fit=crop", price: 900, location: "Addis Ababa, Old Airport", rating: 4.8, category: "service", description: "Injera, tibs, kitfo and more. For any gathering size." },
+  { id: "service-9", title: "Catering for Events – Ethiopian & International", image: "https://images.unsplash.com/photo-1555939594-58d7cb561821?w=500&h=300&fit=crop", price: 1000, location: "Addis Ababa, Nifas Silk-Lafto", rating: 4.9, category: "otherService", description: "Weddings, meetings, parties. Per person or full service." },
+  { id: "service-10", title: "Wedding & Event Catering", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=300&fit=crop", price: 1200, location: "Addis Ababa, Bole", rating: 4.9, category: "otherService", description: "Full wedding menus. Traditional Ethiopian and international options." },
+  { id: "service-11", title: "Corporate Catering – Addis Ababa", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&h=300&fit=crop", price: 850, location: "Addis Ababa, Kazanchis", rating: 4.8, category: "otherService", description: "Meetings, conferences, office events. Punctual delivery." },
+  { id: "service-12", title: "Ethiopian Catering – Traditional & Modern", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&h=300&fit=crop", price: 900, location: "Addis Ababa, Old Airport", rating: 4.8, category: "otherService", description: "Injera, tibs, kitfo and more. For any gathering size." },
 ];
 
 export function getListingPath(category: ListingCategory, id: string): string {
@@ -62,9 +63,17 @@ export function getListingPath(category: ListingCategory, id: string): string {
 export function getHouseById(id: string) {
   return houses.find((h) => h.id === id);
 }
+
 export function getCarById(id: string) {
   return cars.find((c) => c.id === id);
 }
+
+export function getOtherServiceById(id: string) {
+  return otherServices.find((s) => s.id === id);
+}
+
+// Legacy support for services
+export const services = otherServices;
 export function getServiceById(id: string) {
-  return services.find((s) => s.id === id);
+  return getOtherServiceById(id);
 }

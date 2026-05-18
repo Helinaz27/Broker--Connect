@@ -81,27 +81,23 @@ export const updatePaymentInDatabase = async (id, updateData) => {
 export const findPaymentByTransactionId = async (transactionId) => {
   return await prisma.payment.findUnique({
     where: { transactionId },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-      },
-    },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, coins: true } } },
   });
 };
 
 export const creditCoinsAfterPayment = async (payment) => {
   return await prisma.$transaction([
     prisma.user.update({
-      where: { id: payment.userId },
-      data: { coins: { increment: payment.coinsReceived } },
+      where: { id: userId },
+      data: { coins: { increment: coinsReceived } },
     }),
     prisma.coinTransaction.create({
       data: {
-        userId: payment.userId,
+        userId,
         type: 'credit',
-        amount: payment.coinsReceived,
-        reason: 'purchase',
-        description: `Purchased ${payment.coinsReceived} coins for ${payment.amountBirr} Birr via Chapa`,
+        amount: coinsReceived,
+        reason: 'coin_purchase',
+        description: `Purchased ${coinsReceived} coins via Chapa for ${amountBirr} ETB`,
       },
     }),
     prisma.notification.create({

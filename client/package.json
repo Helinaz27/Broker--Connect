@@ -23,6 +23,7 @@
     "@reduxjs/toolkit": "^2.11.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "final-year": "file:../..",
     "next": "^16.1.6",
     "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0",

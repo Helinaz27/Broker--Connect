@@ -10,6 +10,7 @@ import {
   LogOut,
   Settings,
   LayoutDashboard,
+  Bell,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,13 +25,16 @@ import { useLogoutMutation } from "@/store/apis/userApi";
 import { clearUser } from "@/store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
+import { ModeToggle } from "@/components/ModeToggle";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const { currentUser, isAuthenticated } = useAppSelector((state) => state.user);
+  const { currentUser, isAuthenticated } = useAppSelector(
+    (state) => state.user,
+  );
 
   const user = isAuthenticated ? currentUser : null;
   const userName = user
@@ -60,7 +64,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-gray-100 border-b border-gray-200">
+    <header className="sticky top-0 z-40 w-full bg-background border-b border-border">
       <div className="container flex h-14 items-center justify-between">
         <Logo size="md" />
 
@@ -68,63 +72,91 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-0.5">
           <Link
             href="/"
-            className="text-sm font-medium px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
           >
             Home
           </Link>
           <Link
             href="/house-listings"
-            className="text-sm font-medium px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
           >
             Houses
           </Link>
           <Link
             href="/car-listings"
-            className="text-sm font-medium px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
           >
             Cars
           </Link>
           <Link
             href="/service-listings"
-            className="text-sm font-medium px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
           >
-            Services
+            Other Services
           </Link>
           <Link
-            href="/favorites"
-            className="text-sm font-medium px-3 py-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-colors"
+            href="/about-us"
+            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
           >
-            Favorites
+            About Us
           </Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          {/* Conditional auth UI: show Sign in/Register when not signed in; profile when signed in */}
+          <ModeToggle />
+          
+          {/* Notification Icon - Only when authenticated */}
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 relative"
+              asChild
+            >
+              <Link href="/notifications">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+              </Link>
+            </Button>
+          )}
+
+          {/* Favorites Icon */}
+          <Link href="/favorites">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+            >
+              <Heart className="h-5 w-5" />
+            </Button>
+          </Link>
+
+          {/* Conditional auth UI: show Sign in when not signed in; profile when signed in */}
           {user ? (
             <HoverCard openDelay={0} closeDelay={200}>
               <HoverCardTrigger asChild>
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent transition-colors"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.profileImage} alt={userName} />
-                    <AvatarFallback className="bg-gray-200 text-gray-700 text-sm font-medium">
+                    <AvatarFallback className="bg-accent text-sm font-medium">
                       {userInitials || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden lg:block text-left">
-                    <p className="text-sm font-medium text-gray-900 leading-tight">
+                    <p className="text-sm font-medium leading-tight">
                       {userName}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {(user.coins ?? 0).toLocaleString()} Coins
                     </p>
                   </div>
                 </Link>
               </HoverCardTrigger>
               <HoverCardContent
-                className="w-56 p-1 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg z-50"
+                className="w-56 p-1 mt-1 rounded-lg border border-border bg-background shadow-lg z-50"
                 align="end"
               >
                 <div className="flex flex-col gap-1">
@@ -140,18 +172,18 @@ export default function Header() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-accent transition-colors text-sm font-medium"
                     >
-                      <item.icon className="h-4 w-4 text-gray-400" />
+                      <item.icon className="h-4 w-4 text-muted-foreground" />
                       <span>{item.label}</span>
                     </Link>
                   ))}
-                  <div className="h-px bg-gray-100 my-1" />
+                  <div className="h-px bg-border my-1" />
                   <button
                     type="button"
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-gray-50 text-gray-500 hover:text-red-600 transition-colors text-sm font-medium w-full disabled:opacity-60"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-accent text-muted-foreground hover:text-destructive transition-colors text-sm font-medium w-full disabled:opacity-60"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
@@ -160,35 +192,39 @@ export default function Header() {
               </HoverCardContent>
             </HoverCard>
           ) : (
-            <>
-              <Link href="/login">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-500 hover:text-gray-900 hover:bg-gray-200"
-                >
-                  Sign in
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button
-                  size="sm"
-                  className="font-medium bg-gray-900 text-white hover:bg-gray-800"
-                >
-                  Register
-                </Button>
-              </Link>
-            </>
+            <Link href="/login">
+              <Button
+                variant="default"
+                size="sm"
+                className="font-medium"
+              >
+                Sign in
+              </Button>
+            </Link>
           )}
         </div>
 
         {/* Mobile Actions */}
         <div className="flex items-center gap-2 md:hidden">
+          <ModeToggle />
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 relative"
+              asChild
+            >
+              <Link href="/notifications">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+              </Link>
+            </Button>
+          )}
           <Link href="/favorites">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-gray-500 hover:text-gray-900"
+              className="h-9 w-9"
             >
               <Heart className="h-5 w-5" />
             </Button>
@@ -196,13 +232,13 @@ export default function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-gray-500 hover:text-gray-900"
+            className="h-9 w-9"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             ) : (
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             )}
           </Button>
         </div>
@@ -210,74 +246,88 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-gray-100 py-4 animate-in slide-in-from-top duration-300">
-          <nav className="container flex flex-col gap-4">
+        <div className="md:hidden border-t border-border bg-background">
+          <nav className="container py-4 flex flex-col gap-2">
             <Link
               href="/"
-              className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
             </Link>
             <Link
               href="/house-listings"
-              className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Houses
             </Link>
             <Link
               href="/car-listings"
-              className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Cars
             </Link>
             <Link
               href="/service-listings"
-              className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Services
+              Other Services
             </Link>
-            <div className="h-px bg-gray-200" />
+            <Link
+              href="/about-us"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About Us
+            </Link>
+            <div className="h-px bg-border my-2" />
             {user ? (
               <>
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+                  className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
                 </Link>
+                <Link
+                  href="/profile"
+                  className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="h-4 w-4" />
+                  My Profile
+                </Link>
+                <Link
+                  href="/settings"
+                  className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Link>
                 <button
                   type="button"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-red-600 transition-colors disabled:opacity-60"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent text-destructive transition-colors flex items-center gap-2 text-left"
                 >
                   <LogOut className="h-4 w-4" />
-                  {isLoggingOut ? "Logging out..." : "Logout"}
+                  Logout
                 </button>
               </>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Register
-                </Link>
-              </>
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="default" size="sm" className="w-full font-medium">
+                  Sign in
+                </Button>
+              </Link>
             )}
           </nav>
         </div>

@@ -24,6 +24,8 @@ const isCar = (req) => req.body.listingType === 'car';
 const isService = (req) => req.body.listingType === 'service';
 const isHouseRent = (req) => isHouse(req) && req.body.listingMode === 'rent';
 const isHouseSell = (req) => isHouse(req) && req.body.listingMode === 'sell';
+const isCarRent = (req) => isCar(req) && req.body.listingMode === 'rent';
+const isCarSell = (req) => isCar(req) && req.body.listingMode === 'sell';
 
 export const createListingValidator = [
   body('listingType')
@@ -153,6 +155,15 @@ export const createListingValidator = [
     .isIn(CAR_TYPES)
     .withMessage('Car type must be electric or fuel'),
 
+
+     body('rentalPeriod')
+    .if((value, { req }) => isCarRent(req))
+    .trim()
+    .notEmpty()
+    .withMessage('Rental period is required for car rent listings')
+    .isIn(PERIODS)
+    .withMessage('Invalid rental period'),
+
   body('condition')
     .if((value, { req }) => isCar(req))
     .trim()
@@ -172,6 +183,14 @@ export const createListingValidator = [
     .trim()
     .notEmpty()
     .withMessage('Car model is required for car listings'),
+
+     body('rentalPeriod')
+    .if((value, { req }) => isService(req))
+    .trim()
+    .notEmpty()
+    .withMessage('Salary per period is required for service listings')
+    .isIn(PERIODS)
+    .withMessage('Invalid rental period'),
 
   body('serviceType')
     .if((value, { req }) => isService(req))
@@ -297,6 +316,8 @@ export const updateListingValidator = [
   body('serviceType')
     .optional()
     .trim(),
+
+    
 
   handleValidationErrors,
 ];

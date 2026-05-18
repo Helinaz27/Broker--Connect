@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import StoreProvider from "@/store/storeProvider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -14,9 +15,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Digital Broker | Properties, Vehicles & Services",
+  title: "Broker Connect | Houses, Cars & Services",
   description:
-    "Professional marketplace for properties, vehicles, and services in Ethiopia. List, discover, and transact with confidence.",
+    "Professional marketplace for houses, cars, and other services in Ethiopia. List, discover, and transact with confidence.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -28,18 +29,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} font-sans antialiased text-foreground`}
+        className={`${plusJakarta.variable} font-sans antialiased text-foreground bg-background`}
       >
-        <StoreProvider>
-          <FavoritesProvider>
-            <Header />
-            {children}
-            <Footer />
-            <Toaster position="top-right" offset={72} />
-          </FavoritesProvider>
-        </StoreProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <StoreProvider>
+            <FavoritesProvider>
+              <Header />
+              {children}
+              <Footer />
+              <Toaster position="top-right" offset={72} />
+            </FavoritesProvider>
+          </StoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

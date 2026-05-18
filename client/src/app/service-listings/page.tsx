@@ -1,88 +1,138 @@
 "use client";
 
-import ListingCard from "@/components/ListingCard";
-import FilterSection from "@/components/FilterSection";
-import Chat from "@/components/Chat";
+import ListingsGrid from "@/components/ListingsGrid";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import { services } from "@/data/listings";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { otherServices, getListingPath } from "@/data/listings";
 
-export default function ServiceListings() {
+export default function ServiceListingsPage() {
   const [filters, setFilters] = useState({
-    priceRange: [0, 100000] as [number, number],
-    location: "",
     search: "",
-    type: "service" as "all" | "house" | "car" | "service",
+    location: "",
+    priceMin: 0,
+    priceMax: 100000,
   });
 
-  const filteredServices = services.filter((service) => {
+  const filteredServices = otherServices.filter((item) => {
     const priceMatch =
-      service.price >= filters.priceRange[0] &&
-      service.price <= filters.priceRange[1];
-    const locationMatch =
-      !filters.location ||
-      service.location.toLowerCase().includes(filters.location.toLowerCase());
+      item.price >= filters.priceMin && item.price <= filters.priceMax;
     const searchMatch =
       !filters.search ||
-      service.title.toLowerCase().includes(filters.search.toLowerCase());
-    return priceMatch && locationMatch && searchMatch;
+      item.title.toLowerCase().includes(filters.search.toLowerCase());
+    const locationMatch =
+      !filters.location ||
+      item.location.toLowerCase().includes(filters.location.toLowerCase());
+    return priceMatch && searchMatch && locationMatch;
   });
 
+  const handleReset = () => {
+    setFilters({
+      search: "",
+      location: "",
+      priceMin: 0,
+      priceMax: 100000,
+    });
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1 py-8 md:py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Services</h1>
-              <p className="text-muted-foreground">
-                {filteredServices.length} services available
-              </p>
+    <main className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-6">
+        <div className="mb-12">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="gap-2 mb-4">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
+            Other Services
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Browse all available services
+          </p>
+        </div>
+
+        {/* Horizontal Filter Bar */}
+        <div className="bg-card border border-border rounded-lg p-6 mb-12 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Search</label>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+              />
             </div>
-            <Button size="lg" className="gap-2 w-fit" asChild>
-              <Link href="/dashboard">
-                <Plus className="h-5 w-5" />
-                Offer a service
-              </Link>
+
+            {/* Location */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Location</label>
+              <input
+                type="text"
+                placeholder="Location..."
+                value={filters.location}
+                onChange={(e) =>
+                  setFilters({ ...filters, location: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+              />
+            </div>
+
+            {/* Price Min */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Min Price</label>
+              <input
+                type="number"
+                value={filters.priceMin}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    priceMin: parseInt(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+              />
+            </div>
+
+            {/* Price Max */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max Price</label>
+              <input
+                type="number"
+                value={filters.priceMax}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    priceMax: parseInt(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Reset Button */}
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              Reset Filters
             </Button>
           </div>
-
-          <div className="mb-8">
-            <FilterSection
-              filters={filters}
-              onFilterChange={setFilters}
-              variant="horizontal"
-            />
-          </div>
-
-          {filteredServices.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredServices.map((service) => (
-                <ListingCard
-                  key={service.id}
-                  id={service.id}
-                  title={service.title}
-                  image={service.image}
-                  price={service.price}
-                  location={service.location}
-                  category="service"
-                  rating={service.rating}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-muted/30 rounded-lg">
-              <p className="text-muted-foreground text-lg">
-                No services found matching your filters.
-              </p>
-            </div>
-          )}
         </div>
-      </main>
 
-      <Chat />
-    </div>
+        {/* Listings Grid */}
+        <ListingsGrid
+          listings={filteredServices}
+          
+          emptyMessage="No services found. Try adjusting your filters."
+        />
+      </div>
+    </main>
   );
 }
