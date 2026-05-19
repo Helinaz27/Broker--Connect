@@ -9,6 +9,7 @@ import { getListingPath } from "@/data/listings";
 interface Listing {
   id: string;
   title: string;
+  image?: string;
   price: number;
   location: string;
   status: "active" | "occupied" | "inactive";
