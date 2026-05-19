@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { useParams, useRouter } from "next/navigation";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { getOtherServiceById } from "@/data/listings";
 import { MapPin, ArrowLeft, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 export default function ServiceDetailPage() {
   const params = useParams();

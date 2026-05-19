@@ -1,18 +1,15 @@
 "use client";
 
-import Header from "@/components/Header";
 import ListingCard from "@/components/ListingCard";
-import FilterPanel, { FilterValues } from "@/components/FilterPanel";
 import Chat from "@/components/Chat";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { houses, cars, otherServices, getListingPath } from "@/data/listings";
+import { houses, cars, otherServices } from "@/data/listings";
 
 export default function Index() {
-  const [filters, setFilters] = useState<FilterValues>({
+  const [filters, setFilters] = useState({
     search: "",
     location: "",
     priceMin: 0,
@@ -94,16 +91,19 @@ export default function Index() {
                   <option value="otherService">Services</option>
                 </select>
               </div>
-              
-              <div className="space-y-6">
-                <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] text-foreground tracking-tight">
-                  Premium <br />
-                  <span className="text-gradient">Marketplace</span> <br />
-                  for Ethiopia.
-                </h1>
-                <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">
-                  Ethiopia's most trusted ecosystem for high-value real estate, premium automotive assets, and vetted professional services.
-                </p>
+
+              {/* Search */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Search</label>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={filters.search}
+                  onChange={(e) =>
+                    setFilters({ ...filters, search: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+                />
               </div>
 
               {/* Location */}
@@ -231,26 +231,22 @@ export default function Index() {
                   </Button>
                 </Link>
               </div>
-            </div>
-            
-            <div className="relative hidden lg:block animate-in" style={{ animationDelay: '200ms' }}>
-              <div className="relative z-10 rounded-[2.5rem] border border-white/20 bg-white/10 backdrop-blur-md p-4 shadow-glass overflow-hidden group">
-                <div className="aspect-[4/3] rounded-[2rem] overflow-hidden relative">
-                  <img 
-                    src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=1200&q=80" 
-                    alt="Premium Assets"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-                  <div className="absolute bottom-8 left-8">
-                    <div className="flex items-center gap-4 bg-white/10 backdrop-blur-xl p-3 pr-8 rounded-2xl border border-white/20 shadow-2xl">
-                      <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                        <Home className="h-6 w-6" />
-                      </div>
-                      <div className="text-white">
-                        <p className="text-base font-bold tracking-tight">Luxury Estate</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider opacity-80">Bole Atlas, Addis Ababa</p>
-                      </div>
+              <div className="overflow-x-auto pb-4 -mx-6 px-6">
+                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
+                  {filteredCars.slice(0, 8).map((listing) => (
+                    <div
+                      key={listing.id}
+                      className="flex-shrink-0 w-80"
+                    >
+                      <ListingCard
+                        id={listing.id}
+                        title={listing.title}
+                        image={listing.image}
+                        price={listing.price}
+                        location={listing.location}
+                        category={listing.category}
+                        rating={listing.rating}
+                      />
                     </div>
                   ))}
                 </div>
@@ -258,53 +254,17 @@ export default function Index() {
             </div>
           )}
 
-      {/* Segment Curations */}
-      <section className="py-32 bg-muted/30 border-y border-border">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20">
-            <div className="max-w-2xl space-y-4">
-              <h2 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight leading-[1.1]">
-                Precision for <br />
-                <span className="text-gradient">Your Ambition.</span>
-              </h2>
-              <p className="text-lg text-muted-foreground font-medium">
-                Highly vetted collections across three core pillars of modern success.
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { 
-                title: "Houses", 
-                img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
-                desc: "High-yield real estate and luxury living spaces in Addis.",
-                href: "/house-listings"
-              },
-              { 
-                title: "Cars", 
-                img: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&q=80",
-                desc: "Premium mobility for professional excellence.",
-                href: "/car-listings"
-              },
-              { 
-                title: "Services", 
-                img: "https://images.unsplash.com/photo-1581578731548-c64695ce6958?w=800&q=80",
-                desc: "Bespoke services for technical & creative needs.",
-                href: "/service-listings"
-              }
-            ].map((cat, i) => (
-              <Link key={i} href={cat.href} className="group relative rounded-[2rem] overflow-hidden aspect-[4/5] bg-card border border-border shadow-soft hover:shadow-xl hover:-translate-y-2 transition-all duration-500 ease-out">
-                <img 
-                  src={cat.img} 
-                  alt={cat.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
-                <div className="absolute bottom-10 left-8 right-8">
-                  <h3 className="text-3xl font-bold text-white tracking-tight mb-4 uppercase">{cat.title}</h3>
-                  <p className="text-white/70 text-sm font-medium leading-relaxed mb-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-400">
-                    {cat.desc}
+        {/* Other Services Section - Horizontal Scrollable */}
+        {(filters.category === "all" || filters.category === "otherService") &&
+          filteredServices.length > 0 && (
+            <div className="mb-16">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                    Other Services
+                  </h2>
+                  <p className="text-muted-foreground mt-1">
+                    {filteredServices.length} services available
                   </p>
                 </div>
                 <Link href="/service-listings">

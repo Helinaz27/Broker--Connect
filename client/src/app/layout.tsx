@@ -7,7 +7,6 @@ import StoreProvider from "@/store/storeProvider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
-import StoreProvider from "@/store/storeProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -17,7 +16,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Digital Broker | Houses, Cars & Services",
-  description: "Professional marketplace for houses, cars, and services in Ethiopia. List, discover, and transact with confidence.",
+  description:
+    "Professional marketplace for houses, cars, and services in Ethiopia. List, discover, and transact with confidence.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -33,19 +33,21 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} font-sans antialiased text-foreground bg-background`}
       >
-        <StoreProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <StoreProvider>
             <FavoritesProvider>
+              <Header />
               {children}
+              <Footer />
               <Toaster position="top-right" offset={72} />
             </FavoritesProvider>
-          </ThemeProvider>
-        </StoreProvider>
+          </StoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
