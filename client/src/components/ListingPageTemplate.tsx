@@ -1,3 +1,4 @@
+// client/src/components/ListingPageTemplate.tsx
 "use client";
 
 import { useState } from "react";
@@ -28,7 +29,12 @@ interface ListingPageProps {
   postLabel: string;
 }
 
-export default function ListingPage({ title, category, listings, postLabel }: ListingPageProps) {
+export default function ListingPage({
+  title,
+  category,
+  listings,
+  postLabel,
+}: ListingPageProps) {
   const [filters, setFilters] = useState({
     priceRange: [0, 100000] as [number, number],
     location: "",
@@ -37,9 +43,15 @@ export default function ListingPage({ title, category, listings, postLabel }: Li
   });
 
   const filteredListings = listings.filter((item) => {
-    const priceMatch = item.price >= filters.priceRange[0] && item.price <= filters.priceRange[1];
-    const locationMatch = !filters.location || item.location.toLowerCase().includes(filters.location.toLowerCase());
-    const searchMatch = !filters.search || item.title.toLowerCase().includes(filters.search.toLowerCase());
+    const priceMatch =
+      item.price >= filters.priceRange[0] &&
+      item.price <= filters.priceRange[1];
+    const locationMatch =
+      !filters.location ||
+      item.location.toLowerCase().includes(filters.location.toLowerCase());
+    const searchMatch =
+      !filters.search ||
+      item.title.toLowerCase().includes(filters.search.toLowerCase());
     return priceMatch && locationMatch && searchMatch;
   });
 
@@ -55,12 +67,19 @@ export default function ListingPage({ title, category, listings, postLabel }: Li
                 <div className="h-0.5 w-6 bg-primary" />
                 Marketplace
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{title}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+                {title}
+              </h1>
               <p className="text-muted-foreground font-medium">
-                Discover {filteredListings.length} premium {title.toLowerCase()} listings
+                Discover {filteredListings.length} premium {title.toLowerCase()}{" "}
+                listings
               </p>
             </div>
-            <Button size="lg" className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold uppercase tracking-widest text-xs gap-3 transition-all hover:scale-[1.02] text-white" asChild>
+            <Button
+              size="lg"
+              className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold uppercase tracking-widest text-xs gap-3 transition-all hover:scale-[1.02] text-white"
+              asChild
+            >
               <Link href="/dashboard">
                 <Plus className="h-5 w-5" />
                 {postLabel}
@@ -91,8 +110,12 @@ export default function ListingPage({ title, category, listings, postLabel }: Li
                   <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
                     <FilterSection.Icon className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">No listings found</h3>
-                  <p className="text-muted-foreground max-w-xs">Try adjusting your filters to find what you're looking for.</p>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    No listings found
+                  </h3>
+                  <p className="text-muted-foreground max-w-xs">
+                    Try adjusting your filters to find what you're looking for.
+                  </p>
                 </div>
               )}
             </div>

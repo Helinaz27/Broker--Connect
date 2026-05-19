@@ -1,7 +1,7 @@
+// client/src/app/dashboard/page.tsx
 "use client";
 
 import { useState } from "react";
-// import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import {
   Home,
@@ -14,13 +14,21 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
 
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
 import { InventoryTable } from "@/components/dashboard/InventoryTable";
-import { AssetForm } from "@/components/dashboard/AssetForm";
+import {
+  AssetForm,
+  type HouseFormState,
+  type CarFormState,
+  type ServiceFormState,
+} from "@/components/dashboard/AssetForm";
 import Chat from "@/components/Chat";
+import { useGetMyListingsQuery } from "@/store/apis/listingsApi";
 
 type DashboardTab =
   | "dashboard"
@@ -33,70 +41,65 @@ type DashboardTab =
   | "admin_kyc"
   | "admin_users";
 
-interface Listing {
-  id: string;
-  title: string;
-  price: number;
-  location: string;
-  image?: string;
-  status: "active" | "occupied" | "inactive";
-  type: "rent" | "sell";
-  category: "house" | "car" | "service";
-  createdAt: string;
-}
+// ─── default form states ──────────────────────────────────────────────────────
+const defaultHouseForm: HouseFormState = {
+  title: "",
+  description: "",
+  price: "",
+  locationCity: "",
+  locationPlaceName: "",
+  locationSubCity: "",
+  lat: "",
+  lng: "",
+  houseType: "apartment",
+  bedrooms: "",
+  bathrooms: "",
+  area_sqm: "",
+  listingMode: "rent",
+  tanker: false,
+  rentalPeriod: "monthly",
+  parking: "",
+  durationDays: "30",
+  images: [],
+};
 
-const mockListings: Listing[] = [
-  {
-    id: "1",
-    title: "Beautiful Modern Apartment in Downtown",
-    price: 15000,
-    location: "Addis Ababa, Bole",
-    status: "active",
-    type: "rent",
-    category: "house",
-    createdAt: "2026-01-15",
-    image:
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: "2",
-    title: "Spacious Family Villa with Garden",
-    price: 25000,
-    location: "Addis Ababa, Old Airport",
-    status: "occupied",
-    type: "sell",
-    category: "house",
-    createdAt: "2026-01-10",
-    image:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: "3",
-    title: "Professional Electrician Services",
-    price: 500,
-    location: "Addis Ababa, Bole",
-    status: "active",
-    type: "rent",
-    category: "service",
-    createdAt: "2026-01-20",
-    image:
-      "https://images.unsplash.com/photo-1581094271901-8022df4466f9?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: "4",
-    title: "2024 Toyota Land Cruiser V8",
-    price: 12000000,
-    location: "Addis Ababa, Sarbet",
-    status: "active",
-    type: "sell",
-    category: "car",
-    createdAt: "2026-02-01",
-    image:
-      "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800",
-  },
-];
+const defaultCarForm: CarFormState = {
+  title: "",
+  description: "",
+  price: "",
+  locationCity: "",
+  locationPlaceName: "",
+  locationSubCity: "",
+  lat: "",
+  lng: "",
+  brand: "",
+  carModel: "",
+  carType: "fuel",
+  condition: "used",
+  listingMode: "rent",
+  rentalPeriod: "monthly",
+  durationDays: "30",
+  images: [],
+};
+
+const defaultServiceForm: ServiceFormState = {
+  title: "",
+  description: "",
+  price: "",
+  locationCity: "",
+  locationPlaceName: "",
+  locationSubCity: "",
+  lat: "",
+  lng: "",
+  serviceType: "plumber",
+  rentalPeriod: "monthly",
+  durationDays: "30",
+  images: [],
+};
 
 export default function Dashboard() {
+  const currentUser = useSelector((state: RootState) => state.user.currentUser);
+
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -105,76 +108,49 @@ export default function Dashboard() {
     "all" | "rent" | "sell"
   >("all");
 
-  const [houseForm, setHouseForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    locationCity: "",
-    locationPlaceName: "",
-    locationSubCity: "",
-    lat: "",
-    lng: "",
-    type: "apartment" as any,
-    bedrooms: "",
-    bathrooms: "",
-    area_sqm: "",
-    listingMode: "rent" as "rent" | "sell",
-    tanker: false,
-    rentalPeriod: "monthly" as "daily" | "weekly" | "monthly" | "yearly",
-    parking: "",
-    images: [] as File[],
-  });
-  const [carForm, setCarForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    locationCity: "",
-    locationPlaceName: "",
-    locationSubCity: "",
-    lat: "",
-    lng: "",
-    brand: "",
-    carModel: "",
-    year: "",
-    carType: "fuel" as "electric" | "fuel",
-    condition: "used" as "used" | "new",
-    listingMode: "rent" as "rent" | "sell",
-    images: [] as File[],
-  });
-  const [serviceForm, setServiceForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    locationCity: "",
-    locationPlaceName: "",
-    locationSubCity: "",
-    lat: "",
-    lng: "",
-    serviceType: "plumber",
-    experience: "",
-    images: [] as File[],
-  });
+  const [houseForm, setHouseForm] = useState<HouseFormState>(defaultHouseForm);
+  const [carForm, setCarForm] = useState<CarFormState>(defaultCarForm);
+  const [serviceForm, setServiceForm] =
+    useState<ServiceFormState>(defaultServiceForm);
+
+  // Real listings for activity/inventory tables
+  const { data: myListingsData } = useGetMyListingsQuery();
+  const myListings = (myListingsData?.data?.listings ?? []).map((l) => ({
+    id: l.id,
+    title: l.title,
+    price: l.price,
+    location: l.location?.fullAddress ?? l.location?.city ?? "—",
+    image: l.images?.[0],
+    status: l.status as "active" | "occupied" | "inactive",
+    type: (l.listingMode ?? "sell") as "rent" | "sell",
+    category: l.listingType as "house" | "car" | "service",
+    createdAt: l.createdAt,
+  }));
 
   const stats = [
     {
       label: "Active Assets",
-      value: "12",
+      value: String(myListings.filter((l) => l.status === "active").length),
       icon: Home,
-      trend: "+2",
+      trend: `${myListings.length} total`,
       color: "bg-primary/10 text-primary",
     },
     {
-      label: "Total Reach",
-      value: "1,284",
+      label: "Houses",
+      value: String(myListings.filter((l) => l.category === "house").length),
       icon: BarChart3,
-      trend: "+14%",
+      trend: "listed",
       color: "bg-blue-500/10 text-blue-600",
     },
     {
-      label: "Client Inquiries",
-      value: "38",
+      label: "Cars & Services",
+      value: String(
+        myListings.filter(
+          (l) => l.category === "car" || l.category === "service",
+        ).length,
+      ),
       icon: Clock,
-      trend: "+5",
+      trend: "listed",
       color: "bg-emerald-500/10 text-emerald-600",
     },
   ];
@@ -232,63 +208,18 @@ export default function Dashboard() {
     );
   };
 
-  const handlePostSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setHouseForm({
-      title: "",
-      description: "",
-      price: "",
-      locationCity: "",
-      locationPlaceName: "",
-      locationSubCity: "",
-      lat: "",
-      lng: "",
-      type: "apartment",
-      bedrooms: "",
-      bathrooms: "",
-      area_sqm: "",
-      listingMode: "rent",
-      tanker: false,
-      rentalPeriod: "monthly",
-      parking: "",
-      images: [],
-    });
-    setCarForm({
-      title: "",
-      description: "",
-      price: "",
-      locationCity: "",
-      locationPlaceName: "",
-      locationSubCity: "",
-      lat: "",
-      lng: "",
-      brand: "",
-      carModel: "",
-      year: "",
-      carType: "fuel",
-      condition: "used",
-      listingMode: "rent",
-      images: [],
-    });
-    setServiceForm({
-      title: "",
-      description: "",
-      price: "",
-      locationCity: "",
-      locationPlaceName: "",
-      locationSubCity: "",
-      lat: "",
-      lng: "",
-      serviceType: "plumber",
-      experience: "",
-      images: [],
-    });
-    alert("Listing published successfully!");
+  // Called by AssetForm after a successful publish — reset form + go to view tab
+  const handleSuccess = () => {
+    setHouseForm(defaultHouseForm);
+    setCarForm(defaultCarForm);
+    setServiceForm(defaultServiceForm);
+    if (activeTab === "house_post") setActiveTab("house_view");
+    else if (activeTab === "car_post") setActiveTab("car_view");
+    else setActiveTab("service_view");
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* <Header /> */}
       <div className="flex-1 flex overflow-hidden relative">
         <Sidebar
           activeTab={activeTab}
@@ -305,9 +236,10 @@ export default function Dashboard() {
           menuItems={menuItems}
           adminItems={adminItems}
         />
+
         <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar relative bg-muted/30">
           <div className="max-w-7xl mx-auto space-y-8 md:space-y-10">
-            {/* Mobile Sidebar Toggle */}
+            {/* Mobile toggle */}
             <div className="md:hidden flex items-center gap-4 mb-6">
               <Button
                 variant="outline"
@@ -320,6 +252,7 @@ export default function Dashboard() {
               <h1 className="font-bold text-lg">Broker Console</h1>
             </div>
 
+            {/* Dashboard overview */}
             {activeTab === "dashboard" && (
               <div className="space-y-10 animate-in">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -328,7 +261,8 @@ export default function Dashboard() {
                       Performance Overview
                     </h1>
                     <p className="text-muted-foreground font-medium">
-                      Welcome back, Helina. Here's your portfolio activity.
+                      Welcome back, {currentUser?.firstName ?? "—"}. Here's your
+                      portfolio activity.
                     </p>
                   </div>
                   <Button
@@ -340,23 +274,25 @@ export default function Dashboard() {
                 </div>
                 <StatsGrid stats={stats} />
                 <ActivityTable
-                  listings={mockListings}
+                  listings={myListings}
                   filter={dashboardFilter}
                   setFilter={setDashboardFilter}
                 />
               </div>
             )}
 
+            {/* Inventory views */}
             {(activeTab === "house_view" ||
               activeTab === "car_view" ||
               activeTab === "service_view") && (
               <InventoryTable
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
-                listings={mockListings}
+                listings={myListings}
               />
             )}
 
+            {/* Create forms */}
             {(activeTab === "house_post" ||
               activeTab === "car_post" ||
               activeTab === "service_post") && (
@@ -368,10 +304,11 @@ export default function Dashboard() {
                 setCarForm={setCarForm}
                 serviceForm={serviceForm}
                 setServiceForm={setServiceForm}
-                onSubmit={handlePostSubmit}
+                onSuccess={handleSuccess}
               />
             )}
 
+            {/* KYC admin panel */}
             {activeTab === "admin_kyc" && (
               <div className="space-y-8 animate-in">
                 <h1 className="text-3xl font-bold text-foreground tracking-tight">
@@ -407,7 +344,11 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span
-                          className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${f.status === "pending" ? "bg-amber-500/10 text-amber-600" : "bg-green-500/10 text-green-600"}`}
+                          className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${
+                            f.status === "pending"
+                              ? "bg-amber-500/10 text-amber-600"
+                              : "bg-green-500/10 text-green-600"
+                          }`}
                         >
                           {f.status}
                         </span>
