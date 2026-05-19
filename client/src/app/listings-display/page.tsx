@@ -6,7 +6,7 @@ import ListingsGrid from "@/components/ListingsGrid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { houses, cars, otherServices, getListingPath } from "@/data/listings";
+import { houses, cars, services, getListingPath } from "@/data/listings";
 
 export default function ListingsDisplayPage() {
   const [filters, setFilters] = useState<FilterValues>({
@@ -19,7 +19,7 @@ export default function ListingsDisplayPage() {
   });
 
   const allListings = useMemo(() => {
-    const combined = [...houses, ...cars, ...otherServices];
+    const combined = [...houses, ...cars, ...services];
     return combined.filter((item) => {
       const priceMatch =
         item.price >= filters.priceMin && item.price <= filters.priceMax;

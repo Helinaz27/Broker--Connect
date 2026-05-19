@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { otherServices, getListingPath } from "@/data/listings";
+import { services, getListingPath } from "@/data/listings";
 
 export default function ServiceListingsPage() {
   const [filters, setFilters] = useState({
@@ -15,7 +15,7 @@ export default function ServiceListingsPage() {
     priceMax: 100000,
   });
 
-  const filteredServices = otherServices.filter((item) => {
+  const filteredServices = services.filter((item) => {
     const priceMatch =
       item.price >= filters.priceMin && item.price <= filters.priceMax;
     const searchMatch =
