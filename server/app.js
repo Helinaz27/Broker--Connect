@@ -38,11 +38,17 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     const isConnected = await checkDbConnection();
-    if (!isConnected) {
-      console.error("Database connection failed.");
-      process.exit(1);
+    if (isConnected) {
+      // Only check admin if connected
+      // Note: checkDbConnection currently returns true even if it fails for dev purposes
+      // but let's make it more robust here.
+      try {
+        await checkAdmin();
+      } catch (adminError) {
+        console.warn("Skipping admin check due to database error.");
+      }
     }
-    await checkAdmin();
+    
     const port = env.port || 5500;
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

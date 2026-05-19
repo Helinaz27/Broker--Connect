@@ -9,15 +9,13 @@ import {
   Shield,
   FileText,
 } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 const helpSections = [
   {
     title: "Getting started",
     items: [
       { q: "How do I create an account?", a: "Click “Login” in the header, then “Create account.” Enter your email, choose a password, and confirm. You can then login and start browsing or posting listings." },
-      { q: "What can I list on Digital Broker?", a: "You can list houses (for rent or sale), cars (for rent or hire), and other services (plumber, electrician, catering). All listings are for the Ethiopian market, with locations such as Addis Ababa and other cities." },
+      { q: "What can I list on Broker Connect?", a: "You can list houses (for rent or sale), cars (for rent or hire), and other services (plumber, electrician, catering). All listings are for the Ethiopian market, with locations such as Addis Ababa and other cities." },
     ],
   },
   {
@@ -39,8 +37,8 @@ const helpSections = [
   {
     title: "Safety and trust",
     items: [
-      { q: "How does Digital Broker keep the marketplace safe?", a: "We require accounts for listing and messaging, and we may remove content or accounts that violate our Terms of Service or the law. We encourage users to report suspicious or inappropriate behavior." },
-      { q: "Who handles payments?", a: "Payments for rentals, vehicle hire, or other services are agreed and made between users. Digital Broker does not process these payments unless we explicitly offer a payment feature. Always agree on payment method and terms before committing." },
+      { q: "How does Broker Connect keep the marketplace safe?", a: "We require accounts for listing and messaging, and we may remove content or accounts that violate our Terms of Service or the law. We encourage users to report suspicious or inappropriate behavior." },
+      { q: "Who handles payments?", a: "Payments for rentals, vehicle hire, or other services are agreed and made between users. Broker Connect does not process these payments unless we explicitly offer a payment feature. Always agree on payment method and terms before committing." },
       { q: "Where can I read the legal terms?", a: "Our Terms of Service and Privacy Policy explain your rights and our practices. You can find them in the footer (Terms, Privacy) or from your account and registration flows." },
     ],
   },
@@ -57,47 +55,64 @@ const quickLinks = [
 
 export default function HelpPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      <main className="flex-1 container px-6 py-12 md:py-20 max-w-4xl mx-auto animate-fade-in">
-        <div className="mb-12">
+    <main className="flex-1 container px-6 py-12 md:py-20 max-w-4xl mx-auto animate-fade-in">
+      <div className="mb-12">
+        <Link
+          href="/"
+          className="text-sm font-bold text-primary uppercase tracking-widest hover:opacity-80 transition-opacity"
+        >
+          ← Back to marketplace
+        </Link>
+      </div>
+      
+      <div className="space-y-4 mb-16">
+        <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tight italic">
+          Help Center.
+        </h1>
+        <p className="text-lg text-muted-foreground font-medium max-w-2xl">
+          Find answers about using Broker Connect to list or discover houses, cars, and professional services in Ethiopia.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-20">
+        {quickLinks.map((link) => (
           <Link
-            href="/"
-            className="text-sm font-bold text-primary uppercase tracking-widest hover:opacity-80 transition-opacity"
+            key={link.href}
+            href={link.href}
+            className="flex items-center gap-4 p-6 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-muted/50 hover:border-primary/20 transition-all duration-300 shadow-sm group"
           >
-            ← Back to marketplace
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <link.icon className="h-5 w-5" />
+            </div>
+            <span className="font-bold text-sm text-foreground tracking-tight">{link.label}</span>
           </Link>
-        </div>
-        
-        <div className="space-y-4 mb-16">
-          <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tight italic">
-            Help Center.
-          </h1>
-          <p className="text-lg text-muted-foreground font-medium max-w-2xl">
-            Find answers about using Digital Broker to list or discover houses, cars, and professional services in Ethiopia.
-          </p>
-        </div>
+        ))}
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-20">
-          {quickLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-4 p-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:bg-muted/50 hover:border-primary/20 transition-all duration-300 shadow-sm group"
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <link.icon className="h-5 w-5" />
-              </div>
-              <span className="font-bold text-sm text-foreground tracking-tight">{link.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        <div className="space-y-16">
-          {helpSections.map((section) => (
-            <section key={section.title} className="space-y-8">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary border-b border-border pb-4">
-                {section.title}
+      <div className="space-y-16">
+        {helpSections.map((section) => (
+          <section key={section.title} className="space-y-8">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary border-b border-border/50 pb-4">
+              {section.title}
+            </h2>
+            <div className="grid gap-8">
+              {section.items.map((item, i) => (
+                <div key={i} className="space-y-3">
+                  <h3 className="text-xl font-bold text-foreground tracking-tight">
+                    {item.q}
+                  </h3>
+                  <p className="text-muted-foreground font-medium leading-relaxed">
+                    {item.a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </main>
+  );
+}
               </h2>
               <ul className="grid gap-10">
                 {section.items.map((item) => (

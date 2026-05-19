@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import {
   Home,
@@ -12,6 +11,7 @@ import {
   PlusCircle,
   ShieldCheck,
   Users,
+  Menu,
 } from "lucide-react";
 
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -100,9 +100,9 @@ export default function Dashboard() {
   });
 
   const stats = [
-    { label: "Active Assets", value: "12", icon: Home, trend: "+2", color: "bg-primary/10 text-primary" },
-    { label: "Total Reach", value: "1,284", icon: BarChart3, trend: "+14%", color: "bg-blue-500/10 text-blue-600" },
-    { label: "Client Inquiries", value: "38", icon: Clock, trend: "+5", color: "bg-emerald-500/10 text-emerald-600" }
+    { label: "Active Listings", value: "12", icon: Home, trend: "+2", color: "bg-primary/10 text-primary" },
+    { label: "Market Reach", value: "1,284", icon: BarChart3, trend: "+14%", color: "bg-blue-500/10 text-blue-600" },
+    { label: "Asset Inquiries", value: "38", icon: Clock, trend: "+5", color: "bg-emerald-500/10 text-emerald-600" }
   ];
 
   const menuItems = [
@@ -144,10 +144,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      <div className="flex-1 flex overflow-hidden relative">
-        <Sidebar 
+    <div className="flex-1 flex overflow-hidden relative h-[calc(100vh-80px)]">
+      <Sidebar 
           activeTab={activeTab} 
           setActiveTab={(tab) => {
             setActiveTab(tab);
@@ -181,8 +179,8 @@ export default function Dashboard() {
               <div className="space-y-10 animate-in">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                   <div className="space-y-1">
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Performance Overview</h1>
-                    <p className="text-muted-foreground font-medium">Welcome back, Helina. Here's your portfolio activity.</p>
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Broker Portfolio Analytics</h1>
+                    <p className="text-muted-foreground font-medium">Welcome back, Helina. Here's your asset portfolio performance.</p>
                   </div>
                   <Button onClick={() => setActiveTab("house_post")} className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold uppercase tracking-widest text-xs gap-3 transition-all hover:scale-[1.02] text-white">
                     <PlusCircle className="h-4 w-4" /> New Asset Post
@@ -228,8 +226,7 @@ export default function Dashboard() {
             )}
           </div>
         </main>
+        <Chat />
       </div>
-      <Chat />
-    </div>
-  );
+    );
 }

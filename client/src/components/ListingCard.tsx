@@ -14,8 +14,8 @@ interface ListingCardProps {
   price: number;
   location: string;
   category: "house" | "car" | "service";
-  rating?: number;
   contactLimit?: number;
+  type?: "rent" | "sale";
 }
 
 export default function ListingCard({
@@ -25,8 +25,8 @@ export default function ListingCard({
   price,
   location,
   category,
-  rating = 4.8,
   contactLimit = 0,
+  type,
 }: ListingCardProps) {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const pathname = usePathname();
@@ -57,14 +57,20 @@ export default function ListingCard({
         <img
           src={image}
           alt={title}
+          referrerPolicy="no-referrer"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
         
-        {/* Category Badge */}
-        <div className="absolute top-4 left-4">
+        {/* Category & Type Badges */}
+        <div className="absolute top-4 left-4 flex gap-2">
           <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
             {category === "car" ? "Car" : category === "service" ? "Service" : "House"}
           </span>
+          {type && (
+            <span className={`backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/20 shadow-sm ${type === 'rent' ? 'bg-blue-500/80 text-white' : 'bg-emerald-500/80 text-white'}`}>
+              {type === 'rent' ? 'Rent' : 'Sale'}
+            </span>
+          )}
         </div>
 
         {/* Like Button */}
@@ -84,11 +90,6 @@ export default function ListingCard({
 
       <div className="p-6">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center gap-1 text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">
-            <Star className="h-3 w-3 fill-current" />
-            <span className="text-[11px] font-bold">{rating}</span>
-          </div>
-          <div className="h-1 w-1 rounded-full bg-border" />
           <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
             <MapPin className="h-3.5 w-3.5 text-primary" />
             <span className="line-clamp-1">{location.split(",")[1] || location}</span>

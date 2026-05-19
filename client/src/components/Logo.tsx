@@ -20,12 +20,12 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
   const iconClass = iconSizeMap[size];
 
   return (
-    <Link href="/" className={`flex items-center gap-2 group ${className}`}>
+    <Link href="/" className={`flex items-center gap-2.5 group ${className}`}>
       <div
-        className={`flex ${boxClass} items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white flex-shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-indigo-200 shadow-indigo-100/50 shadow-md relative overflow-hidden`}
+        className={`flex ${boxClass} items-center justify-center rounded-[0.8rem] bg-primary text-primary-foreground flex-shrink-0 transition-all duration-500 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-primary/20 shadow-primary/10 shadow-md relative overflow-hidden`}
         aria-hidden
       >
-        <div className="absolute inset-0 bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
+        <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-1000 -translate-x-full" />
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -35,14 +35,13 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
           strokeLinejoin="round"
           className={iconClass}
         >
-          <path d="M12 3L4 9v12h5v-7h6v7h5V9L12 3z" />
-          <rect x="10" y="13" width="4" height="5" rx="0.5" />
-          <circle cx="12" cy="15.5" r="0.6" fill="currentColor" stroke="none" />
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       </div>
       {showText && (
-        <span className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors duration-300">
-          Digital<span className="text-indigo-600 group-hover:text-slate-900 transition-colors duration-300">Broker</span>
+        <span className="text-xl font-black tracking-tighter text-foreground group-hover:text-primary transition-colors duration-300 italic">
+          BROKER<span className="text-primary group-hover:text-foreground transition-colors duration-300">CONNECT.</span>
         </span>
       )}
     </Link>

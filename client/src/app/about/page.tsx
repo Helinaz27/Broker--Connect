@@ -1,7 +1,5 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { ShieldCheck, Users, Trophy, Target } from "lucide-react";
 
 export default function AboutPage() {
@@ -13,12 +11,8 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative py-20 md:py-32 overflow-hidden">
+    <>
+      <section className="relative py-20 md:py-32 overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl">

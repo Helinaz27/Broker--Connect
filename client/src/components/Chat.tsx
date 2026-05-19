@@ -17,6 +17,7 @@ interface Message {
 
 export default function Chat() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -37,6 +38,10 @@ export default function Chat() {
       timestamp: new Date(Date.now() - 600000),
     },
   ]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -134,7 +139,7 @@ export default function Chat() {
                 <p className="text-sm leading-relaxed break-words font-medium">{message.text}</p>
               </div>
               <span className="text-[10px] text-muted-foreground mt-1 px-1 font-bold">
-                {formatTime(message.timestamp)}
+                {mounted ? formatTime(message.timestamp) : "--:--"}
               </span>
             </div>
           ))}

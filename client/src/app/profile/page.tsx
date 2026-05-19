@@ -3,11 +3,10 @@
 import Link from "next/link";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
-import { Coins, Edit, Lock, LogOut, Plus, ChevronRight, ShieldCheck } from "lucide-react";
+import { Coins, Edit, Lock, LogOut, Plus, ChevronRight, ShieldCheck, FileText, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { toast } from "sonner";
 
 export default function Profile() {
   const [user] = useState({
@@ -21,6 +20,8 @@ export default function Profile() {
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
   });
 
+  const [isKycApproved, setIsKycApproved] = useState(false);
+  const [showKycForm, setShowKycForm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const getLevelBadge = (level: number) => {
@@ -35,11 +36,10 @@ export default function Profile() {
   const badge = getLevelBadge(user.level);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
+    <div className="bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.03),transparent_50%)]" />
-      <Header />
 
-      <main className="flex-1 py-12 md:py-20 relative z-10">
+      <main className="py-12 md:py-20 relative z-10">
         <div className="container mx-auto px-4 max-w-5xl animate-fade-in">
           {/* Profile Header */}
           <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-8 md:p-12 mb-10 shadow-2xl shadow-black/5 overflow-hidden group">
@@ -69,14 +69,34 @@ export default function Profile() {
 
               {/* User Info */}
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">
-                    {user.name}
-                  </h1>
-                  <p className="text-muted-foreground font-bold text-sm flex items-center gap-2">
-                    Member since{" "}
-                    <span className="text-foreground">{user.joinedDate}</span>
-                  </p>
+                <div className="space-y-4">
+                  <div>
+                    <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+                      {user.name}
+                    </h1>
+                    <p className="text-muted-foreground font-bold text-sm flex items-center gap-2 mt-1">
+                      Member since{" "}
+                      <span className="text-foreground">{user.joinedDate}</span>
+                    </p>
+                  </div>
+
+                  {/* KYC Status - Next to Name at bottom */}
+                  <div className="flex items-center gap-3">
+                    {isKycApproved ? (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">KYC Approved</span>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => setShowKycForm(true)}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-600 hover:bg-amber-500/20 transition-all"
+                      >
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">KYC Pending • Verify Now</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-6 border-t border-border/40">
@@ -104,6 +124,70 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+          {/* KYC Form Modal */}
+          {showKycForm && (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+              <div className="bg-card rounded-[2.5rem] max-w-lg w-full p-10 border border-border/50 shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <h2 className="text-3xl font-black text-foreground tracking-tight italic">
+                    Identity Verification.
+                  </h2>
+                </div>
+                
+                <p className="text-muted-foreground font-medium mb-8">
+                  To ensure a secure marketplace, we require identity verification for all professional brokers in Addis Ababa.
+                </p>
+
+                <div className="space-y-6 mb-10">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                      ID Document Type
+                    </label>
+                    <select className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium appearance-none">
+                      <option>National ID Card</option>
+                      <option>Passport</option>
+                      <option>Driver's License</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                      Upload Document (Front & Back)
+                    </label>
+                    <div className="border-2 border-dashed border-border/60 rounded-2xl p-8 text-center hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
+                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4 group-hover:text-primary group-hover:scale-110 transition-all" />
+                      <p className="text-sm font-bold text-foreground">Drop files here or click to browse</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Max size: 5MB • JPG, PNG, PDF</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-14 rounded-2xl font-bold border-border/60"
+                    onClick={() => setShowKycForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
+                    onClick={() => {
+                      toast.success("Verification documents submitted. Our team will review them within 24 hours.");
+                      setIsKycApproved(true);
+                      setShowKycForm(false);
+                    }}
+                  >
+                    Submit for Review
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Finance & Activity */}
           <div className="grid md:grid-cols-3 gap-8 mb-10">
@@ -199,26 +283,6 @@ export default function Profile() {
             </h2>
 
             <div className="grid gap-4">
-              {/* KYC Status */}
-              <div className="w-full flex items-center justify-between p-6 bg-muted/20 border border-border/50 rounded-[1.5rem]">
-                <div className="flex items-center gap-5">
-                  <div className="h-12 w-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-600">
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold text-foreground">
-                      Account verified
-                    </p>
-                    <p className="text-xs text-muted-foreground font-medium mt-1">
-                      Identity verified • Full access to list and message
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-green-600 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
-                  Active
-                </span>
-              </div>
-
               {/* Reset Password */}
               <button 
                 onClick={() => setShowPasswordModal(true)}
@@ -320,7 +384,6 @@ export default function Profile() {
       )}
 
       <Chat />
-      <Footer />
     </div>
   );
 }

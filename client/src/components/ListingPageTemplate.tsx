@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
@@ -17,7 +15,7 @@ interface Listing {
   price: number;
   location: string;
   category: "house" | "car" | "service";
-  rating?: number;
+  type?: "rent" | "sale";
 }
 
 interface ListingPageProps {
@@ -43,65 +41,60 @@ export default function ListingPage({ title, category, listings, postLabel }: Li
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-
-      <main className="flex-1 py-8 md:py-16">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8 mb-16">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
-                <div className="h-0.5 w-6 bg-primary" />
-                Marketplace
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{title}</h1>
-              <p className="text-muted-foreground font-medium">
-                Discover {filteredListings.length} premium {title.toLowerCase()} listings
-              </p>
+    <main className="flex-1 py-8 md:py-16">
+      <div className="container mx-auto px-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8 mb-16">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
+              <div className="h-0.5 w-6 bg-primary" />
+              Marketplace
             </div>
-            <Button size="lg" className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold uppercase tracking-widest text-xs gap-3 transition-all hover:scale-[1.02] text-white" asChild>
-              <Link href="/dashboard">
-                <Plus className="h-5 w-5" />
-                {postLabel}
-              </Link>
-            </Button>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{title}</h1>
+            <p className="text-muted-foreground font-medium">
+              Discover {filteredListings.length} premium {title.toLowerCase()} listings
+            </p>
           </div>
+          <Button size="lg" className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold uppercase tracking-widest text-xs gap-3 transition-all hover:scale-[1.02] text-white" asChild>
+            <Link href="/dashboard">
+              <Plus className="h-5 w-5" />
+              {postLabel}
+            </Link>
+          </Button>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-            <aside className="lg:col-span-1">
-              <div className="sticky top-24">
-                <FilterSection
-                  filters={filters}
-                  onFilterChange={setFilters}
-                  variant="sidebar"
-                />
-              </div>
-            </aside>
-
-            <div className="lg:col-span-3">
-              {filteredListings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {filteredListings.map((item) => (
-                    <ListingCard key={item.id} {...item} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-dashed border-border rounded-[2rem]">
-                  <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
-                    <FilterSection.Icon className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">No listings found</h3>
-                  <p className="text-muted-foreground max-w-xs">Try adjusting your filters to find what you're looking for.</p>
-                </div>
-              )}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+          <aside className="lg:col-span-1">
+            <div className="sticky top-24">
+              <FilterSection
+                filters={filters}
+                onFilterChange={setFilters}
+                variant="sidebar"
+              />
             </div>
+          </aside>
+
+          <div className="lg:col-span-3">
+            {filteredListings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {filteredListings.map((item) => (
+                  <ListingCard key={item.id} {...item} type={item.type} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-dashed border-border rounded-[2rem]">
+                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
+                  {/* @ts-ignore */}
+                  <FilterSection.Icon className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">No listings found</h3>
+                <p className="text-muted-foreground max-w-xs">Try adjusting your filters to find what you're looking for.</p>
+              </div>
+            )}
           </div>
         </div>
-      </main>
-
+      </div>
       <Chat />
-      <Footer />
-    </div>
+    </main>
   );
 }
 

@@ -1,10 +1,8 @@
 "use client";
 
-import Header from "@/components/Header";
 import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
@@ -47,9 +45,7 @@ export default function Index() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-
+    <>
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 md:pt-32 md:pb-48 overflow-hidden" id="hero">
         {/* Abstract background elements */}
@@ -233,7 +229,7 @@ export default function Index() {
               <div className="flex overflow-x-auto gap-6 pb-10 custom-scrollbar scroll-smooth snap-x snap-mandatory px-2">
                 {section.data.map((item) => (
                   <div key={item.id} className="min-w-[300px] md:min-w-[380px] snap-start">
-                    <ListingCard {...item} category={section.id as any} />
+                    <ListingCard {...item} category={section.id as any} type={item.type} />
                   </div>
                 ))}
               </div>
@@ -272,8 +268,7 @@ export default function Index() {
         </div>
       </section>
 
-      <Footer />
       <Chat />
-    </div>
+    </>
   );
 }
