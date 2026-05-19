@@ -1,4 +1,4 @@
-export type ListingCategory = "house" | "car" | "otherService" | "service";
+export type ListingCategory = "house" | "car" | "service";
 
 export interface BaseListing {
   id: string;
@@ -74,6 +74,11 @@ export const houses: (BaseListing & { category: "house" })[] = [
     id: "house-5", 
     title: "Penthouse in Sarbet", 
     image: "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&q=80&w=800", 
+    images: [
+      "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800"
+    ],
     price: 65000, 
     location: "Addis Ababa, Sarbet", 
     category: "house", 
@@ -84,6 +89,10 @@ export const houses: (BaseListing & { category: "house" })[] = [
     id: "house-6", 
     title: "Apartment in Summit", 
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800", 
+    images: [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800"
+    ],
     price: 18000, 
     location: "Addis Ababa, Summit", 
     category: "house", 
@@ -117,6 +126,10 @@ export const cars: (BaseListing & { category: "car" })[] = [
     id: "car-1", 
     title: "2024 Toyota Land Cruiser V8", 
     image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800", 
+    images: [
+      "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=800"
+    ],
     price: 12000, 
     location: "Addis Ababa, Bole", 
     category: "car", 
@@ -127,6 +140,10 @@ export const cars: (BaseListing & { category: "car" })[] = [
     id: "car-2", 
     title: "2022 Hyundai Tucson", 
     image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=800", 
+    images: [
+      "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800"
+    ],
     price: 3500, 
     location: "Addis Ababa, Sarbet", 
     category: "car", 
@@ -207,12 +224,6 @@ export function getCarById(id: string) {
   return cars.find((c) => c.id === id);
 }
 
-export function getOtherServiceById(id: string) {
-  return otherServices.find((s) => s.id === id);
-}
-
-// Legacy support for services
-export const services = otherServices;
 export function getServiceById(id: string) {
-  return getOtherServiceById(id);
+  return services.find((s) => s.id === id);
 }
