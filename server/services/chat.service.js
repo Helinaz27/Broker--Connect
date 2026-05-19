@@ -3,11 +3,41 @@ import { prisma } from '../config/db.config.js';
 export const createRoomService = async (creatorId, listingId, participantId) => {
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
   if (!listing) throw { status: 404, message: 'Listing not found' };
+  if (listing.status !== 'active') throw { status: 400, message: 'Listing is not active' };
 
   const participant = await prisma.user.findUnique({ where: { id: participantId } });
   if (!participant) throw { status: 404, message: 'Participant not found' };
 
-  if (creatorId === participantId) throw { status: 400, message: 'You cannot create a chat room with yourself' };
+  if (creatorId === participantId) {
+    throw { status: 400, message: 'You cannot create a chat room with yourself' };
+  }
+
+  const isCreatorOwner = creatorId === listing.ownerId;
+  const isParticipantOwner = participantId === listing.ownerId;
+
+  if (!isCreatorOwner && !isParticipantOwner) {
+    throw { status: 400, message: 'Chat must be between the listing owner and an interested user' };
+  }
+
+  // Fix 4: Gate chat behind contact access — the non-owner must have paid
+  const buyerId = isCreatorOwner ? participantId : creatorId;
+
+  if (buyerId !== listing.ownerId) {
+    const access = await prisma.contactAccess.findFirst({
+      where: {
+        viewerId: buyerId,
+        listingId,
+        isActive: true,
+      },
+    });
+
+    if (!access) {
+      throw {
+        status: 403,
+        message: 'Contact access not unlocked. Pay the required coins to chat with this listing owner',
+      };
+    }
+  }
 
   const existing = await prisma.chatRoom.findFirst({
     where: {
