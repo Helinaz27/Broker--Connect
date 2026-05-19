@@ -1,7 +1,5 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { ShieldCheck, Users, Trophy, Target } from "lucide-react";
 
 export default function AboutPage() {
@@ -14,8 +12,6 @@ export default function AboutPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative py-20 md:py-32 overflow-hidden">
@@ -24,10 +20,14 @@ export default function AboutPage() {
             <div className="max-w-3xl">
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6">
                 Redefining the <br />
-                <span className="text-primary italic">Brokerage Experience.</span>
+                <span className="text-primary italic">
+                  Brokerage Experience.
+                </span>
               </h1>
               <p className="text-lg text-muted-foreground font-medium leading-relaxed mb-10">
-                Digital Broker is Ethiopia's premier marketplace for high-value assets. We connect verified sellers with serious buyers in a secure, transparent environment.
+                Digital Broker is Ethiopia's premier marketplace for high-value
+                assets. We connect verified sellers with serious buyers in a
+                secure, transparent environment.
               </p>
             </div>
           </div>
@@ -42,8 +42,12 @@ export default function AboutPage() {
                   <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
                     <stat.icon className="h-6 w-6" />
                   </div>
-                  <p className="text-3xl font-bold text-foreground mb-1">{stat.value}</p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+                  <p className="text-3xl font-bold text-foreground mb-1">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    {stat.label}
+                  </p>
                 </div>
               ))}
             </div>
@@ -55,12 +59,18 @@ export default function AboutPage() {
           <div className="container mx-auto px-6">
             <div className="grid md:grid-cols-2 gap-20 items-center">
               <div className="space-y-6">
-                <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">Our Mission</h2>
+                <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                  Our Mission
+                </h2>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  To provide a seamless, secure, and professional platform for transacting high-value houses, cars, and services in Ethiopia. We believe in transparency, integrity, and efficiency.
+                  To provide a seamless, secure, and professional platform for
+                  transacting high-value houses, cars, and services in Ethiopia.
+                  We believe in transparency, integrity, and efficiency.
                 </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  By leveraging technology, we're removing the traditional barriers in the brokerage industry, making it easier for everyone to list and discover premium assets.
+                  By leveraging technology, we're removing the traditional
+                  barriers in the brokerage industry, making it easier for
+                  everyone to list and discover premium assets.
                 </p>
               </div>
               <div className="rounded-[2.5rem] overflow-hidden border border-border shadow-glass aspect-video">
@@ -74,8 +84,6 @@ export default function AboutPage() {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }

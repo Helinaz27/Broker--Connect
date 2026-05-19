@@ -1,9 +1,10 @@
-export type ListingCategory = "house" | "car" | "service";
+export type ListingCategory = "house" | "car" | "otherService" | "service";
 
 export interface BaseListing {
   id: string;
   title: string;
   image: string;
+  images?: string[];
   price: number;
   location: string;
   rating: number;
@@ -46,9 +47,17 @@ export function getListingPath(category: ListingCategory, id: string): string {
 export function getHouseById(id: string) {
   return houses.find((h) => h.id === id);
 }
+
 export function getCarById(id: string) {
   return cars.find((c) => c.id === id);
 }
+
+export function getOtherServiceById(id: string) {
+  return otherServices.find((s) => s.id === id);
+}
+
+// Legacy support for services
+export const services = otherServices;
 export function getServiceById(id: string) {
-  return services.find((s) => s.id === id);
+  return getOtherServiceById(id);
 }

@@ -1,5 +1,4 @@
 import express from 'express';
-import { protect, admin } from '../middleware/auth.js';
 import * as listingController from '../controllers/listing.controller.js';
 import { createListingValidator, updateListingValidator } from '../validators/listing.validator.js';
 import { uploadMultiple, handleUploadError } from '../middleware/upload.js';

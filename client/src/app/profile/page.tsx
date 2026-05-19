@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import Chat from "@/components/Chat";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Coins, Edit, Lock, LogOut, Plus, ChevronRight, ShieldCheck } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -32,8 +31,6 @@ export default function Profile() {
     return badges[level as keyof typeof badges] || badges[0];
   };
 
-  const badge = getLevelBadge(user.level);
-
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.03),transparent_50%)]" />
@@ -45,37 +42,22 @@ export default function Profile() {
           <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-8 md:p-12 mb-10 shadow-2xl shadow-black/5 overflow-hidden group">
             <div className="absolute top-0 right-0 h-64 w-64 bg-primary/5 blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors duration-700" />
 
-            <div className="grid md:grid-cols-[240px_1fr] gap-12 items-center relative z-10">
-              {/* Avatar */}
-              <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                  <div className="absolute -inset-1.5 bg-gradient-to-tr from-primary to-blue-400 rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
-                  <img
-                    src={user.profileImage}
-                    alt={user.name}
-                    className="relative w-40 h-40 rounded-full object-cover border-4 border-card shadow-xl"
-                  />
-                  <button className="absolute bottom-2 right-2 p-2.5 bg-primary text-primary-foreground rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all border-4 border-card">
-                    <Edit className="h-4 w-4" />
-                  </button>
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Profile Info Card */}
+          <div className="lg:col-span-1">
+            <Card className="bg-card border-border sticky top-24">
+              <CardHeader>
+                <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/50 rounded-xl flex items-center justify-center text-3xl font-bold text-white mb-4">
+                  {user.name.charAt(0)}
                 </div>
-                <div
-                  className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${badge.color} border-current/20`}
-                >
-                  <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                  {badge.label}
-                </div>
-              </div>
-
-              {/* User Info */}
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Name
+                  </p>
+                  <p className="text-lg font-semibold text-foreground mt-1">
                     {user.name}
-                  </h1>
-                  <p className="text-muted-foreground font-bold text-sm flex items-center gap-2">
-                    Member since{" "}
-                    <span className="text-foreground">{user.joinedDate}</span>
                   </p>
                 </div>
 
@@ -164,32 +146,28 @@ export default function Profile() {
                   <p className="text-4xl font-black text-foreground tracking-tighter group-hover:text-primary transition-colors">
                     3
                   </p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    Active Posts
+                  <p className="text-sm font-semibold text-foreground break-all mt-1">
+                    {user.email}
                   </p>
                 </div>
-                <div className="h-1.5 w-full bg-muted rounded-full mt-6 overflow-hidden">
-                  <div className="h-full bg-primary rounded-full w-[30%]" />
-                </div>
-              </div>
-
-              <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2rem] p-8 shadow-sm group hover:border-amber-200 transition-all duration-500">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">
-                  Broker Authority
-                </p>
-                <div className="flex items-center gap-2">
-                  <p className="text-4xl font-black text-foreground tracking-tighter group-hover:text-amber-500 transition-colors">
-                    4.8
+                <div className="border-t border-border pt-6">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Member Since
                   </p>
-                  <div className="flex text-amber-500">
-                    <span className="text-xl">★</span>
-                  </div>
+                  <p className="text-sm font-semibold text-foreground mt-1">
+                    {user.joinedAt}
+                  </p>
                 </div>
-                <p className="text-xs font-bold text-muted-foreground mt-4 italic">
-                  Top 5% in Addis Ababa
-                </p>
-              </div>
-            </div>
+                <div className="border-t border-border pt-6 bg-primary/5 -mx-6 px-6 py-6 rounded-b-lg">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Available Coins
+                  </p>
+                  <p className="text-3xl font-bold text-primary mt-2">
+                    {user.coins.toLocaleString()}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Security & Activity Console */}

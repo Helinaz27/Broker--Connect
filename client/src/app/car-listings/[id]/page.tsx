@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { getCarById } from "@/data/listings";
-import { MapPin, ArrowLeft, Star } from "lucide-react";
+import { MapPin, ArrowLeft, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -14,6 +14,7 @@ export default function CarDetailPage() {
   const router = useRouter();
   const id = params?.id as string;
   const car = id ? getCarById(id) : null;
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   if (!car) {
     return (
@@ -21,12 +22,26 @@ export default function CarDetailPage() {
         <Header />
         <main className="flex-1 container px-4 py-16 text-center">
           <p className="text-muted-foreground mb-4">Car not found.</p>
-          <Button variant="outline" onClick={() => router.back()}>Go back</Button>
+          <Button variant="outline" onClick={() => router.back()}>
+            Go back
+          </Button>
         </main>
         <Footer />
       </div>
     );
   }
+
+  const images = car.images && car.images.length > 0 
+    ? car.images 
+    : [car.image, car.image, car.image, car.image];
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -67,6 +82,18 @@ export default function CarDetailPage() {
                 </a>
               </Button>
             </div>
+          </div>
+
+          {/* Description */}
+          <div className="mt-12 bg-card border border-border rounded-lg p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
+              {car.title}
+            </h2>
+            {car.description && (
+              <p className="text-muted-foreground leading-relaxed text-lg">
+                {car.description}
+              </p>
+            )}
           </div>
         </div>
       </main>
