@@ -30,7 +30,6 @@ import { useLogoutMutation } from "@/store/apis/userApi";
 import { clearUser } from "@/store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
-import { ModeToggle } from "@/components/ModeToggle";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,17 +41,13 @@ export default function Header() {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const { currentUser, isAuthenticated } = useAppSelector((state) => state.user);
 
-  const user = isAuthenticated ? currentUser : null;
-  const userName = user
-    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User"
-    : "";
-  const userInitials = userName
-    .split(" ")
-    .filter(Boolean)
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const user = isAuthenticated ? currentUser : null;
   const userName = user
