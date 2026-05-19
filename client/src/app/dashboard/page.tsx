@@ -114,7 +114,7 @@ export default function Dashboard() {
             <div className="space-y-12 animate-fade-in">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">Performance Hub.</h1>
+                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">Broker Portfolio Analytics.</h1>
                   <p className="text-muted-foreground font-medium mt-1">Real-time metrics for your Broker Connect portfolio.</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -335,6 +335,90 @@ export default function Dashboard() {
           )}
 
           {/* Placeholder for other tabs */}
+          {activeTab.includes("_view") && (
+            <div className="space-y-12 animate-fade-in">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                  <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+                    {activeTab === "house_view" ? "House" : activeTab === "car_view" ? "Car" : "Service"} Portfolio.
+                  </h1>
+                  <p className="text-muted-foreground font-medium mt-1">Manage and analyze your {activeTab.split("_")[0]} listings.</p>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
+                    {(["all", "rent", "sell"] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setDashboardFilter(filter)}
+                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                          dashboardFilter === filter 
+                            ? "bg-card text-primary shadow-sm" 
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2.5rem] shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[800px]">
+                    <thead>
+                      <tr className="bg-muted/30 border-b border-border/40">
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Listing</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Type</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Price</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Location</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
+                        <th className="text-right py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {mockListings
+                        .filter(l => dashboardFilter === "all" || l.type === dashboardFilter)
+                        .map((listing) => (
+                          <tr key={listing.id} className="hover:bg-primary/[0.02] transition-colors group">
+                            <td className="py-6 px-8">
+                              <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{listing.title}</span>
+                            </td>
+                            <td className="py-6 px-8">
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                                listing.type === "rent" ? "bg-blue-500/10 text-blue-600" : "bg-emerald-500/10 text-emerald-600"
+                              }`}>
+                                {listing.type}
+                              </span>
+                            </td>
+                            <td className="py-6 px-8 font-black text-sm">{listing.price.toLocaleString()} Br</td>
+                            <td className="py-6 px-8 text-muted-foreground text-xs font-semibold">{listing.location}</td>
+                            <td className="py-6 px-8">
+                              <div className="flex items-center gap-2">
+                                <div className={`h-1.5 w-1.5 rounded-full ${listing.status === "active" ? "bg-green-500" : "bg-slate-400"}`} />
+                                <span className="text-[11px] font-black uppercase tracking-wider">{listing.status}</span>
+                              </div>
+                            </td>
+                            <td className="py-6 px-8 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-destructive/10 hover:text-destructive">
+                                  <Clock className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab.includes("_post") && (
              <div className="space-y-12 animate-fade-in">
                 <h1 className="text-4xl font-black text-foreground tracking-tight italic">Coming Soon.</h1>
