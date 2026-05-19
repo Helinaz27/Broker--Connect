@@ -54,7 +54,7 @@ export const createListingValidator = [
     .trim()
     .notEmpty()
     .withMessage("Description is required")
-    .isLength({ min: 20, max: 5000 })
+    .isLength({ min: 2, max: 5000 })
     .withMessage("Description must be between 20 and 5000 characters"),
 
   body("price")
@@ -205,8 +205,8 @@ export const updateListingValidator = [
   body("description")
     .optional()
     .trim()
-    .isLength({ min: 20, max: 5000 })
-    .withMessage("Description must be between 20 and 5000 characters"),
+    .isLength({ min: 2, max: 5000 })
+    .withMessage("Description must be between 2 and 5000 characters"),
 
   body("price")
     .optional()
