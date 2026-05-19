@@ -79,25 +79,25 @@ export default function Index() {
               </div>
               
               <div className="space-y-6">
-                <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] text-foreground tracking-tight italic">
+                <h1 className="text-5xl md:text-8xl font-black leading-[1.1] text-foreground tracking-tight italic font-poppins">
                   Premium <br />
                   <span className="text-primary">Marketplace</span> <br />
                   for Ethiopia.
                 </h1>
-                <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">
-                  Ethiopia's most trusted ecosystem for high-value real estate, premium automotive assets, and vetted professional services.
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium max-w-lg font-inter">
+                  Ethiopia's most trusted ecosystem for high-value real estate, premium automotive posts, and vetted professional services.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all group" asChild>
+                <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all group font-poppins" asChild>
                   <Link href="/house-listings">
-                    Explore Assets
+                    Explore Marketplace
                     <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl border-border/60 font-black uppercase tracking-widest text-xs hover:bg-muted/50 transition-all" asChild>
-                  <Link href="/dashboard">Post Asset</Link>
+                <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl border-border/60 font-black uppercase tracking-widest text-xs hover:bg-muted/50 transition-all font-poppins" asChild>
+                  <Link href="/dashboard">Post Now</Link>
                 </Button>
               </div>
             </div>
@@ -135,11 +135,11 @@ export default function Index() {
         <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Asset Category</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Post Category</label>
               <select
                 value={filters.category}
                 onChange={(e) => setFilters({ ...filters, category: e.target.value as any })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all appearance-none"
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all appearance-none font-inter"
               >
                 <option value="all">All Categories</option>
                 <option value="house">Houses</option>
@@ -148,37 +148,37 @@ export default function Index() {
               </select>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Location</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Location</label>
               <input
                 type="text"
                 placeholder="District in Addis..."
                 value={filters.location}
                 onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all font-inter"
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Min Price (ETB)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Min Price (ETB)</label>
               <input
                 type="number"
                 placeholder="0"
                 value={filters.priceMin || ""}
                 onChange={(e) => setFilters({ ...filters, priceMin: parseInt(e.target.value) || 0 })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all font-inter"
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Max Price (ETB)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Max Price (ETB)</label>
               <input
                 type="number"
                 placeholder="Any"
                 value={filters.priceMax || ""}
                 onChange={(e) => setFilters({ ...filters, priceMax: parseInt(e.target.value) || 100000000 })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all font-inter"
               />
             </div>
             <div className="flex items-end">
-              <Button onClick={handleReset} variant="outline" className="w-full h-14 rounded-2xl border-border/60 font-black uppercase tracking-widest text-[10px] hover:bg-muted/50 transition-all">
+              <Button onClick={handleReset} variant="outline" className="w-full h-14 rounded-2xl border-border/60 font-black uppercase tracking-widest text-[10px] hover:bg-muted/50 transition-all font-poppins">
                 Reset Filters
               </Button>
             </div>
@@ -194,13 +194,13 @@ export default function Index() {
               <div key={section.id} className="space-y-12">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                   <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-widest">
+                    <div className="inline-flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-widest font-poppins">
                       <div className="h-0.5 w-6 bg-primary" />
                       {section.label}
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight italic">{section.title}</h2>
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight italic font-poppins">{section.title}</h2>
                   </div>
-                  <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-6 h-12 rounded-xl group" asChild>
+                  <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-6 h-12 rounded-xl group font-poppins" asChild>
                     <Link href={section.href}>
                       View Collection
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -224,9 +224,9 @@ export default function Index() {
               <div className="h-20 w-20 rounded-3xl bg-muted/50 flex items-center justify-center mb-8">
                 <ArrowRight className="h-10 w-10 text-muted-foreground -rotate-45" />
               </div>
-              <h3 className="text-2xl font-black text-foreground mb-3 italic">No matching assets found.</h3>
-              <p className="text-muted-foreground max-w-sm font-medium">Try broadening your search criteria or resetting the filters to explore the marketplace.</p>
-              <Button onClick={handleReset} variant="outline" className="mt-10 rounded-2xl border-border/60 font-bold px-8 h-12">Clear all filters</Button>
+              <h3 className="text-2xl font-black text-foreground mb-3 italic font-poppins">No matching posts found.</h3>
+              <p className="text-muted-foreground max-w-sm font-medium font-inter">Try broadening your search criteria or resetting the filters to explore the marketplace.</p>
+              <Button onClick={handleReset} variant="outline" className="mt-10 rounded-2xl border-border/60 font-black px-8 h-12 font-poppins">Clear all filters</Button>
             </div>
           )}
         </div>
@@ -237,11 +237,11 @@ export default function Index() {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20">
             <div className="max-w-2xl space-y-4">
-              <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-[1.1] italic">
+              <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-[1.1] italic font-poppins">
                 Precision for <br />
                 <span className="text-primary">Your Ambition.</span>
               </h2>
-              <p className="text-lg text-muted-foreground font-medium">
+              <p className="text-lg text-muted-foreground font-medium font-inter">
                 Highly vetted collections across three core pillars of modern success.
               </p>
             </div>
@@ -282,8 +282,8 @@ export default function Index() {
                   <div className="h-12 w-12 rounded-2xl bg-primary/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
                     <cat.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-3xl font-black text-white tracking-tight mb-4 uppercase italic">{cat.title}</h3>
-                  <p className="text-white/70 text-sm font-medium leading-relaxed opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                  <h3 className="text-3xl font-black text-white tracking-tight mb-4 uppercase italic font-poppins">{cat.title}</h3>
+                  <p className="text-white/70 text-sm font-medium leading-relaxed opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 font-inter">
                     {cat.desc}
                   </p>
                 </div>

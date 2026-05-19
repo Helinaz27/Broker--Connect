@@ -120,6 +120,7 @@ export default function Profile() {
             </div>
           </div>
 
+          <p className="px-4 text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-4 font-poppins">Post Portfolios</p>
           <div className="grid md:grid-cols-3 gap-8">
             {/* Finance Card */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2.5rem] p-10 md:col-span-2 shadow-2xl relative overflow-hidden group">

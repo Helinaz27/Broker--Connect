@@ -59,15 +59,15 @@ export default function FilterSection({
     return (
       <div className="flex flex-col lg:flex-row items-end gap-6 bg-card p-3 rounded-2xl shadow-soft">
         <div className="w-full lg:flex-[1.5]">
-          <label className={labelStyles}>Search Query</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 ml-1 block font-poppins">Post Title</label>
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Houses, cars, or services..."
+              placeholder="Search listings..."
               value={filters.search}
               onChange={(e) => updateFilter({ search: e.target.value })}
-              className={`${inputStyles} pl-11`}
+              className={`${inputStyles} pl-11 font-inter`}
             />
           </div>
         </div>

@@ -5,7 +5,7 @@ import { ShieldCheck, Users, Trophy, Target } from "lucide-react";
 export default function AboutPage() {
   const stats = [
     { label: "Active Users", value: "10K+", icon: Users },
-    { label: "Verified Assets", value: "5K+", icon: ShieldCheck },
+    { label: "Verified Posts", value: "5K+", icon: ShieldCheck },
     { label: "Awards Won", value: "12", icon: Trophy },
     { label: "Success Rate", value: "98%", icon: Target },
   ];
