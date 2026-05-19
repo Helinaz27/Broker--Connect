@@ -1,19 +1,19 @@
 import express from 'express';
-import { protect, admin } from '../middleware/auth.js';
+import { can } from '../middleware/can.js';
 import * as notificationController from '../controllers/notification.controller.js';
+import { sendNotificationValidator, markAsReadValidator } from '../validators/notification.validator.js';
+
 
 const router = express.Router();
 
-//  USER NOTIFICATION ROUTES 
-router.get('/', protect, notificationController.getMyNotifications);
-router.get('/unread/count', protect, notificationController.getUnreadCount);
-router.put('/:id/read', protect, notificationController.markAsRead);
-router.put('/read-all', protect, notificationController.markAllAsRead);
-router.delete('/:id', protect, notificationController.deleteNotification);
-router.delete('/', protect, notificationController.deleteAllNotifications);
+router.get('/admin/all',   can('notification', 'manage'),    notificationController.adminGetAllNotifications);
+router.post('/admin/send', can('notification', 'manage'), sendNotificationValidator,    notificationController.sendSystemNotification);
 
-//  ADMIN NOTIFICATION ROUTES 
-router.post('/admin/send', protect, admin, notificationController.sendSystemNotification);
-router.get('/admin/all', protect, admin, notificationController.adminGetAllNotifications);
+router.put('/read-all',     can('notification', 'updateOwn'), notificationController.markAllAsRead);
+
+router.get('/unread/count', can('notification', 'readOwn'),   notificationController.getUnreadCount);
+router.get('/',             can('notification', 'readOwn'),   notificationController.getMyNotifications);
+
+router.put('/:id/read', can('notification', 'updateOwn'), markAsReadValidator, notificationController.markOneAsRead);
 
 export default router;
