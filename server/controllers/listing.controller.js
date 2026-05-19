@@ -315,7 +315,7 @@ export const updateListingCtrl = async (req, res) => {
       if (parking !== undefined) updateData.parking = parseInt(parking);
       if (rentalPeriod !== undefined) updateData.rentalPeriod = rentalPeriod;
     }
-
+t
     if (existingListing.listingType === 'car') {
       if (carType !== undefined) updateData.carType = carType;
       if (condition !== undefined) updateData.condition = condition;
