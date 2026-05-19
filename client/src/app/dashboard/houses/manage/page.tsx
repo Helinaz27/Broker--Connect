@@ -147,18 +147,6 @@ export default function HouseManagePage() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-          <Button
             size="sm"
             className="gap-2"
             onClick={() => router.push("/dashboard/houses/post")}

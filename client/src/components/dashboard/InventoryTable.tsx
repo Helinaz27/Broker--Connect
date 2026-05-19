@@ -39,7 +39,7 @@ export function InventoryTable({
         <div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight italic">
             {activeTab === "house_view"
-              ? "House Portfolio"
+              ? "House Inventory"
               : activeTab === "car_view"
                 ? "Car Inventory"
                 : "Service Directory"}

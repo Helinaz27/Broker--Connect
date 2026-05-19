@@ -574,8 +574,6 @@ function KYCSection() {
   );
 }
 
-// ─── Listings tab (dynamic) ───────────────────────────────────────────────────
-
 function MyListingsTab() {
   const [page, setPage] = useState(1);
   const limit = 10;
