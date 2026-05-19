@@ -10,14 +10,16 @@ import {
   LogOut,
   Settings,
   LayoutDashboard,
-  ChevronDown,
   Bell,
-  Home,
-  Car,
-  Wrench,
+  LucideProps,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  useState,
+  useEffect,
+  ForwardRefExoticComponent,
+  RefAttributes,
+} from "react";
+import { useRouter } from "next/navigation";
 import {
   HoverCard,
   HoverCardContent,
@@ -31,15 +33,24 @@ import { clearUser } from "@/store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
 
+type MenuItem = {
+  href: string;
+  icon: ForwardRefExoticComponent<
+    Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
+  >;
+  label: string;
+};
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const { currentUser, isAuthenticated } = useAppSelector((state) => state.user);
+  const { currentUser, isAuthenticated } = useAppSelector(
+    (state) => state.user,
+  );
 
   const user = isAuthenticated ? currentUser : null;
   const userName = user
@@ -59,6 +70,7 @@ export default function Header() {
       dispatch(clearUser());
       toast.success("Logged out successfully");
       setMobileMenuOpen(false);
+      setProfileOpen(false);
       router.push("/login");
     } catch (err: unknown) {
       const errorMessage =
@@ -75,6 +87,14 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const desktopMenuItems: MenuItem[] = [
+    ...(!user?.roles.includes("user")
+      ? [{ href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }]
+      : []),
+    { href: "/profile", icon: User, label: "My Profile" },
+    { href: "/settings", icon: Settings, label: "Settings" },
+  ];
 
   return (
     <header
@@ -121,7 +141,7 @@ export default function Header() {
 
         <div className="hidden md:flex items-center gap-2">
           <ModeToggle />
-          
+
           {/* Notification Icon - Only when authenticated */}
           {user && (
             <Button
@@ -139,22 +159,22 @@ export default function Header() {
 
           {/* Favorites Icon */}
           <Link href="/favorites">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-            >
+            <Button variant="ghost" size="icon" className="h-9 w-9">
               <Heart className="h-5 w-5" />
             </Button>
           </Link>
 
-          {/* Conditional auth UI: show Sign in when not signed in; profile when signed in */}
           {user ? (
-            <HoverCard openDelay={0} closeDelay={200}>
+            <HoverCard
+              open={profileOpen}
+              onOpenChange={setProfileOpen}
+              openDelay={0}
+              closeDelay={200}
+            >
               <HoverCardTrigger asChild>
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent transition-colors"
+                <div
+                  onClick={() => setProfileOpen((prev) => !prev)}
+                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.profileImage} alt={userName} />
@@ -170,25 +190,18 @@ export default function Header() {
                       {(user.coins ?? 0).toLocaleString()} Coins
                     </p>
                   </div>
-                </Link>
+                </div>
               </HoverCardTrigger>
               <HoverCardContent
                 className="w-56 p-1 mt-1 rounded-lg border border-border bg-background shadow-lg z-50"
                 align="end"
               >
                 <div className="flex flex-col gap-1">
-                  {[
-                    {
-                      href: "/dashboard",
-                      icon: LayoutDashboard,
-                      label: "Dashboard",
-                    },
-                    { href: "/profile", icon: User, label: "My Profile" },
-                    { href: "/settings", icon: Settings, label: "Settings" },
-                  ].map((item) => (
+                  {desktopMenuItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-accent transition-colors text-sm font-medium"
                     >
                       <item.icon className="h-4 w-4 text-muted-foreground" />
@@ -210,11 +223,7 @@ export default function Header() {
             </HoverCard>
           ) : (
             <Link href="/login">
-              <Button
-                variant="default"
-                size="sm"
-                className="font-medium"
-              >
+              <Button variant="default" size="sm" className="font-medium">
                 Sign in
               </Button>
             </Link>
@@ -238,11 +247,7 @@ export default function Header() {
             </Button>
           )}
           <Link href="/favorites">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-            >
+            <Button variant="ghost" size="icon" className="h-9 w-9">
               <Heart className="h-5 w-5" />
             </Button>
           </Link>
@@ -303,14 +308,16 @@ export default function Header() {
             <div className="h-px bg-border my-2" />
             {user ? (
               <>
-                <Link
-                  href="/dashboard"
-                  className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
+                {!user.roles.includes("user") && (
+                  <Link
+                    href="/dashboard"
+                    className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                )}
                 <Link
                   href="/profile"
                   className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"
@@ -341,7 +348,11 @@ export default function Header() {
               </>
             ) : (
               <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="default" size="sm" className="w-full font-medium">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full font-medium"
+                >
                   Sign in
                 </Button>
               </Link>

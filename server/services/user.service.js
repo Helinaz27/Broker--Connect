@@ -51,9 +51,9 @@ export const registerUserService = async (userData) => {
         userId: newUser.id,
         type: "credit",
         amount: COIN_RULES.WELCOME_BONUS,
-        reason: 'welcome_bonus',
-        description: `Welcome bonus of ${COIN_RULES.WELCOME_BONUS} coins`
-      }
+        reason: "welcome_bonus",
+        description: `Welcome bonus of ${COIN_RULES.WELCOME_BONUS} coins`,
+      },
     });
   }
 
@@ -93,7 +93,7 @@ export const loginUserService = async (email, password) => {
     };
   }
 
-  const token = generateToken(user.id);
+  const token = generateToken(user.id, user.roles);
 
   return {
     success: true,
