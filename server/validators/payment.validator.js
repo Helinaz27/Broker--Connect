@@ -19,8 +19,5 @@ export const updatePaymentValidator = [
   body('status')
     .notEmpty().withMessage('Status is required')
     .isIn(['pending', 'processing', 'success', 'failed']).withMessage('Invalid payment status'),
-  body('completedAt')
-    .optional()
-    .isISO8601().withMessage('completedAt must be a valid date'),
   validate,
 ];

@@ -30,6 +30,7 @@ import { useLogoutMutation } from "@/store/apis/userApi";
 import { clearUser } from "@/store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
+import { ModeToggle } from "@/components/ModeToggle";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,13 +42,17 @@ export default function Header() {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const { currentUser, isAuthenticated } = useAppSelector((state) => state.user);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const user = isAuthenticated ? currentUser : null;
+  const userName = user
+    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User"
+    : "";
+  const userInitials = userName
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const user = isAuthenticated ? currentUser : null;
   const userName = user
@@ -188,7 +193,7 @@ export default function Header() {
               className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
               onClick={() => toast.info("No new notifications")}
             >
-              <Bell className="h-5 w-5" />
+              <Heart className="h-5 w-5" />
             </Button>
           </div>
 
@@ -283,8 +288,21 @@ export default function Header() {
         </div>
 
         {/* Mobile Actions */}
-        <div className="flex items-center gap-1 md:hidden">
+        <div className="flex items-center gap-2 md:hidden">
           <ModeToggle />
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 relative"
+              asChild
+            >
+              <Link href="/notifications">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+              </Link>
+            </Button>
+          )}
           <Link href="/favorites">
             <Button
               variant="ghost"
@@ -297,7 +315,7 @@ export default function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 text-muted-foreground rounded-xl"
+            className="h-9 w-9"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (

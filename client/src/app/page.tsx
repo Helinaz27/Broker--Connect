@@ -1,27 +1,27 @@
 "use client";
 
 import ListingCard from "@/components/ListingCard";
-import FilterSection from "@/components/FilterSection";
+import { FilterValues } from "@/components/FilterPanel";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Home } from "lucide-react";
+import { ArrowRight, Home, Car, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { houses, cars, services } from "@/data/listings";
 
 export default function Index() {
-  const [filters, setFilters] = useState({
-    priceRange: [0, 100000] as [number, number],
-    location: "",
+  const [filters, setFilters] = useState<FilterValues>({
     search: "",
-    type: "all" as "all" | "house" | "car" | "service",
+    location: "",
+    priceMin: 0,
+    priceMax: 100000000,
+    category: "all",
   });
 
-  const filterBySearch = (items: any[]) => {
+  const filterListings = (items: any[]) => {
     return items.filter((item) => {
       const priceMatch =
-        item.price >= filters.priceRange[0] &&
-        item.price <= filters.priceRange[1];
+        item.price >= filters.priceMin && item.price <= filters.priceMax;
       const searchMatch =
         !filters.search ||
         item.title.toLowerCase().includes(filters.search.toLowerCase());
@@ -32,23 +32,38 @@ export default function Index() {
     });
   };
 
-  const filteredHouses = filterBySearch(
-    filters.type === "all" || filters.type === "house" ? houses : [],
+  const filteredHouses = filterListings(
+    filters.category === "all" || filters.category === "house" ? houses : []
   );
 
-  const filteredCars = filterBySearch(
-    filters.type === "all" || filters.type === "car" ? cars : [],
+  const filteredCars = filterListings(
+    filters.category === "all" || filters.category === "car" ? cars : []
   );
 
-  const filteredServices = filterBySearch(
-    filters.type === "all" || filters.type === "service" ? services : [],
+  const filteredServices = filterListings(
+    filters.category === "all" || filters.category === "service" ? services : []
   );
+
+  const handleReset = () => {
+    setFilters({
+      search: "",
+      location: "",
+      priceMin: 0,
+      priceMax: 100000000,
+      category: "all",
+    });
+  };
+
+  const sections = [
+    { id: "house", title: "Premium Real Estate", data: filteredHouses, href: "/house-listings", label: "Houses" },
+    { id: "car", title: "Automotive Collection", data: filteredCars, href: "/car-listings", label: "Cars" },
+    { id: "service", title: "Professional Services", data: filteredServices, href: "/service-listings", label: "Services" },
+  ];
 
   return (
-    <>
+    <main className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 md:pt-32 md:pb-48 overflow-hidden" id="hero">
-        {/* Abstract background elements */}
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-[120px] opacity-60 pointer-events-none" />
         <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] opacity-60 pointer-events-none" />
         
@@ -64,44 +79,29 @@ export default function Index() {
               </div>
               
               <div className="space-y-6">
-                <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] text-foreground tracking-tight">
+                <h1 className="text-5xl md:text-8xl font-bold leading-[1.1] text-foreground tracking-tight italic">
                   Premium <br />
-                  <span className="text-gradient">Marketplace</span> <br />
+                  <span className="text-primary">Marketplace</span> <br />
                   for Ethiopia.
                 </h1>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">
                   Ethiopia's most trusted ecosystem for high-value real estate, premium automotive assets, and vetted professional services.
                 </p>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <Button size="lg" className="h-14 px-10 rounded-2xl text-sm font-bold gap-3 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all text-white group" asChild>
-                  <Link href="#listings">
-                    Explore Marketplace
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all group" asChild>
+                  <Link href="/house-listings">
+                    Explore Assets
+                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" className="h-14 px-10 rounded-2xl text-sm font-bold border-border bg-background/50 backdrop-blur-sm text-foreground hover:bg-muted transition-all" asChild>
-                  <Link href="/about">How it Works</Link>
+                <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl border-border/60 font-black uppercase tracking-widest text-xs hover:bg-muted/50 transition-all" asChild>
+                  <Link href="/dashboard">Post Asset</Link>
                 </Button>
               </div>
-              
-              <div className="grid grid-cols-3 gap-8 pt-12 border-t border-border">
-                <div>
-                  <p className="text-4xl font-bold text-foreground tracking-tight">{houses.length}+</p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">Houses</p>
-                </div>
-                <div>
-                  <p className="text-4xl font-bold text-foreground tracking-tight">{cars.length}+</p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">Cars</p>
-                </div>
-                <div>
-                  <p className="text-4xl font-bold text-foreground tracking-tight">{services.length}+</p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5">Experts</p>
-                </div>
-              </div>
             </div>
-            
+
             <div className="relative hidden lg:block animate-in" style={{ animationDelay: '200ms' }}>
               <div className="relative z-10 rounded-[2.5rem] border border-white/20 bg-white/10 backdrop-blur-md p-4 shadow-glass overflow-hidden group">
                 <div className="aspect-[4/3] rounded-[2rem] overflow-hidden relative">
@@ -124,22 +124,122 @@ export default function Index() {
                   </div>
                 </div>
               </div>
-              {/* Floating decorative elements */}
-              <div className="absolute -top-12 -right-12 h-40 w-40 bg-primary/20 rounded-full blur-[80px] opacity-40 animate-pulse-soft" />
-              <div className="absolute -bottom-16 -left-16 h-56 w-56 bg-primary/20 rounded-full blur-[100px] opacity-40 animate-pulse-soft" />
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -z-10" />
             </div>
           </div>
         </div>
       </section>
 
+      {/* Horizontal Filter Bar */}
+      <section className="container mx-auto px-6 -mt-12 relative z-20">
+        <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Asset Category</label>
+              <select
+                value={filters.category}
+                onChange={(e) => setFilters({ ...filters, category: e.target.value as any })}
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all appearance-none"
+              >
+                <option value="all">All Categories</option>
+                <option value="house">Houses</option>
+                <option value="car">Cars</option>
+                <option value="service">Services</option>
+              </select>
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Location</label>
+              <input
+                type="text"
+                placeholder="District in Addis..."
+                value={filters.location}
+                onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Min Price (ETB)</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={filters.priceMin || ""}
+                onChange={(e) => setFilters({ ...filters, priceMin: parseInt(e.target.value) || 0 })}
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Max Price (ETB)</label>
+              <input
+                type="number"
+                placeholder="Any"
+                value={filters.priceMax || ""}
+                onChange={(e) => setFilters({ ...filters, priceMax: parseInt(e.target.value) || 100000000 })}
+                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={handleReset} variant="outline" className="w-full h-14 rounded-2xl border-border/60 font-black uppercase tracking-widest text-[10px] hover:bg-muted/50 transition-all">
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Listings Sections */}
+      <section className="py-32">
+        <div className="container mx-auto px-6 space-y-32">
+          {sections.map((section) => (
+            section.data.length > 0 && (
+              <div key={section.id} className="space-y-12">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-widest">
+                      <div className="h-0.5 w-6 bg-primary" />
+                      {section.label}
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight italic">{section.title}</h2>
+                  </div>
+                  <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-6 h-12 rounded-xl group" asChild>
+                    <Link href={section.href}>
+                      View Collection
+                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </Button>
+                </div>
+                
+                <div className="flex overflow-x-auto gap-8 pb-10 -mx-6 px-6 custom-scrollbar scroll-smooth snap-x snap-mandatory">
+                  {section.data.slice(0, 8).map((item) => (
+                    <div key={item.id} className="min-w-[320px] md:min-w-[420px] snap-start">
+                      <ListingCard {...item} category={section.id as any} type={item.type} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          ))}
+
+          {filteredHouses.length === 0 && filteredCars.length === 0 && filteredServices.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-32 text-center bg-card/30 border border-dashed border-border/60 rounded-[3rem]">
+              <div className="h-20 w-20 rounded-3xl bg-muted/50 flex items-center justify-center mb-8">
+                <ArrowRight className="h-10 w-10 text-muted-foreground -rotate-45" />
+              </div>
+              <h3 className="text-2xl font-black text-foreground mb-3 italic">No matching assets found.</h3>
+              <p className="text-muted-foreground max-w-sm font-medium">Try broadening your search criteria or resetting the filters to explore the marketplace.</p>
+              <Button onClick={handleReset} variant="outline" className="mt-10 rounded-2xl border-border/60 font-bold px-8 h-12">Clear all filters</Button>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Segment Curations */}
-      <section className="py-32 bg-muted/30 border-y border-border">
+      <section className="py-32 bg-muted/30 border-y border-border/40">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20">
             <div className="max-w-2xl space-y-4">
-              <h2 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight leading-[1.1]">
+              <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-[1.1] italic">
                 Precision for <br />
-                <span className="text-gradient">Your Ambition.</span>
+                <span className="text-primary">Your Ambition.</span>
               </h2>
               <p className="text-lg text-muted-foreground font-medium">
                 Highly vetted collections across three core pillars of modern success.
@@ -153,37 +253,39 @@ export default function Index() {
                 title: "Houses", 
                 img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
                 desc: "High-yield real estate and luxury living spaces in Addis.",
-                href: "/house-listings"
+                href: "/house-listings",
+                icon: Home
               },
               { 
                 title: "Cars", 
                 img: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&q=80",
                 desc: "Premium mobility for professional excellence.",
-                href: "/car-listings"
+                href: "/car-listings",
+                icon: Car
               },
               { 
                 title: "Services", 
                 img: "https://images.unsplash.com/photo-1581578731548-c64695ce6958?w=800&q=80",
                 desc: "Bespoke services for technical & creative needs.",
-                href: "/service-listings"
+                href: "/service-listings",
+                icon: Wrench
               }
             ].map((cat, i) => (
-              <Link key={i} href={cat.href} className="group relative rounded-[2rem] overflow-hidden aspect-[4/5] bg-card border border-border shadow-soft hover:shadow-xl hover:-translate-y-2 transition-all duration-500 ease-out">
+              <Link key={i} href={cat.href} className="group relative rounded-[2.5rem] overflow-hidden aspect-[4/5] bg-card border border-border shadow-soft hover:shadow-2xl transition-all duration-700 ease-out">
                 <img 
                   src={cat.img} 
                   alt={cat.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
-                <div className="absolute bottom-10 left-8 right-8">
-                  <h3 className="text-3xl font-bold text-white tracking-tight mb-4 uppercase">{cat.title}</h3>
-                  <p className="text-white/70 text-sm font-medium leading-relaxed mb-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-400">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
+                <div className="absolute bottom-12 left-10 right-10">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
+                    <cat.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-3xl font-black text-white tracking-tight mb-4 uppercase italic">{cat.title}</h3>
+                  <p className="text-white/70 text-sm font-medium leading-relaxed opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
                     {cat.desc}
                   </p>
-                  <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
-                    View Segment
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                  </div>
                 </div>
               </Link>
             ))}
@@ -191,84 +293,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Global Filter Console */}
-      <section className="relative z-20 -mt-12 mb-20" id="listings">
-        <div className="container mx-auto px-6">
-          <div className="bg-background/80 backdrop-blur-xl border border-border p-2 rounded-3xl shadow-glass">
-            <FilterSection
-              filters={filters}
-              onFilterChange={setFilters}
-              variant="horizontal"
-            />
-          </div>
-        </div>
-      </section>
-
-      <main className="container mx-auto px-6 py-16">
-        {/* Marketplace Sections */}
-        <div className="space-y-32">
-          {[
-            { id: "house", label: "Houses", sub: "Real Estate", data: filteredHouses, href: "/house-listings" },
-            { id: "car", label: "Cars", sub: "Automotive", data: filteredCars, href: "/car-listings" },
-            { id: "service", label: "Services", sub: "Experts & Professionals", data: filteredServices, href: "/service-listings" }
-          ].map((section) => (filters.type === "all" || filters.type === section.id) && (
-            <section key={section.id} className="animate-in">
-              <div className="flex items-end justify-between mb-12 px-2">
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
-                    <div className="h-0.5 w-6 bg-primary" />
-                    {section.sub}
-                  </div>
-                  <h2 className="text-4xl font-bold text-foreground tracking-tight">{section.label}</h2>
-                </div>
-                <Link href={section.href} className="group flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary transition-all uppercase tracking-widest pb-1 border-b border-transparent hover:border-primary/20">
-                  Explore All
-                  <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
-              <div className="flex overflow-x-auto gap-6 pb-10 custom-scrollbar scroll-smooth snap-x snap-mandatory px-2">
-                {section.data.map((item) => (
-                  <div key={item.id} className="min-w-[300px] md:min-w-[380px] snap-start">
-                    <ListingCard {...item} category={section.id as any} type={item.type} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </main>
-
-      {/* Trust & Stats Section */}
-      <section className="py-32 bg-card border-y border-border overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,var(--tw-gradient-from),transparent_70%)] from-primary/5 pointer-events-none" />
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8 mb-24">
-            <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground">
-              Institutional trust. <br />
-              <span className="text-gradient">Digital speed.</span>
-            </h2>
-            <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
-              We've re-engineered the brokerage experience for a generation that values transparency, security, and elite service.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-            {[
-              { label: "Verified Assets", value: "2.4k+" },
-              { label: "Direct Connections", value: "15k+" },
-              { label: "Market Trust", value: "99.8%" },
-              { label: "Cities Covered", value: "12" }
-            ].map((stat, i) => (
-              <div key={i} className="space-y-2">
-                <p className="text-5xl font-bold tracking-tight text-foreground">{stat.value}</p>
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <Chat />
-    </>
+    </main>
   );
 }

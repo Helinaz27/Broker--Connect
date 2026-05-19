@@ -6,6 +6,7 @@ import { useFavorites } from "@/lib/FavoritesContext";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getListingPath } from "@/data/listings";
 
 export default function Favorites() {
   const { favorites } = useFavorites();
@@ -15,7 +16,7 @@ export default function Favorites() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.03),transparent_50%)]" />
 
       <main className="flex-grow py-12 md:py-20 relative z-10">
-        <div className="container mx-auto px-4 animate-fade-in">
+        <div className="container mx-auto px-4">
           <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3 text-primary">
@@ -24,7 +25,7 @@ export default function Favorites() {
                   Personal Vault
                 </span>
               </div>
-              <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+              <h1 className="text-4xl font-black text-foreground tracking-tight">
                 Saved Selections.
               </h1>
               <p className="text-muted-foreground font-medium">
@@ -44,33 +45,27 @@ export default function Favorites() {
           {favorites.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {favorites.map((listing) => (
-                <ListingCard key={listing.id} {...listing} rating={4.8} />
+                <ListingCard
+                  key={listing.id}
+                  id={listing.id}
+                  title={listing.title}
+                  image={listing.image}
+                  price={listing.price}
+                  location={listing.location}
+                  rating={listing.rating || 4.8}
+                  category={listing.category as any}
+                />
               ))}
             </div>
           ) : (
-            <div className="text-center py-24 bg-card/50 backdrop-blur-xl border border-border/50 rounded-[3rem] shadow-2xl shadow-black/[0.02] max-w-3xl mx-auto overflow-hidden relative">
-              <div className="absolute top-0 right-0 h-64 w-64 bg-primary/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-
-              <div className="relative z-10">
-                <div className="h-24 w-24 bg-primary/5 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-primary/10 transition-transform duration-500 hover:scale-110">
-                  <Heart className="h-10 w-10 text-primary/40" />
-                </div>
-                <h2 className="text-3xl font-black text-foreground tracking-tight mb-4 italic">
-                  Empty Vault.
-                </h2>
-                <p className="text-muted-foreground mb-10 max-w-md mx-auto font-medium">
-                  Your favorites list is empty. Start exploring the marketplace
-                  to save properties, vehicles, and services you like.
-                </p>
-                <Link href="/">
-                  <Button
-                    size="lg"
-                    className="h-14 px-10 rounded-2xl text-base font-black shadow-[0_20px_40px_-10px_rgba(59,130,246,0.3)] hover:shadow-[0_25px_50px_-12px_rgba(59,130,246,0.4)] transition-all duration-300"
-                  >
-                    Explore Marketplace
-                  </Button>
-                </Link>
-              </div>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Heart className="h-16 w-16 text-muted-foreground/20 mb-4" />
+              <p className="text-lg text-muted-foreground mb-4">
+                No favorites yet!
+              </p>
+              <Link href="/">
+                <Button>Start Exploring</Button>
+              </Link>
             </div>
           )}
         </div>

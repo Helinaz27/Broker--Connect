@@ -6,9 +6,9 @@ import env from '../utils/env.js';
 export const can = (resource, action) => {
   return async (req, res, next) => {
     try {
-      const token = req.headers.cookies;
+      const token = req.cookies.token;
       if (!token) {
-        console.log("No token provided in can middleware");
+        
         return res.status(401).json({
           success: false,
           message: 'Not authorized: No token provided'

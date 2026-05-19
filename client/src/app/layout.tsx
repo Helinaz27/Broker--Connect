@@ -3,10 +3,10 @@ import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
 import StoreProvider from "@/store/storeProvider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${inter.variable} font-sans antialiased text-foreground selection:bg-primary/30 selection:text-primary-foreground`}
+        className={`${plusJakarta.variable} ${inter.variable} font-sans antialiased text-foreground bg-background selection:bg-primary/30 selection:text-primary-foreground`}
       >
         <StoreProvider>
           <ThemeProvider

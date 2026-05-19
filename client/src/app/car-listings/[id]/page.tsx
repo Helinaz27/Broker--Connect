@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { getCarById } from "@/data/listings";
-import { MapPin, ArrowLeft, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 

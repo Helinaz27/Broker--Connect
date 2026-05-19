@@ -1,16 +1,53 @@
 import { prisma } from '../config/db.config.js';
 
+export const getMyTransactionsService = async (userId, page, limit) => {
+  const skip = (page - 1) * limit;
 
-//  CREATE 
-export const saveCoinTransactionToDatabase = async (transactionData) => {
-  return await prisma.coinTransaction.create({
-    data: transactionData
-  });
+  const [transactions, total] = await Promise.all([
+    prisma.coinTransaction.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.coinTransaction.count({ where: { userId } }),
+  ]);
+
+  return { transactions, total };
 };
 
-//  READ 
-export const findTransactionById = async (id) => {
-  return await prisma.coinTransaction.findUnique({
+export const adminGetAllTransactionsService = async (page, limit, type) => {
+  const skip = (page - 1) * limit;
+
+  const where = type ? { type } : {};
+
+  const [transactions, total] = await Promise.all([
+    prisma.coinTransaction.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            profileImage: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.coinTransaction.count({ where }),
+  ]);
+
+  return { transactions, total };
+};
+
+export const adminGetTransactionByIdService = async (id) => {
+  const transaction = await prisma.coinTransaction.findUnique({
     where: { id },
     include: {
       user: {
@@ -19,100 +56,47 @@ export const findTransactionById = async (id) => {
           firstName: true,
           lastName: true,
           email: true,
-          phone: true
-        }
-      }
-    }
+          phone: true,
+          profileImage: true,
+        },
+      },
+    },
   });
+
+  if (!transaction) throw { status: 404, message: 'Transaction not found' };
+
+  return transaction;
 };
 
-export const findTransactionByIdAndUser = async (id, userId) => {
-  return await prisma.coinTransaction.findFirst({
-    where: { id: id, userId: userId }
-  });
-};
+export const adminGetTransactionsByUserService = async (userId, page, limit, type) => {
+  const skip = (page - 1) * limit;
 
-export const findTransactionsByUser = async (userId, skip, take, type, reason) => {
-  const where = { userId };
-  if (type) where.type = type;
-  if (reason) where.Reason = reason;
-  
-  return await prisma.coinTransaction.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' }
-  });
-};
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw { status: 404, message: 'User not found' };
 
-export const countTransactionsByUser = async (userId, type, reason) => {
-  const where = { userId };
-  if (type) where.type = type;
-  if (reason) where.Reason = reason;
-  
-  return await prisma.coinTransaction.count({ where });
-};
+  const where = { userId, ...(type ? { type } : {}) };
 
-export const findAllTransactions = async (skip, take, type, reason) => {
-  const where = {};
-  if (type) where.type = type;
-  if (reason) where.Reason = reason;
-  
-  return await prisma.coinTransaction.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true
-        }
-      }
-    }
-  });
-};
+  const [transactions, total] = await Promise.all([
+    prisma.coinTransaction.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            profileImage: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.coinTransaction.count({ where }),
+  ]);
 
-export const countAllTransactions = async (type, reason) => {
-  const where = {};
-  if (type) where.type = type;
-  if (reason) where.Reason = reason;
-  
-  return await prisma.coinTransaction.count({ where });
-};
-
-export const findTransactionsByUserForAdmin = async (userId, skip, take, type, reason) => {
-  const where = { userId };
-  if (type) where.type = type;
-  if (reason) where.Reason = reason;
-  
-  return await prisma.coinTransaction.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true
-        }
-      }
-    }
-  });
-};
-
-export const countTransactionsByUserForAdmin = async (userId, type, reason) => {
-  const where = { userId };
-  if (type) where.type = type;
-  if (reason) where.Reason = reason;
-  
-  return await prisma.coinTransaction.count({ where });
+  return { transactions, total };
 };

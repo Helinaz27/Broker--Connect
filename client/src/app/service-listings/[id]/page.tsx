@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { getServiceById } from "@/data/listings";
-import { MapPin, ArrowLeft, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -40,6 +40,7 @@ export default function ServiceDetailPage() {
               <img 
                 src={gallery[activeImage]} 
                 alt={service.title} 
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
               />
               

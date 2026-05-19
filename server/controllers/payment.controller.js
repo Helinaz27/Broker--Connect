@@ -28,28 +28,29 @@ export const initiateChapa = async (req, res) => {
       transactionId: tx_ref,
     });
 
-  const { data } = await axios.post(
-  'https://api.chapa.co/v1/transaction/initialize',
-  {
-    amount:       amountBirr.toString(),
-    currency:     'ETB',
-    email:        user.email,
-    first_name:   user.firstName,
-    last_name:    user.lastName,
-    phone_number: user.phone,
-    tx_ref,
-    return_url:   `${process.env.CLIENT_URL}/payment/verify?tx_ref=${tx_ref}`,
-    'customization[title]':       'Buy Coins',
-    'customization[description]': `Purchase of ${coinsRequested} coins`,
-  },
-  {
-    httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-    headers: {
-      Authorization:  `Bearer ${process.env.CHAPA_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  }
-);
+    const { data } = await axios.post(
+      'https://api.chapa.co/v1/transaction/initialize',
+      {
+        amount:       amountBirr.toString(),
+        currency:     'ETB',
+        email:        user.email,
+        first_name:   user.firstName,
+        last_name:    user.lastName,
+        phone_number: user.phone,
+        tx_ref,
+        return_url:   `${process.env.CLIENT_URL}/payment/verify?tx_ref=${tx_ref}`,
+        'customization[title]':       'Buy Coins',
+        'customization[description]': `Purchase of ${coinsRequested} coins`,
+      },
+      {
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+        headers: {
+          Authorization:  `Bearer ${process.env.CHAPA_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
     return successResponse(res, 'Payment initiated successfully', {
       checkout_url:  data.data.checkout_url,
       tx_ref,
@@ -78,6 +79,7 @@ export const verifyChapa = async (req, res) => {
     const { data } = await axios.get(
       `https://api.chapa.co/v1/transaction/verify/${tx_ref}`,
       {
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         headers: { Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}` },
       }
     );
