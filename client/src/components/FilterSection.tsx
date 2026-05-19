@@ -93,11 +93,22 @@ export default function FilterSection({
         </div>
         <div className="flex items-center gap-3 w-full lg:w-auto">
           {isFiltered && (
-            <button onClick={clearFilters} className="flex items-center justify-center gap-2 h-12 px-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted transition-all">
+            <button 
+              onClick={clearFilters} 
+              className="flex items-center justify-center gap-2 h-12 px-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted transition-all"
+            >
               <X className="h-4 w-4" /> Reset
             </button>
           )}
-          <button className="h-12 px-8 bg-primary text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20 w-full lg:w-auto">
+          <button 
+            onClick={() => {
+              const element = document.getElementById('listings');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="h-12 px-8 bg-primary text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20 w-full lg:w-auto"
+          >
             Apply Filters
           </button>
         </div>

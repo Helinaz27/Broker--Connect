@@ -43,8 +43,9 @@ const startServer = async () => {
       process.exit(1);
     }
     await checkAdmin();
-    app.listen(env.port, () => {
-      console.log(`Server running on port ${env.port}`);
+    const port = env.port || 5500;
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
       console.log(`Environment: ${env.NODE_ENV || "development"}`);
     });
   } catch (error) {

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { getCarById } from "@/data/listings";
 import { MapPin, ArrowLeft, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function CarDetailPage() {
   const params = useParams();
@@ -18,12 +19,14 @@ export default function CarDetailPage() {
   if (!car) {
     return (
       <div className="flex flex-col min-h-screen">
+        <Header />
         <main className="flex-1 container px-4 py-16 text-center">
           <p className="text-muted-foreground mb-4">Car not found.</p>
           <Button variant="outline" onClick={() => router.back()}>
             Go back
           </Button>
         </main>
+        <Footer />
       </div>
     );
   }
@@ -42,118 +45,42 @@ export default function CarDetailPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-1 py-8 md:py-12">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <Link
-            href="/car-listings"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
-          >
+      <Header />
+      <main className="flex-1 py-8 md:py-16">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <Link href="/car-listings" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8">
             <ArrowLeft className="h-4 w-4" /> Back to cars
           </Link>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Image Gallery */}
-            <div className="md:col-span-2">
-              <div className="space-y-4">
-                {/* Main Image */}
-                <div className="relative bg-muted rounded-lg overflow-hidden aspect-video group">
-                  <img
-                    src={images[currentImageIndex]}
-                    alt={car.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <span className="absolute top-3 left-3 bg-background/90 text-xs font-medium uppercase tracking-wider px-2 py-1 rounded">
-                    Car
-                  </span>
-
-                  {/* Navigation Buttons */}
-                  {images.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevImage}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </>
-                  )}
-
-                  {/* Image Counter */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 bg-background/80 text-xs font-medium px-2 py-1 rounded">
-                      {currentImageIndex + 1} / {images.length}
-                    </div>
-                  )}
-                </div>
-
-                {/* Thumbnail Gallery */}
-                {images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {images.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentImageIndex(idx)}
-                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                          idx === currentImageIndex
-                            ? "border-primary"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <img
-                          src={img}
-                          alt={`${car.title} - ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-glass">
+            <div className="aspect-[16/10] bg-muted relative">
+              <img src={car.image} alt={car.title} className="w-full h-full object-cover" />
+              <span className="absolute top-4 left-4 bg-background/90 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/20">Car</span>
             </div>
-
-            {/* Details Sidebar */}
-            <div className="md:col-span-1 space-y-6">
-              <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className="h-5 w-5 fill-amber-500 text-amber-500" />
-                    <span className="font-semibold text-foreground">
-                      {car.rating}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                    <MapPin className="h-4 w-4" />
-                    <span className="text-sm">{car.location}</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm text-muted-foreground mb-2">Daily Rate</p>
-                  <p className="text-3xl font-bold text-primary">
-                    {car.price.toLocaleString()}
-                    <span className="text-base font-normal text-muted-foreground">
-                      {" "}
-                      Birr/day
-                    </span>
-                  </p>
-                </div>
-
-                <Button asChild className="w-full">
-                  <a
-                    href={`mailto:contact@digitalbroker.example.com?subject=Inquiry: ${encodeURIComponent(
-                      car.title
-                    )}`}
-                  >
-                    Book Now
-                  </a>
-                </Button>
+            <div className="p-8 md:p-12">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Star className="h-4 w-4 fill-amber-500 text-amber-500" /> {car.rating}
+                </span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  <MapPin className="h-4 w-4" /> {car.location}
+                </span>
               </div>
+              <h1 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-4">{car.title}</h1>
+              <p className="text-3xl font-bold text-primary mb-8">
+                {car.price.toLocaleString()} <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Br</span>
+              </p>
+              <div className="h-px bg-border/50 w-full mb-8" />
+              <div className="space-y-6 mb-10">
+                <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Description</h3>
+                <p className="text-muted-foreground leading-relaxed font-medium">
+                  {car.description || "No description provided for this car."}
+                </p>
+              </div>
+              <Button asChild className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
+                <a href={`mailto:contact@digitalbroker.et?subject=Inquiry: ${encodeURIComponent(car.title)}`}>
+                  Contact Agent
+                </a>
+              </Button>
             </div>
           </div>
 
@@ -171,6 +98,7 @@ export default function CarDetailPage() {
         </div>
       </main>
       <Chat />
+      <Footer />
     </div>
   );
 }

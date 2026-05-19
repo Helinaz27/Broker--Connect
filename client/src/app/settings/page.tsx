@@ -19,248 +19,160 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { ArrowLeft, User, Lock, Shield } from "lucide-react";
+import { ArrowLeft, User, Bell, Lock, Shield, ChevronRight } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { PasswordInput } from "@/components/ui/password-input";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-
-  // Edit Profile Form
-  const editProfileForm = useForm({
-    defaultValues: {
-      firstName: "John",
-      lastName: "Doe",
-      email: "john@example.com",
-      phone: "+251912345678",
-    },
-  });
-
-  // Change Password Form
-  const changePasswordForm = useForm({
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  const onEditProfile = (data: any) => {
-    toast.success("Profile updated successfully!");
-    setEditProfileOpen(false);
-  };
-
-  const onChangePassword = (data: any) => {
-    if (data.newPassword !== data.confirmPassword) {
-      toast.error("Passwords don't match");
-      return;
-    }
-    toast.success("Password changed successfully!");
-    setChangePasswordOpen(false);
-    changePasswordForm.reset();
-  };
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   return (
-    <main className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-6 max-w-2xl">
-        <Link
-          href="/profile"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to profile
-        </Link>
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-12">
-          Settings
-        </h1>
-        <div className="space-y-4">
-          {/* Edit Profile */}
-          <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
-            <DialogTrigger asChild>
-              <button className="w-full flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors text-left">
-                <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">Edit Profile</p>
-                  <p className="text-sm text-muted-foreground">
-                    Update your name, email, and phone
-                  </p>
-                </div>
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
-                <DialogDescription>
-                  Update your profile information
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...editProfileForm}>
-                <form
-                  onSubmit={editProfileForm.handleSubmit(onEditProfile)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={editProfileForm.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="First name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editProfileForm.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Last name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editProfileForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="Email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editProfileForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input type="tel" placeholder="Phone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full">
-                    Save Changes
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <main className="flex-1 py-12 md:py-20 relative z-10">
+        <div className="container mx-auto px-4 max-w-2xl animate-fade-in">
+          <Link
+            href="/profile"
+            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80 transition-opacity mb-8"
+          >
+            <ArrowLeft className="h-3 w-3" /> Back to profile
+          </Link>
+          
+          <div className="mb-10">
+            <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+              Platform Settings.
+            </h1>
+            <p className="text-muted-foreground font-medium mt-2">Manage your broker account preferences and security protocols.</p>
+          </div>
 
-          {/* Change Password */}
-          <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-            <DialogTrigger asChild>
-              <button className="w-full flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors text-left">
-                <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">Change Password</p>
-                  <p className="text-sm text-muted-foreground">
-                    Update your password
-                  </p>
-                </div>
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Change Password</DialogTitle>
-                <DialogDescription>
-                  Enter your current password and new password
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...changePasswordForm}>
-                <form
-                  onSubmit={changePasswordForm.handleSubmit(onChangePassword)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Current password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>New Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="New password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Confirm password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full">
-                    Update Password
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <div className="space-y-4">
+            <Link
+              href="/profile"
+              className="group flex items-center gap-5 p-6 rounded-[1.5rem] border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-muted/50 hover:border-primary/20 transition-all duration-300 shadow-sm"
+            >
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <User className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground">Profile Configuration</p>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Update your professional name, email, and mobile link
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+            </Link>
 
-          {/* Privacy */}
-          <div className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
-            <Shield className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-foreground">Privacy Policy</p>
-              <p className="text-sm text-muted-foreground">
-                Read our privacy and data protection policy
-              </p>
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full text-left group flex items-center gap-5 p-6 rounded-[1.5rem] border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-muted/50 hover:border-primary/20 transition-all duration-300 shadow-sm"
+            >
+              <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground">Security Protocol</p>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Change your access password and session credentials
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+            </button>
+
+            <div className="flex items-center gap-5 p-6 rounded-[1.5rem] border border-border/50 bg-card/50 backdrop-blur-sm opacity-60">
+              <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground">Notification Matrix</p>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Coming soon: Configure real-time alert preferences
+                </p>
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-1 rounded-md">Alpha</span>
             </div>
-            <Link href="/privacy">
-              <Button variant="ghost" size="sm">
-                View
-              </Button>
+
+            <Link
+              href="/privacy"
+              className="group flex items-center gap-5 p-6 rounded-[1.5rem] border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-muted/50 hover:border-primary/20 transition-all duration-300 shadow-sm"
+            >
+              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground">Data Privacy</p>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Review our commitment to your data security
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
             </Link>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      {/* Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+          <div className="bg-card rounded-[2.5rem] max-w-md w-full p-10 border border-border/50 shadow-2xl animate-in zoom-in-95 duration-300">
+            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic">
+              Reset Access.
+            </h2>
+
+            <div className="space-y-6 mb-10">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  Current Protocol
+                </label>
+                <PasswordInput
+                  placeholder="••••••••"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  New Protocol
+                </label>
+                <PasswordInput
+                  placeholder="••••••••"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  Verify New Protocol
+                </label>
+                <PasswordInput
+                  placeholder="••••••••"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                className="flex-1 h-14 rounded-2xl font-bold border-border/60"
+                onClick={() => setShowPasswordModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
+                onClick={() => {
+                  toast.success("Security credentials updated successfully.");
+                  setShowPasswordModal(false);
+                }}
+              >
+                Confirm Reset
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      <Footer />
+    </div>
   );
 }

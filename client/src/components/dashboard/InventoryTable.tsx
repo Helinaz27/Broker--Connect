@@ -9,6 +9,7 @@ interface Listing {
   title: string;
   price: number;
   location: string;
+  image?: string;
   status: "active" | "occupied" | "inactive";
   category: "house" | "car" | "service";
 }
@@ -39,8 +40,8 @@ export function InventoryTable({ activeTab, setActiveTab, listings }: InventoryT
           <PlusCircle className="h-3.5 w-3.5" /> Add New Asset
         </Button>
       </div>
-      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-soft">
-        <table className="w-full text-left">
+      <div className="bg-card border border-border rounded-3xl overflow-x-auto shadow-soft custom-scrollbar">
+        <table className="w-full text-left min-w-[800px]">
           <thead className="bg-muted/50 border-b border-border">
             <tr>
               {["Asset Details", "Valuation", "Status", "Actions"].map(h => (
@@ -53,8 +54,12 @@ export function InventoryTable({ activeTab, setActiveTab, listings }: InventoryT
               <tr key={listing.id} className="hover:bg-muted/30 transition-colors group">
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                      {activeTab === "house_view" ? <Home className="h-4 w-4" /> : activeTab === "car_view" ? <Car className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
+                    <div className="h-10 w-10 rounded-xl overflow-hidden bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                      {listing.image ? (
+                        <img src={listing.image} alt={listing.title} className="w-full h-full object-cover" />
+                      ) : (
+                        activeTab === "house_view" ? <Home className="h-4 w-4" /> : activeTab === "car_view" ? <Car className="h-4 w-4" /> : <Wrench className="h-4 w-4" />
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-foreground text-sm line-clamp-1">{listing.title}</p>

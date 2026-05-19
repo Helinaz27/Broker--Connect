@@ -26,6 +26,13 @@ import {
   Filter,
 } from "lucide-react";
 
+import { Sidebar } from "@/components/dashboard/Sidebar";
+import { StatsGrid } from "@/components/dashboard/StatsGrid";
+import { ActivityTable } from "@/components/dashboard/ActivityTable";
+import { InventoryTable } from "@/components/dashboard/InventoryTable";
+import { AssetForm } from "@/components/dashboard/AssetForm";
+import Chat from "@/components/Chat";
+
 type DashboardTab = "dashboard" | "house_post" | "house_view" | "car_post" | "car_view" | "service_post" | "service_view" | "admin_kyc" | "admin_users";
 
 interface Listing {
@@ -33,84 +40,92 @@ interface Listing {
   title: string;
   price: number;
   location: string;
+  image?: string;
   status: "active" | "occupied" | "inactive";
   type: "rent" | "sell";
   createdAt: string;
 }
 
 const mockListings: Listing[] = [
-  {
-    id: "1",
-    title: "Beautiful Modern Apartment in Downtown",
-    price: 15000,
-    location: "Addis Ababa, Bole",
-    status: "active",
-    type: "rent",
-    createdAt: "2026-01-15",
-  },
-  {
-    id: "2",
-    title: "Spacious Family Villa with Garden",
-    price: 25000,
-    location: "Addis Ababa, Old Airport",
-    status: "occupied",
-    type: "sell",
-    createdAt: "2026-01-10",
-  },
-  {
-    id: "3",
-    title: "Professional Electrician Services",
-    price: 500,
-    location: "Addis Ababa, Bole",
-    status: "active",
-    type: "rent",
-    createdAt: "2026-01-20",
-  },
+  { id: "1", title: "Beautiful Modern Apartment in Downtown", price: 15000, location: "Addis Ababa, Bole", status: "active", type: "rent", category: "house", createdAt: "2026-01-15", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" },
+  { id: "2", title: "Spacious Family Villa with Garden", price: 25000, location: "Addis Ababa, Old Airport", status: "occupied", type: "sell", category: "house", createdAt: "2026-01-10", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800" },
+  { id: "3", title: "Professional Electrician Services", price: 500, location: "Addis Ababa, Bole", status: "active", type: "rent", category: "service", createdAt: "2026-01-20", image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?auto=format&fit=crop&q=80&w=800" },
+  { id: "4", title: "2024 Toyota Land Cruiser V8", price: 12000000, location: "Addis Ababa, Sarbet", status: "active", type: "sell", category: "car", createdAt: "2026-02-01", image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800" },
 ];
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [dashboardFilter, setDashboardFilter] = useState<"all" | "rent" | "sell">("all");
   
-  const [houseForm, setHouseForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    location: "",
-    type: "apartment",
-    bedrooms: "",
-    bathrooms: "",
-    area: "",
+  const [houseForm, setHouseForm] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    locationCity: "", 
+    locationPlaceName: "", 
+    locationSubCity: "", 
+    lat: "", 
+    lng: "",
+    type: "apartment" as any, 
+    bedrooms: "", 
+    bathrooms: "", 
+    area_sqm: "", 
+    listingMode: "rent" as "rent" | "sell",
+    tanker: false,
+    rentalPeriod: "monthly" as "daily" | "weekly" | "monthly" | "yearly",
+    parking: "",
+    images: [] as File[]
   });
-
-  const [carForm, setCarForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    location: "",
-    make: "",
-    model: "",
-    year: "",
-    fuelType: "petrol",
-    transmission: "manual",
+  const [carForm, setCarForm] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    locationCity: "", 
+    locationPlaceName: "", 
+    locationSubCity: "", 
+    lat: "", 
+    lng: "",
+    brand: "", 
+    carModel: "", 
+    year: "", 
+    carType: "fuel" as "electric" | "fuel", 
+    condition: "used" as "used" | "new", 
+    listingMode: "rent" as "rent" | "sell",
+    images: [] as File[]
   });
-
-  const [serviceForm, setServiceForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    location: "",
-    category: "plumber",
+  const [serviceForm, setServiceForm] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    locationCity: "", 
+    locationPlaceName: "", 
+    locationSubCity: "", 
+    lat: "", 
+    lng: "",
+    serviceType: "plumber", 
     experience: "",
+    images: [] as File[]
   });
 
-  const stats = {
-    activeListings: 8,
-    totalViews: 324,
-    messagesReceived: 42,
-  };
+  const stats = [
+    { label: "Active Assets", value: "12", icon: Home, trend: "+2", color: "bg-primary/10 text-primary" },
+    { label: "Total Reach", value: "1,284", icon: BarChart3, trend: "+14%", color: "bg-blue-500/10 text-blue-600" },
+    { label: "Client Inquiries", value: "38", icon: Clock, trend: "+5", color: "bg-emerald-500/10 text-emerald-600" }
+  ];
+
+  const menuItems = [
+    { id: "houses", label: "Houses", icon: Home, post: "house_post", view: "house_view", color: "text-primary" },
+    { id: "cars", label: "Cars", icon: Car, post: "car_post", view: "car_view", color: "text-blue-500" },
+    { id: "services", label: "Services", icon: Wrench, post: "service_post", view: "service_view", color: "text-emerald-500" }
+  ] as any[];
+
+  const adminItems = [
+    { id: "admin_kyc", label: "KYC Audits", icon: ShieldCheck, color: "bg-amber-500/10 text-amber-600" },
+    { id: "admin_users", label: "User Directory", icon: Users, color: "bg-primary/10 text-primary" }
+  ] as any[];
 
   const toggleMenu = (menu: string) => {
     if (isSidebarCollapsed) {
@@ -131,94 +146,62 @@ export default function Dashboard() {
 
   const handlePostSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Submit form logic here
-    resetForms();
-    alert("Listing posted successfully!");
+    setHouseForm({ 
+      title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", 
+      lat: "", lng: "", type: "apartment", bedrooms: "", bathrooms: "", area_sqm: "", listingMode: "rent", 
+      tanker: false, rentalPeriod: "monthly", parking: "", images: [] 
+    });
+    setCarForm({ 
+      title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", 
+      lat: "", lng: "", brand: "", carModel: "", year: "", carType: "fuel", condition: "used", listingMode: "rent", images: [] 
+    });
+    setServiceForm({ 
+      title: "", description: "", price: "", locationCity: "", locationPlaceName: "", locationSubCity: "", 
+      lat: "", lng: "", serviceType: "plumber", experience: "", images: [] 
+    });
+    alert("Listing published successfully!");
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.03),transparent_50%)]" />
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <div className="flex-1 flex overflow-hidden relative">
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setIsMobileSidebarOpen(false);
+          }} 
+          isSidebarCollapsed={isSidebarCollapsed} 
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          setIsMobileSidebarOpen={setIsMobileSidebarOpen}
+          expandedMenus={expandedMenus} 
+          toggleMenu={toggleMenu} 
+          menuItems={menuItems} 
+          adminItems={adminItems} 
+        />
+        <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar relative bg-muted/30">
+          <div className="max-w-7xl mx-auto space-y-8 md:space-y-10">
+            {/* Mobile Sidebar Toggle */}
+            <div className="md:hidden flex items-center gap-4 mb-6">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-10 w-10 rounded-xl"
+                onClick={() => setIsMobileSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <h1 className="font-bold text-lg">Broker Console</h1>
+            </div>
 
-      <div className="flex-1 flex relative z-10">
-        {/* Sidebar */}
-        <aside className={`${isSidebarCollapsed ? "w-20" : "w-72"} bg-card/50 backdrop-blur-xl border-r border-border/50 transition-all duration-500 flex flex-col sticky top-16 h-[calc(100vh-64px)] overflow-y-auto z-40 group/sidebar`}>
-          <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
-            {!isSidebarCollapsed && (
-              <span className="text-sm font-semibold text-foreground">Dashboard</span>
-            )}
-            <button 
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2.5 hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-300"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <nav className="flex-1 p-4 space-y-2">
-            {/* Dashboard */}
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
-                activeTab === "dashboard"
-                  ? "bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(59,130,246,0.4)]"
-                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-              }`}
-              title="Dashboard"
-            >
-              <LayoutDashboard className={`h-5 w-5 flex-shrink-0 transition-transform duration-500 ${activeTab === "dashboard" ? "scale-110" : ""}`} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm tracking-tight">Overview</span>}
-            </button>
-
-            <div className="h-px bg-border/40 my-6 mx-2" />
-
-            {/* Categories */}
-            {[
-              { id: "houses", label: "house", icon: Home, postTab: "house_post" as DashboardTab, viewTab: "house_view" as DashboardTab, color: "text-blue-500" },
-              { id: "cars", label: "cars", icon: Car, postTab: "car_post" as DashboardTab, viewTab: "car_view" as DashboardTab, color: "text-indigo-500" },
-              { id: "services", label: "other services", icon: Wrench, postTab: "service_post" as DashboardTab, viewTab: "service_view" as DashboardTab, color: "text-violet-500" }
-            ].map((cat) => (
-              <div key={cat.id} className="space-y-1">
-                <button
-                  onClick={() => toggleMenu(cat.id)}
-                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl hover:bg-muted/50 transition-all duration-300 text-muted-foreground hover:text-foreground group/item ${
-                    (activeTab === cat.postTab || activeTab === cat.viewTab) ? "bg-muted/30 text-foreground" : ""
-                  }`}
-                  title={cat.label}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <cat.icon className={`h-5 w-5 flex-shrink-0 transition-colors ${ (activeTab === cat.postTab || activeTab === cat.viewTab) ? cat.color : "group-hover/item:text-primary" }`} />
-                    {!isSidebarCollapsed && <span className="font-bold text-sm tracking-tight">{cat.label}</span>}
-                  </div>
-                  {!isSidebarCollapsed && (
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-500 ${expandedMenus.includes(cat.id) ? "rotate-180" : "-rotate-90 opacity-40"}`} />
-                  )}
-                </button>
-                
-                {!isSidebarCollapsed && expandedMenus.includes(cat.id) && (
-                  <div className="ml-12 space-y-1 pr-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <button
-                      onClick={() => setActiveTab(cat.postTab)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] rounded-xl transition-all ${
-                        activeTab === cat.postTab
-                          ? "text-primary font-black bg-primary/5"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                      }`}
-                    >
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      Create Listing
-                    </button>
-                    <button
-                      onClick={() => setActiveTab(cat.viewTab)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] rounded-xl transition-all ${
-                        activeTab === cat.viewTab
-                          ? "text-primary font-black bg-primary/5"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                      }`}
-                    >
-                      <List className="h-3.5 w-3.5" />
-                      Manage All
-                    </button>
+            {activeTab === "dashboard" && (
+              <div className="space-y-10 animate-in">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div className="space-y-1">
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Performance Overview</h1>
+                    <p className="text-muted-foreground font-medium">Welcome back, Helina. Here's your portfolio activity.</p>
                   </div>
                 )}
               </div>
@@ -805,8 +788,6 @@ export default function Dashboard() {
           )}
         </main>
       </div>
-
-      {/* Chat Component */}
       <Chat />
     </div>
   );
