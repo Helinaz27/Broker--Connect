@@ -3,11 +3,9 @@ import * as contactAccessService from '../services/contactAccess.service.js';
 export const accessContact = async (req, res) => {
   try {
     const { listingId } = req.body;
-    const data = await contactAccessService.accessContactService(
-      req.user.id,
-      listingId,
-      req.user.coins
-    );
+
+    const data = await contactAccessService.accessContactService(req.user.id, listingId);
+
     return res.status(201).json({
       success: true,
       message: 'Contact access granted successfully',
@@ -55,10 +53,7 @@ export const adminGetAllAccesses = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const { accesses, total } = await contactAccessService.adminGetAllAccessesService(
-      page,
-      limit
-    );
+    const { accesses, total } = await contactAccessService.adminGetAllAccessesService(page, limit);
     return res.status(200).json({
       success: true,
       message: `Retrieved ${accesses.length} accesses successfully`,

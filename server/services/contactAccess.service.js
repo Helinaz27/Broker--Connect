@@ -1,6 +1,6 @@
 import { prisma } from '../config/db.config.js';
 
-export const accessContactService = async (viewerId, listingId, viewerCoins) => {
+export const accessContactService = async (viewerId, listingId) => {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
   });
@@ -12,16 +12,20 @@ export const accessContactService = async (viewerId, listingId, viewerCoins) => 
   const existing = await prisma.contactAccess.findFirst({
     where: { viewerId, listingId, isActive: true },
   });
-  if (existing) throw { status: 409, message: 'You already have access to this listing contact' };
+  if (existing) return existing;
 
   const coinCost = listing.contactCoinLimit;
 
   if (coinCost <= 0) throw { status: 400, message: 'This listing has no contact access fee configured' };
 
-  if (viewerCoins < coinCost) {
+  // Fix 1: Fetch fresh coins from DB instead of relying on stale req.user.coins
+  const viewer = await prisma.user.findUnique({ where: { id: viewerId } });
+  if (!viewer) throw { status: 404, message: 'User not found' };
+
+  if (viewer.coins < coinCost) {
     throw {
       status: 400,
-      message: `Insufficient coins. You need ${coinCost} coins but have ${viewerCoins}`,
+      message: `Insufficient coins. You need ${coinCost} coins but have ${viewer.coins}`,
     };
   }
 
