@@ -1,14 +1,17 @@
+// app/dashboard/fees/page.tsx
 "use client";
 
 import { useState } from "react";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Save } from "lucide-react";
+import { Save, ShieldCheck, Menu } from "lucide-react";
 import { toast } from "sonner";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
+import { useRouter } from "next/navigation";
 
 interface PlatformFee {
   id: string;
@@ -20,9 +23,10 @@ interface PlatformFee {
 }
 
 export default function FeesPage() {
-  const isAdmin = true; // Mock - in real app, check user role
+  const currentUser = useSelector((state: RootState) => state.user.currentUser);
+  const isAdmin = currentUser?.roles?.includes("admin") ?? false;
+  const router = useRouter();
 
-  // Mock fees data
   const [fees, setFees] = useState<PlatformFee[]>([
     {
       id: "1",
@@ -50,122 +54,130 @@ export default function FeesPage() {
     },
   ]);
 
-  const handleFeeUpdate = (id: string, field: "amount" | "percentage", value: number) => {
+  const handleFeeUpdate = (
+    id: string,
+    field: "amount" | "percentage",
+    value: number,
+  ) => {
     setFees(
-      fees.map((fee) =>
-        fee.id === id ? { ...fee, [field]: value } : fee
-      )
+      fees.map((fee) => (fee.id === id ? { ...fee, [field]: value } : fee)),
     );
   };
 
   const handleSave = () => {
-    // API call to save fees would go here
     toast.success("Platform fees updated successfully!");
   };
 
-  if (!isAdmin) {
-    return (
-      <main className="min-h-screen bg-background py-8">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground text-lg">
-              Access denied. Admin only.
+  return (
+    <div className="space-y-8 animate-in">
+      {/* Mobile header */}
+      <div className="md:hidden flex items-center gap-4">
+        <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl">
+          <Menu className="h-5 w-5" />
+        </Button>
+        <h1 className="font-bold text-lg">Broker Console</h1>
+      </div>
+
+      {!isAdmin ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <ShieldCheck className="h-12 w-12 text-muted-foreground" />
+          <p className="text-muted-foreground font-medium">
+            You don't have permission to view this page.
+          </p>
+          <Button variant="outline" onClick={() => router.push("/dashboard")}>
+            Go back to Dashboard
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              Platform Fees
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Configure and manage platform fees
             </p>
           </div>
-        </div>
-      </main>
-    );
-  }
 
-  return (
-    <main className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <DashboardSidebar isAdmin={isAdmin} />
+          <div className="space-y-4">
+            {fees.map((fee) => (
+              <Card key={fee.id} className="bg-card border-border">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{fee.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {fee.description}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="capitalize">
+                      {fee.category}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor={`amount-${fee.id}`}
+                        className="font-medium"
+                      >
+                        Fixed Amount (ETB)
+                      </Label>
+                      <Input
+                        id={`amount-${fee.id}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={fee.amount}
+                        onChange={(e) =>
+                          handleFeeUpdate(
+                            fee.id,
+                            "amount",
+                            parseFloat(e.target.value),
+                          )
+                        }
+                        className="bg-background"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor={`percentage-${fee.id}`}
+                        className="font-medium"
+                      >
+                        Percentage (%)
+                      </Label>
+                      <Input
+                        id={`percentage-${fee.id}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={fee.percentage}
+                        onChange={(e) =>
+                          handleFeeUpdate(
+                            fee.id,
+                            "percentage",
+                            parseFloat(e.target.value),
+                          )
+                        }
+                        className="bg-background"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Header */}
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Platform Fees
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Configure and manage platform fees
-              </p>
-            </div>
-
-            {/* Fees Management */}
-            <div className="space-y-4">
-              {fees.map((fee) => (
-                <Card key={fee.id} className="bg-card border-border">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{fee.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {fee.description}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="capitalize">
-                        {fee.category}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor={`amount-${fee.id}`} className="font-medium">
-                          Fixed Amount (ETB)
-                        </Label>
-                        <Input
-                          id={`amount-${fee.id}`}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={fee.amount}
-                          onChange={(e) =>
-                            handleFeeUpdate(fee.id, "amount", parseFloat(e.target.value))
-                          }
-                          className="bg-background"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`percentage-${fee.id}`} className="font-medium">
-                          Percentage (%)
-                        </Label>
-                        <Input
-                          id={`percentage-${fee.id}`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={fee.percentage}
-                          onChange={(e) =>
-                            handleFeeUpdate(fee.id, "percentage", parseFloat(e.target.value))
-                          }
-                          className="bg-background"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Save Button */}
-            <div className="flex justify-end">
-              <Button size="lg" onClick={handleSave} className="gap-2">
-                <Save className="h-4 w-4" />
-                Save Changes
-              </Button>
-            </div>
+          <div className="flex justify-end">
+            <Button size="lg" onClick={handleSave} className="gap-2">
+              <Save className="h-4 w-4" />
+              Save Changes
+            </Button>
           </div>
-        </div>
-      </div>
-    </main>
+        </>
+      )}
+    </div>
   );
 }
