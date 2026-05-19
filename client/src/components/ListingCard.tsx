@@ -1,3 +1,4 @@
+// client/src/components/ListingCard.tsx
 "use client";
 
 import { Heart, MapPin, Star, ArrowUpRight } from "lucide-react";
@@ -62,11 +63,15 @@ export default function ListingCard({
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
-          
+
           {/* Category Badge */}
           <div className="absolute top-4 left-4">
             <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
-              {category === "car" ? "Car" : category === "service" || category === "otherService" ? "Service" : "House"}
+              {category === "car"
+                ? "Car"
+                : category === "service" || category === "otherService"
+                  ? "Service"
+                  : "House"}
             </span>
           </div>
 
@@ -77,7 +82,9 @@ export default function ListingCard({
           >
             <Heart
               className={`h-4 w-4 transition-colors duration-300 ${
-                liked ? "fill-destructive text-destructive" : "text-muted-foreground group-hover/heart:text-destructive"
+                liked
+                  ? "fill-destructive text-destructive"
+                  : "text-muted-foreground group-hover/heart:text-destructive"
               }`}
             />
           </button>
@@ -94,18 +101,24 @@ export default function ListingCard({
             <div className="h-1 w-1 rounded-full bg-border" />
             <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
               <MapPin className="h-3.5 w-3.5 text-primary" />
-              <span className="line-clamp-1">{location.split(",")[1] || location}</span>
+              <span className="line-clamp-1">
+                {location.split(",")[1] || location}
+              </span>
             </div>
           </div>
-          
+
           <h3 className="font-bold text-foreground line-clamp-1 text-lg tracking-tight mb-5 group-hover:text-primary transition-colors">
             {title}
           </h3>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Price</p>
-              <p className="text-xl font-bold text-foreground">${price.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                Price
+              </p>
+              <p className="text-xl font-bold text-foreground">
+                ${price.toLocaleString()}
+              </p>
             </div>
             <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
           </div>

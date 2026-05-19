@@ -1,3 +1,4 @@
+// client/src/components/ListingsTable.tsx
 "use client";
 
 import {

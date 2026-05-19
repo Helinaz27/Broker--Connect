@@ -1,3 +1,4 @@
+// client/src/components/ListingsGrid.tsx
 "use client";
 
 import ListingCard from "@/components/ListingCard";
@@ -6,7 +7,10 @@ import { cn } from "@/lib/utils";
 interface Listing {
   id: string;
   title: string;
-  image: string;
+  /** Primary image URL. If omitted, falls back to images[0] or placeholder. */
+  image?: string;
+  /** Full images array from the API. */
+  images?: string[];
   price: number;
   location: string;
   rating?: number;
@@ -37,7 +41,7 @@ export default function ListingsGrid({
     <div
       className={cn(
         "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4",
-        className
+        className,
       )}
     >
       {listings.map((listing) => (
@@ -45,7 +49,7 @@ export default function ListingsGrid({
           key={listing.id}
           id={listing.id}
           title={listing.title}
-          image={listing.image}
+          image={listing.image ?? listing.images?.[0] ?? "/placeholder.jpg"}
           price={listing.price}
           location={listing.location}
           rating={listing.rating}
