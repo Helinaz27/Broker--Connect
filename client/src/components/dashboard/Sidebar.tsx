@@ -94,7 +94,7 @@ export function Sidebar({
           <div className="h-px bg-border/50 my-6 mx-4" />
 
           {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-            <p className="px-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Asset Portfolios</p>
+            <p className="px-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4 font-poppins">Post Portfolios</p>
           )}
 
           {menuItems.map((cat) => (
@@ -107,7 +107,7 @@ export function Sidebar({
               >
                 <div className="flex items-center gap-4">
                   <cat.icon className={`h-5 w-5 flex-shrink-0 transition-colors ${ (activeTab === cat.post || activeTab === cat.view) ? cat.color : "group-hover/item:text-foreground"}`} />
-                  {(!isSidebarCollapsed || isMobileSidebarOpen) && <span className="font-semibold text-sm">{cat.label}</span>}
+                  {(!isSidebarCollapsed || isMobileSidebarOpen) && <span className="font-semibold text-sm font-poppins">{cat.label}</span>}
                 </div>
                 {(!isSidebarCollapsed || isMobileSidebarOpen) && (
                   <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${expandedMenus.includes(cat.id) ? "rotate-180" : "text-muted-foreground/50"}`} />
@@ -117,13 +117,13 @@ export function Sidebar({
               {(!isSidebarCollapsed || isMobileSidebarOpen) && expandedMenus.includes(cat.id) && (
                 <div className="pl-11 pr-2 space-y-1 animate-in">
                   {[
-                    { label: "Post New Asset", tab: cat.post },
-                    { label: "Manage Inventory", tab: cat.view }
+                    { label: (cat as any).postLabel || "Post New", tab: cat.post },
+                    { label: "Manage All", tab: cat.view }
                   ].map((sub) => (
                     <button
                       key={sub.tab}
                       onClick={() => setActiveTab(sub.tab as any)}
-                      className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                      className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium transition-all font-inter ${
                         activeTab === sub.tab ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >

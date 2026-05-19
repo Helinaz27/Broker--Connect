@@ -55,33 +55,33 @@ export function AssetForm({
   return (
     <div className="max-w-4xl mx-auto animate-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
-          {isHouse ? "Post House" : isCar ? "List Car" : "Offer Service"}
+        <h1 className="text-3xl font-black mb-2 font-poppins italic">
+          {isHouse ? "Post New Home" : isCar ? "Post New Car" : "Post New Service"}
         </h1>
-        <p className="text-muted-foreground font-medium">Complete the asset dossier for global marketplace publishing.</p>
+        <p className="text-muted-foreground font-medium font-inter">Complete the post dossier for global marketplace publishing.</p>
       </div>
 
       <form onSubmit={onSubmit} className="bg-card border border-border rounded-3xl p-8 shadow-soft space-y-8">
         {/* Common Fields: Title, Price, Mode */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-2">
-            <label className={labelStyle}>Asset Title</label>
+            <label className={`${labelStyle} font-poppins`}>Post Title</label>
             <input 
               type="text" 
               value={currentForm.title} 
               onChange={(e) => handleChange("title", e.target.value)} 
-              className={inputStyle} 
+              className={`${inputStyle} font-inter`} 
               placeholder="e.g. Modern Villa in Bole"
               required 
             />
           </div>
           <div className="space-y-2">
-            <label className={labelStyle}>Price (Br)</label>
+            <label className={`${labelStyle} font-poppins`}>Price (Br)</label>
             <input 
               type="number" 
               value={currentForm.price} 
               onChange={(e) => handleChange("price", e.target.value)} 
-              className={inputStyle} 
+              className={`${inputStyle} font-inter`} 
               placeholder="0.00"
               required 
             />
@@ -92,9 +92,9 @@ export function AssetForm({
         {!isService && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className={labelStyle}>Listing Mode</label>
+              <label className={`${labelStyle} font-poppins`}>Listing Mode</label>
               <select 
-                className={inputStyle}
+                className={`${inputStyle} font-inter`}
                 value={currentForm.listingMode}
                 onChange={(e) => handleChange("listingMode", e.target.value)}
               >
@@ -104,9 +104,9 @@ export function AssetForm({
             </div>
             {isHouse && currentForm.listingMode === "rent" && (
               <div className="space-y-2 animate-in fade-in duration-300">
-                <label className={labelStyle}>Rental Period</label>
+                <label className={`${labelStyle} font-poppins`}>Rental Period</label>
                 <select 
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   value={currentForm.rentalPeriod}
                   onChange={(e) => handleChange("rentalPeriod", e.target.value)}
                 >
@@ -122,70 +122,70 @@ export function AssetForm({
 
         {/* Description */}
         <div className="space-y-2">
-          <label className={labelStyle}>Detailed Description</label>
+          <label className={`${labelStyle} font-poppins`}>Detailed Description</label>
           <textarea 
             value={currentForm.description} 
             onChange={(e) => handleChange("description", e.target.value)} 
-            className={`${inputStyle} h-32 resize-none`} 
-            placeholder="Provide comprehensive details about the asset..."
+            className={`${inputStyle} h-32 resize-none font-inter`} 
+            placeholder="Provide comprehensive details about the post..."
             required 
           />
         </div>
 
         {/* Location Section */}
         <div className="space-y-4 pt-6 border-t border-border">
-          <h3 className="text-sm font-bold text-foreground italic">Location Details</h3>
+          <h3 className="text-sm font-black text-foreground italic font-poppins">Location Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className={labelStyle}>City</label>
+              <label className={`${labelStyle} font-poppins`}>City</label>
               <input 
                 type="text" 
                 value={currentForm.locationCity} 
                 onChange={(e) => handleChange("locationCity", e.target.value)} 
-                className={inputStyle} 
+                className={`${inputStyle} font-inter`} 
                 placeholder="e.g. Addis Ababa"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <label className={labelStyle}>Place Name</label>
+              <label className={`${labelStyle} font-poppins`}>Place Name</label>
               <input 
                 type="text" 
                 value={currentForm.locationPlaceName} 
                 onChange={(e) => handleChange("locationPlaceName", e.target.value)} 
-                className={inputStyle} 
+                className={`${inputStyle} font-inter`} 
                 placeholder="e.g. Bole Atlas"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <label className={labelStyle}>Sub City (Optional)</label>
+              <label className={`${labelStyle} font-poppins`}>Sub City (Optional)</label>
               <input 
                 type="text" 
                 value={currentForm.locationSubCity} 
                 onChange={(e) => handleChange("locationSubCity", e.target.value)} 
-                className={inputStyle} 
+                className={`${inputStyle} font-inter`} 
                 placeholder="e.g. Bole"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className={labelStyle}>Latitude (Opt)</label>
+                <label className={`${labelStyle} font-poppins`}>Latitude (Opt)</label>
                 <input 
                   type="text" 
                   value={currentForm.lat} 
                   onChange={(e) => handleChange("lat", e.target.value)} 
-                  className={inputStyle} 
+                  className={`${inputStyle} font-inter`} 
                   placeholder="9.01"
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Longitude (Opt)</label>
+                <label className={`${labelStyle} font-poppins`}>Longitude (Opt)</label>
                 <input 
                   type="text" 
                   value={currentForm.lng} 
                   onChange={(e) => handleChange("lng", e.target.value)} 
-                  className={inputStyle} 
+                  className={`${inputStyle} font-inter`} 
                   placeholder="38.75"
                 />
               </div>
@@ -195,14 +195,14 @@ export function AssetForm({
 
         {/* Specific Fields */}
         <div className="pt-6 border-t border-border">
-          <h3 className="text-sm font-bold text-foreground italic mb-6">Asset Specifics</h3>
+          <h3 className="text-sm font-black text-foreground italic mb-6 font-poppins">Post Specifics</h3>
           
           {isHouse && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
               <div className="space-y-2">
-                <label className={labelStyle}>House Type</label>
+                <label className={`${labelStyle} font-poppins`}>House Type</label>
                 <select 
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   value={houseForm.type}
                   onChange={(e) => handleChange("type", e.target.value)}
                 >
@@ -214,39 +214,39 @@ export function AssetForm({
                 </select>
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Bedrooms</label>
+                <label className={`${labelStyle} font-poppins`}>Bedrooms</label>
                 <input 
                   type="number" 
                   value={houseForm.bedrooms}
                   onChange={(e) => handleChange("bedrooms", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Bathrooms</label>
+                <label className={`${labelStyle} font-poppins`}>Bathrooms</label>
                 <input 
                   type="number" 
                   value={houseForm.bathrooms}
                   onChange={(e) => handleChange("bathrooms", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Area (sqm)</label>
+                <label className={`${labelStyle} font-poppins`}>Area (sqm)</label>
                 <input 
                   type="number" 
                   value={houseForm.area_sqm}
                   onChange={(e) => handleChange("area_sqm", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Parking Slots</label>
+                <label className={`${labelStyle} font-poppins`}>Parking Slots</label>
                 <input 
                   type="number" 
                   value={houseForm.parking}
                   onChange={(e) => handleChange("parking", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   placeholder="0"
                 />
               </div>
@@ -259,7 +259,7 @@ export function AssetForm({
                       onChange={(e) => handleChange("tanker", e.target.checked)}
                       className="h-5 w-5 rounded border-border text-primary focus:ring-primary/20"
                     />
-                    <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-widest">Water Tanker</span>
+                    <span className="text-xs font-black text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-widest font-poppins">Water Tanker</span>
                   </label>
                 )}
               </div>
@@ -269,39 +269,39 @@ export function AssetForm({
           {isCar && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
               <div className="space-y-2">
-                <label className={labelStyle}>Brand</label>
+                <label className={`${labelStyle} font-poppins`}>Brand</label>
                 <input 
                   type="text" 
                   value={carForm.brand}
                   onChange={(e) => handleChange("brand", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   placeholder="e.g. Toyota"
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Model</label>
+                <label className={`${labelStyle} font-poppins`}>Model</label>
                 <input 
                   type="text" 
                   value={carForm.carModel}
                   onChange={(e) => handleChange("carModel", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   placeholder="e.g. Land Cruiser"
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Year</label>
+                <label className={`${labelStyle} font-poppins`}>Year</label>
                 <input 
                   type="number" 
                   value={carForm.year}
                   onChange={(e) => handleChange("year", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   placeholder="2024"
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Car Type</label>
+                <label className={`${labelStyle} font-poppins`}>Car Type</label>
                 <select 
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   value={carForm.carType}
                   onChange={(e) => handleChange("carType", e.target.value)}
                 >
@@ -310,9 +310,9 @@ export function AssetForm({
                 </select>
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Condition</label>
+                <label className={`${labelStyle} font-poppins`}>Condition</label>
                 <select 
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   value={carForm.condition}
                   onChange={(e) => handleChange("condition", e.target.value)}
                 >
@@ -326,9 +326,9 @@ export function AssetForm({
           {isService && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
               <div className="space-y-2">
-                <label className={labelStyle}>Service Category</label>
+                <label className={`${labelStyle} font-poppins`}>Service Category</label>
                 <select 
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   value={serviceForm.serviceType}
                   onChange={(e) => handleChange("serviceType", e.target.value)}
                 >
@@ -341,12 +341,12 @@ export function AssetForm({
                 </select>
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Years of Experience</label>
+                <label className={`${labelStyle} font-poppins`}>Years of Experience</label>
                 <input 
                   type="text" 
                   value={serviceForm.experience}
                   onChange={(e) => handleChange("experience", e.target.value)}
-                  className={inputStyle}
+                  className={`${inputStyle} font-inter`}
                   placeholder="e.g. 5+ years"
                 />
               </div>
@@ -356,7 +356,7 @@ export function AssetForm({
 
         {/* Image Upload Section */}
         <div className="pt-6 border-t border-border space-y-4">
-          <label className={labelStyle}>Visual Assets (Images)</label>
+          <label className={`${labelStyle} font-poppins`}>Post Media (Images)</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
             {currentForm.images?.map((img: File, index: number) => (
               <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border border-border group">
@@ -383,14 +383,14 @@ export function AssetForm({
                 className="hidden" 
               />
               <Upload className="h-6 w-6 text-muted-foreground" />
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Upload</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest font-poppins">Upload</span>
             </label>
           </div>
         </div>
 
-        <Button type="submit" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] gap-2">
+        <Button type="submit" className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] gap-2 font-poppins">
           <Plus className="h-4 w-4" />
-          Publish Asset to Marketplace
+          Publish Post to Marketplace
         </Button>
       </form>
     </div>

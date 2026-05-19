@@ -33,7 +33,7 @@ export default function Footer() {
           </div>
           
           <div className="space-y-6">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Marketplace</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground font-poppins">Marketplace</h3>
             <ul className="space-y-3">
               {[
                 { label: "Houses", href: "/house-listings" },
@@ -42,7 +42,7 @@ export default function Footer() {
                 { label: "Featured Deals", href: "/#listings" }
               ].map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors font-inter">
                     {link.label}
                   </Link>
                 </li>
@@ -51,7 +51,7 @@ export default function Footer() {
           </div>
 
           <div className="space-y-6">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Platform</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground font-poppins">Platform</h3>
             <ul className="space-y-3">
               {[
                 { label: "Dashboard", href: "/dashboard" },
@@ -60,7 +60,7 @@ export default function Footer() {
                 { label: "Settings", href: "/settings" }
               ].map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors font-inter">
                     {link.label}
                   </Link>
                 </li>
@@ -69,7 +69,7 @@ export default function Footer() {
           </div>
 
           <div className="space-y-6">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Support</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground font-poppins">Support</h3>
             <ul className="space-y-3">
               {[
                 { label: "Help Center", href: "/help" },
@@ -78,7 +78,7 @@ export default function Footer() {
                 { label: "Contact Us", href: "/contact" }
               ].map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors font-inter">
                     {link.label}
                   </Link>
                 </li>
@@ -88,13 +88,13 @@ export default function Footer() {
         </div>
         
         <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+          <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest font-poppins">
             © 2026 Digital Broker Connect. All rights reserved.
           </p>
           <div className="flex gap-8">
-            <Link href="/privacy" className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors">Terms</Link>
-            <Link href="/help" className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors">Help</Link>
+            <Link href="/privacy" className="text-[11px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors font-poppins">Privacy</Link>
+            <Link href="/terms" className="text-[11px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors font-poppins">Terms</Link>
+            <Link href="/help" className="text-[11px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors font-poppins">Help</Link>
           </div>
         </div>
       </div>

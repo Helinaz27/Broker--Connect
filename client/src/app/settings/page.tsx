@@ -39,10 +39,10 @@ export default function SettingsPage() {
         </Link>
         
         <div className="mb-10">
-          <h1 className="text-4xl font-black text-foreground tracking-tight italic">
+          <h1 className="text-4xl font-black text-foreground tracking-tight italic font-poppins">
             Platform Settings.
           </h1>
-          <p className="text-muted-foreground font-medium mt-2">Manage your broker account preferences and security protocols.</p>
+          <p className="text-muted-foreground font-medium mt-2 font-inter">Manage your broker account preferences and security.</p>
         </div>
 
         <div className="space-y-4">
@@ -54,8 +54,8 @@ export default function SettingsPage() {
               <User className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <p className="font-bold text-foreground">Edit Profile</p>
-              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+              <p className="font-bold text-foreground font-poppins">Edit Profile</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5 font-inter">
                 Update your professional name, email, and mobile link
               </p>
             </div>
@@ -70,9 +70,9 @@ export default function SettingsPage() {
               <Lock className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <p className="font-bold text-foreground">Security Protocol</p>
-              <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                Change your access password and session credentials
+              <p className="font-bold text-foreground font-poppins">Password</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5 font-inter">
+                Change your access password and account credentials
               </p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
@@ -84,13 +84,13 @@ export default function SettingsPage() {
       {showEditProfileModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-card rounded-[2.5rem] max-w-md w-full p-10 border border-border/50 shadow-2xl animate-in zoom-in-95 duration-300">
-            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic">
+            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic font-poppins">
               Edit Profile.
             </h2>
 
             <div className="space-y-6 mb-10">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">
                   Full Name
                 </label>
                 <div className="relative">
@@ -98,12 +98,12 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     defaultValue="Helina Tesfaye"
-                    className="w-full pl-12 pr-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                    className="w-full pl-12 pr-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">
                   Email Address
                 </label>
                 <div className="relative">
@@ -111,12 +111,12 @@ export default function SettingsPage() {
                   <input
                     type="email"
                     defaultValue="helina.t@brokerconnect.et"
-                    className="w-full pl-12 pr-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                    className="w-full pl-12 pr-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -124,7 +124,7 @@ export default function SettingsPage() {
                   <input
                     type="tel"
                     defaultValue="+251 911 123 456"
-                    className="w-full pl-12 pr-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                    className="w-full pl-12 pr-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                   />
                 </div>
               </div>
@@ -133,13 +133,13 @@ export default function SettingsPage() {
             <div className="flex gap-4">
               <Button
                 variant="outline"
-                className="flex-1 h-14 rounded-2xl font-bold border-border/60"
+                className="flex-1 h-14 rounded-2xl font-bold border-border/60 font-inter"
                 onClick={() => setShowEditProfileModal(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
+                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20 font-poppins"
                 onClick={() => {
                   toast.success("Profile updated successfully.");
                   setShowEditProfileModal(false);
@@ -156,36 +156,36 @@ export default function SettingsPage() {
       {showPasswordModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-card rounded-[2.5rem] max-w-md w-full p-10 border border-border/50 shadow-2xl animate-in zoom-in-95 duration-300">
-            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic">
+            <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic font-poppins">
               Reset Access.
             </h2>
 
             <div className="space-y-6 mb-10">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  Current Protocol
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">
+                  Current Password
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  New Protocol
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">
+                  New Password
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  Verify New Protocol
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">
+                  Verify New Password
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                 />
               </div>
             </div>
@@ -193,15 +193,15 @@ export default function SettingsPage() {
             <div className="flex gap-4">
               <Button
                 variant="outline"
-                className="flex-1 h-14 rounded-2xl font-bold border-border/60"
+                className="flex-1 h-14 rounded-2xl font-bold border-border/60 font-inter"
                 onClick={() => setShowPasswordModal(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
+                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20 font-poppins"
                 onClick={() => {
-                  toast.success("Security credentials updated successfully.");
+                  toast.success("Account credentials updated successfully.");
                   setShowPasswordModal(false);
                 }}
               >

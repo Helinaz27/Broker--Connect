@@ -127,7 +127,7 @@ export default function TermsPage() {
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               For questions about these Terms of Service, contact us at
-              legal@digitalbroker.example.com or through the Help Center.
+              legal@BrokerConnect.example.com or through the Help Center.
             </p>
           </section>
         </div>

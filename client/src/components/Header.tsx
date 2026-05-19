@@ -100,7 +100,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium px-4 py-2 rounded-xl transition-all duration-300 relative group ${
+                className={`text-sm font-bold px-4 py-2 rounded-xl transition-all duration-300 relative group font-poppins ${
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -118,7 +118,7 @@ export default function Header() {
             <button
               onMouseEnter={() => setCategoriesOpen(true)}
               onClick={() => setCategoriesOpen(!categoriesOpen)}
-              className={`flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-all duration-300 ${
+              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl transition-all duration-300 font-poppins ${
                 categoriesOpen
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -165,10 +165,10 @@ export default function Header() {
                       <item.icon className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                      <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors font-poppins">
                         {item.label}
                       </span>
-                      <span className="text-[11px] text-muted-foreground leading-normal">
+                      <span className="text-[11px] text-muted-foreground leading-normal font-inter">
                         {item.desc}
                       </span>
                     </div>
@@ -206,10 +206,10 @@ export default function Header() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden lg:block text-left">
-                    <p className="text-[12px] font-semibold text-foreground leading-none mb-0.5">
+                    <p className="text-[12px] font-bold text-foreground leading-none mb-0.5 font-poppins">
                       {userName}
                     </p>
-                    <p className="text-[10px] font-medium text-primary uppercase tracking-tight">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-tight font-poppins">
                       {(user.coins ?? 0).toLocaleString()} Br
                     </p>
                   </div>

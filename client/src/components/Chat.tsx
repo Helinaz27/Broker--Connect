@@ -169,7 +169,7 @@ export default function Chat() {
             </Button>
           </form>
           <p className="text-[10px] text-center text-muted-foreground mt-3 font-bold uppercase tracking-tight">
-            Safe & Encrypted Chat by DigitalBroker
+            Safe & Encrypted Chat by BrokerConnect
           </p>
         </div>
       </div>

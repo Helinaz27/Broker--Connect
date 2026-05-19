@@ -151,7 +151,7 @@ export default function Login() {
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-10 font-medium">
-            New to DigitalBroker?{" "}
+            New to BrokerConnect?{" "}
             <Link
               href="/register"
               className="text-primary hover:underline font-medium ml-1"

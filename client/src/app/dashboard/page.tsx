@@ -50,13 +50,13 @@ export default function Dashboard() {
   const stats = [
     { label: "Active Listings", value: "12", icon: Home, color: "text-blue-500", bg: "bg-blue-500/10", trend: "+12%" },
     { label: "Market Reach", value: "1,284", icon: BarChart3, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "+24%" },
-    { label: "Asset Inquiries", value: "38", icon: Clock, color: "text-violet-500", bg: "bg-violet-500/10", trend: "5 New" }
+    { label: "Post Inquiries", value: "38", icon: Clock, color: "text-violet-500", bg: "bg-violet-500/10", trend: "5 New" }
   ];
 
   const menuItems = [
-    { id: "houses", label: "Houses", icon: Home, post: "house_post", view: "house_view", color: "text-primary" },
-    { id: "cars", label: "Cars", icon: Car, post: "car_post", view: "car_view", color: "text-blue-500" },
-    { id: "services", label: "Services", icon: Wrench, post: "service_post", view: "service_view", color: "text-emerald-500" }
+    { id: "houses", label: "Houses", icon: Home, post: "house_post", view: "house_view", color: "text-primary", postLabel: "Post New Homes" },
+    { id: "cars", label: "Cars", icon: Car, post: "car_post", view: "car_view", color: "text-blue-500", postLabel: "Post New Cars" },
+    { id: "services", label: "Services", icon: Wrench, post: "service_post", view: "service_view", color: "text-emerald-500", postLabel: "Post New Services" }
   ];
 
   const adminItems = [
@@ -178,7 +178,7 @@ export default function Dashboard() {
                       ))}
                     </div>
                     <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-4 rounded-xl" onClick={() => setActiveTab("house_view")}>
-                      Analyze All <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                      Manage All <ChevronRight className="h-3.5 w-3.5 ml-1" />
                     </Button>
                   </div>
                 </div>
@@ -186,12 +186,12 @@ export default function Dashboard() {
                   <table className="w-full min-w-[800px]">
                     <thead>
                       <tr className="bg-muted/30 border-b border-border/40">
-                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Listing Portfolio</th>
-                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Type</th>
-                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Valuation</th>
-                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">District</th>
-                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
-                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Timestamp</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground font-poppins">Listing Portfolio</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground font-poppins">Type</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground font-poppins">Valuation</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground font-poppins">District</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground font-poppins">Status</th>
+                        <th className="text-left py-5 px-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground font-poppins">Timestamp</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
@@ -421,8 +421,8 @@ export default function Dashboard() {
 
           {activeTab.includes("_post") && (
              <div className="space-y-12 animate-fade-in">
-                <h1 className="text-4xl font-black text-foreground tracking-tight italic">Coming Soon.</h1>
-                <p className="text-muted-foreground font-medium mt-1">Asset posting features are being optimized for the new brand identity.</p>
+                <h1 className="text-4xl font-black text-foreground tracking-tight italic font-poppins">Coming Soon.</h1>
+                <p className="text-muted-foreground font-medium mt-1 font-inter">Post features are being optimized for the new brand identity.</p>
              </div>
           )}
         </div>

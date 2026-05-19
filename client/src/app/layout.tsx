@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { Poppins, Inter } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,17 +8,18 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-poppins",
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${inter.variable} font-sans antialiased text-foreground bg-background selection:bg-primary/30 selection:text-primary-foreground`}
+        className={`${poppins.variable} ${inter.variable} font-inter antialiased text-foreground bg-background selection:bg-primary/30 selection:text-primary-foreground`}
       >
         <StoreProvider>
           <ThemeProvider

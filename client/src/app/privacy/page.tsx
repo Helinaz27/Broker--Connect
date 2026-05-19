@@ -87,7 +87,7 @@ export default function PrivacyPage() {
               You can access and update your profile and listings from your
               account. You may request a copy of your data or request correction
               or deletion. To exercise these rights or ask questions about this
-              policy, contact us at privacy@digitalbroker.example.com.
+              policy, contact us at privacy@BrokerConnect.example.com.
             </p>
           </section>
 
