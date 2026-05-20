@@ -6,7 +6,6 @@ import {
   Menu,
   Eye,
   Loader2,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Pencil,
@@ -55,11 +54,14 @@ import {
 import type { Listing, ListingStatus } from "@/store/apis/listingsApi";
 import { toast } from "sonner";
 
+type ListingModeFilter = "all" | "rent" | "sell";
+
 export default function CarManagePage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [modeFilter, setModeFilter] = useState<ListingModeFilter>("all");
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -75,14 +77,24 @@ export default function CarManagePage() {
     listingType: "car",
     status:
       statusFilter === "all" ? undefined : (statusFilter as ListingStatus),
+    listingMode: modeFilter === "all" ? undefined : modeFilter,
   });
 
   const [updateListingStatus, { isLoading: isUpdating }] =
     useUpdateListingStatusMutation();
 
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  const handleModeFilterChange = (value: ListingModeFilter) => {
+    setModeFilter(value);
+    setPage(1);
+  };
+
   const handleStatusUpdate = async () => {
     if (!listingToUpdate) return;
-
     try {
       const result = await updateListingStatus({
         id: listingToUpdate.id,
@@ -110,6 +122,22 @@ export default function CarManagePage() {
       sold: "bg-blue-500 hover:bg-blue-600",
     };
     return <Badge className={variants[status]}>{status}</Badge>;
+  };
+
+  const getModeBadge = (mode: string | undefined) => {
+    if (!mode) return <span className="text-muted-foreground">—</span>;
+    return (
+      <Badge
+        variant="outline"
+        className={
+          mode === "rent"
+            ? "border-violet-500/50 text-violet-600 bg-violet-500/5"
+            : "border-blue-500/50 text-blue-600 bg-blue-500/5"
+        }
+      >
+        {mode === "rent" ? "Rent" : "Sale"}
+      </Badge>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -162,20 +190,53 @@ export default function CarManagePage() {
             <CardTitle className="text-lg sm:text-xl">
               Cars {pagination && `(${pagination.total})`}
             </CardTitle>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="occupied">Occupied</SelectItem>
-                <SelectItem value="sold">Sold</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* ── filters row ─────────────────────────────────────────────── */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Listing mode segmented filter */}
+              <div className="flex items-center rounded-xl border border-border overflow-hidden">
+                {(["all", "rent", "sell"] as ListingModeFilter[]).map(
+                  (mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleModeFilterChange(mode)}
+                      className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        modeFilter === mode
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`}
+                    >
+                      {mode === "all"
+                        ? "All"
+                        : mode === "rent"
+                          ? "For Rent"
+                          : "For Sale"}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              {/* Status dropdown */}
+              <Select
+                value={statusFilter}
+                onValueChange={handleStatusFilterChange}
+              >
+                <SelectTrigger className="w-full sm:w-36">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="occupied">Occupied</SelectItem>
+                  <SelectItem value="sold">Sold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
+
         <CardContent className="p-0 sm:p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -194,7 +255,11 @@ export default function CarManagePage() {
             </div>
           ) : listings.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-muted-foreground">No car listings found</p>
+              <p className="text-muted-foreground">
+                {modeFilter !== "all" || statusFilter !== "all"
+                  ? "No listings match the selected filters."
+                  : "No car listings found."}
+              </p>
               <Button
                 variant="outline"
                 className="mt-4 gap-2"
@@ -217,7 +282,7 @@ export default function CarManagePage() {
                           Brand/Model
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Price
+                          Price (ETB)
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
                           Type
@@ -252,7 +317,7 @@ export default function CarManagePage() {
                             {listing.brand} {listing.carModel}
                           </TableCell>
                           <TableCell className="whitespace-nowrap font-mono">
-                            ${listing.price.toLocaleString()}
+                            {listing.price.toLocaleString()}
                           </TableCell>
                           <TableCell className="whitespace-nowrap capitalize">
                             {listing.carType || "-"}
@@ -260,8 +325,8 @@ export default function CarManagePage() {
                           <TableCell className="whitespace-nowrap capitalize">
                             {listing.condition || "-"}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap capitalize">
-                            {listing.listingMode || "-"}
+                          <TableCell className="whitespace-nowrap">
+                            {getModeBadge(listing.listingMode)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {getStatusBadge(listing.status)}
@@ -369,6 +434,7 @@ export default function CarManagePage() {
         </CardContent>
       </Card>
 
+      {/* View dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -390,10 +456,16 @@ export default function CarManagePage() {
             )}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Price</p>
+                <p className="text-sm text-muted-foreground">Price (ETB)</p>
                 <p className="font-medium">
-                  ${selectedListing?.price?.toLocaleString()}
+                  {selectedListing?.price?.toLocaleString()}
                 </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Mode</p>
+                <div className="mt-0.5">
+                  {getModeBadge(selectedListing?.listingMode)}
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Brand</p>
@@ -415,12 +487,6 @@ export default function CarManagePage() {
                 <p className="text-sm text-muted-foreground">Condition</p>
                 <p className="font-medium capitalize">
                   {selectedListing?.condition || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Listing Mode</p>
-                <p className="font-medium capitalize">
-                  {selectedListing?.listingMode || "-"}
                 </p>
               </div>
               <div>

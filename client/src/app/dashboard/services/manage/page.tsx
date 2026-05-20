@@ -6,7 +6,6 @@ import {
   Menu,
   Eye,
   Loader2,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Pencil,
@@ -80,9 +79,13 @@ export default function ServiceManagePage() {
   const [updateListingStatus, { isLoading: isUpdating }] =
     useUpdateListingStatusMutation();
 
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
   const handleStatusUpdate = async () => {
     if (!listingToUpdate) return;
-
     try {
       const result = await updateListingStatus({
         id: listingToUpdate.id,
@@ -162,7 +165,11 @@ export default function ServiceManagePage() {
             <CardTitle className="text-lg sm:text-xl">
               Services {pagination && `(${pagination.total})`}
             </CardTitle>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+
+            <Select
+              value={statusFilter}
+              onValueChange={handleStatusFilterChange}
+            >
               <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -176,6 +183,7 @@ export default function ServiceManagePage() {
             </Select>
           </div>
         </CardHeader>
+
         <CardContent className="p-0 sm:p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -194,7 +202,11 @@ export default function ServiceManagePage() {
             </div>
           ) : listings.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-muted-foreground">No service listings found</p>
+              <p className="text-muted-foreground">
+                {statusFilter !== "all"
+                  ? "No listings match the selected filter."
+                  : "No service listings found."}
+              </p>
               <Button
                 variant="outline"
                 className="mt-4 gap-2"
@@ -217,7 +229,7 @@ export default function ServiceManagePage() {
                           Service Type
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Price
+                          Price (ETB)
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
                           Location
@@ -242,11 +254,11 @@ export default function ServiceManagePage() {
                           <TableCell className="font-medium whitespace-nowrap">
                             {listing.title}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
+                          <TableCell className="whitespace-nowrap capitalize">
                             {listing.serviceType || "-"}
                           </TableCell>
                           <TableCell className="whitespace-nowrap font-mono">
-                            ${listing.price.toLocaleString()}
+                            {listing.price.toLocaleString()}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {listing.location?.city || "-"}
@@ -357,6 +369,7 @@ export default function ServiceManagePage() {
         </CardContent>
       </Card>
 
+      {/* View dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -378,14 +391,14 @@ export default function ServiceManagePage() {
             )}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Price</p>
+                <p className="text-sm text-muted-foreground">Price (ETB)</p>
                 <p className="font-medium">
-                  ${selectedListing?.price?.toLocaleString()}
+                  {selectedListing?.price?.toLocaleString()}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Service Type</p>
-                <p className="font-medium">
+                <p className="font-medium capitalize">
                   {selectedListing?.serviceType || "-"}
                 </p>
               </div>
@@ -396,9 +409,23 @@ export default function ServiceManagePage() {
                 </p>
               </div>
               <div>
+                <p className="text-sm text-muted-foreground">Rental Period</p>
+                <p className="font-medium capitalize">
+                  {selectedListing?.rentalPeriod || "-"}
+                </p>
+              </div>
+              <div>
                 <p className="text-sm text-muted-foreground">Posted Date</p>
                 <p className="font-medium">
                   {selectedListing && formatDate(selectedListing.createdAt)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Days Remaining</p>
+                <p className="font-medium">
+                  {selectedListing?.daysRemaining !== undefined
+                    ? `${selectedListing.daysRemaining} days`
+                    : "-"}
                 </p>
               </div>
             </div>

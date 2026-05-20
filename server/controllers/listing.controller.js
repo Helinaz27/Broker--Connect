@@ -475,12 +475,21 @@ export const getAllListingsCtrl = async (req, res) => {
 export const getMyListingsCtrl = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { page = 1, limit = 20, listingType } = req.query;
+    // ↓ add listingMode here
+    const {
+      page = 1,
+      limit = 20,
+      listingType,
+      listingMode,
+      status,
+    } = req.query;
 
     const { listings, total } = await getPaginatedListings({
       filters: {
         ownerId: userId,
         ...(listingType && { listingType }),
+        ...(listingMode && { listingMode }), // ← forward it
+        ...(status && status !== "all" && { status }),
       },
       page,
       limit,
