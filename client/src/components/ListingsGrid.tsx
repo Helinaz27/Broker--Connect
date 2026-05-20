@@ -1,4 +1,3 @@
-// client/src/components/ListingsGrid.tsx
 "use client";
 
 import ListingCard from "@/components/ListingCard";
@@ -7,15 +6,12 @@ import { cn } from "@/lib/utils";
 interface Listing {
   id: string;
   title: string;
-  /** Primary image URL. If omitted, falls back to images[0] or placeholder. */
   image?: string;
-  /** Full images array from the API. */
   images?: string[];
   price: number;
   location: string;
-  rating?: number;
-  description?: string;
   category: "house" | "car" | "otherService" | "service";
+  listingMode?: "rent" | "sell";
 }
 
 interface ListingsGridProps {
@@ -52,8 +48,8 @@ export default function ListingsGrid({
           image={listing.image ?? listing.images?.[0] ?? "/placeholder.jpg"}
           price={listing.price}
           location={listing.location}
-          rating={listing.rating}
           category={listing.category}
+          listingMode={listing.listingMode}
         />
       ))}
     </div>

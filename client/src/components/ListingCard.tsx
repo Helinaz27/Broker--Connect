@@ -14,7 +14,7 @@ interface ListingCardProps {
   price: number;
   location: string;
   category: "house" | "car" | "service" | "otherService";
-  rating?: number;
+  listingMode?: "rent" | "sell";
   contactLimit?: number;
 }
 
@@ -25,6 +25,7 @@ export default function ListingCard({
   price,
   location,
   category,
+  listingMode,
   contactLimit = 0,
 }: ListingCardProps) {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
@@ -52,6 +53,9 @@ export default function ListingCard({
 
   const href = getListingPath(category, id);
 
+  const showModeBadge =
+    (category === "house" || category === "car") && listingMode;
+
   return (
     <Link href={href}>
       <div className="group rounded-[2rem] overflow-hidden bg-card border border-border hover:border-primary/50 hover:shadow-modern hover:-translate-y-1.5 transition-all duration-500 animate-in">
@@ -62,7 +66,7 @@ export default function ListingCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
 
-          <div className="absolute top-4 left-4">
+          <div className="absolute top-4 left-4 flex gap-2">
             <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
               {category === "car"
                 ? "Car"
@@ -70,6 +74,15 @@ export default function ListingCard({
                   ? "Service"
                   : "House"}
             </span>
+            {showModeBadge && (
+              <span
+                className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-sm text-white ${
+                  listingMode === "rent" ? "bg-blue-500/90" : "bg-green-500/90"
+                }`}
+              >
+                {listingMode}
+              </span>
+            )}
           </div>
 
           <button
@@ -89,13 +102,11 @@ export default function ListingCard({
         </div>
 
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
-              <MapPin className="h-3.5 w-3.5 text-primary" />
-              <span className="line-clamp-1">
-                {location.split(",")[1] || location}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider mb-3">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="line-clamp-1">
+              {location.split(",")[1] || location}
+            </span>
           </div>
 
           <h3 className="font-bold text-foreground line-clamp-1 text-lg tracking-tight mb-5 group-hover:text-primary transition-colors">
@@ -108,7 +119,7 @@ export default function ListingCard({
                 Price
               </p>
               <p className="text-xl font-bold text-foreground">
-                ${price.toLocaleString()}
+                {price.toLocaleString()} Br
               </p>
             </div>
             <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />

@@ -95,6 +95,7 @@ export default function Index() {
     location: l.location?.fullAddress ?? l.location?.city ?? "—",
     image: l.images?.[0] ?? "/placeholder.jpg",
     category,
+    listingMode: l.listingMode,
   });
 
   return (
