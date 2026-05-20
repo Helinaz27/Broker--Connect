@@ -1,7 +1,6 @@
-// client/src/components/ListingCard.tsx
 "use client";
 
-import { Heart, MapPin, Star, ArrowUpRight } from "lucide-react";
+import { Heart, MapPin, ArrowUpRight } from "lucide-react";
 import { useFavorites } from "@/lib/FavoritesContext";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +25,6 @@ export default function ListingCard({
   price,
   location,
   category,
-  rating = 4.8,
   contactLimit = 0,
 }: ListingCardProps) {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
@@ -64,7 +62,6 @@ export default function ListingCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
 
-          {/* Category Badge */}
           <div className="absolute top-4 left-4">
             <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
               {category === "car"
@@ -75,7 +72,6 @@ export default function ListingCard({
             </span>
           </div>
 
-          {/* Like Button */}
           <button
             onClick={handleLike}
             className="absolute top-4 right-4 bg-background/80 backdrop-blur-md p-2.5 rounded-xl shadow-sm hover:bg-background z-10 transition-all active:scale-90 border border-white/20 group/heart"
@@ -94,11 +90,6 @@ export default function ListingCard({
 
         <div className="p-6">
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center gap-1 text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">
-              <Star className="h-3 w-3 fill-current" />
-              <span className="text-[11px] font-bold">{rating}</span>
-            </div>
-            <div className="h-1 w-1 rounded-full bg-border" />
             <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
               <MapPin className="h-3.5 w-3.5 text-primary" />
               <span className="line-clamp-1">
