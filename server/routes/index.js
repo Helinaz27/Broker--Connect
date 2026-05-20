@@ -10,7 +10,7 @@ import coinTransactionRoutes from "./coinTransaction.routes.js";
 import contactAccessRoutes from "./contactAccess.routes.js";  
 import messageRoutes from "./message.routes.js";   
 import chatRoutes from "./chat.routes.js";
-// import notificationRoutes from  "./notification.routes.js";
+import notificationRoutes from  "./notification.routes.js";
 
 
 // Mount all routes
@@ -23,7 +23,7 @@ router.use("/coin-transactions", coinTransactionRoutes);
 router.use("/contact-access", contactAccessRoutes);
 router.use("/messages", messageRoutes);
 router.use("/chats", chatRoutes);
-// router.use("/notifications", notificationRoutes);
+router.use("/notifications", notificationRoutes);
 
 
 export default router;

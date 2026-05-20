@@ -1,19 +1,17 @@
 import express from 'express';
-import { protect, admin } from '../middleware/auth.js';
+import { can } from '../middleware/can.js';
 import * as kycController from '../controllers/kyc.controller.js';
 import { submitKycValidator } from '../validators/kyc.validator.js';
 import { uploadKYCImages, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
-//  USER ROUTES 
-router.post('/submit', protect, uploadKYCImages, handleUploadError, submitKycValidator, kycController.submitKYC);
-router.get('/my-status', protect, kycController.getMyKYCStatus);
+router.post('/submit',              can('kyc', 'createOwn'),  uploadKYCImages, handleUploadError, submitKycValidator, kycController.submitKYC);
+router.get('/my-status',            can('kyc', 'readOwn'),    kycController.getMyKYCStatus);
 
-//  ADMIN ROUTES 
-router.get('/get-all', protect, admin, kycController.getAllKYC);  
-router.get('/:requestId/getkyc', protect, admin, kycController.getKYCById);
-router.put('/:requestId/approve', protect, admin, kycController.approveKYC); 
-router.patch('/:requestId/reject', protect, admin, kycController.rejectKYC);   
+router.get('/get-all',              can('kyc', 'manage'),     kycController.getAllKYC);
+router.get('/:requestId/getkyc',    can('kyc', 'manage'),     kycController.getKYCById);
+router.put('/:requestId/approve',   can('kyc', 'manage'),     kycController.approveKYC);
+router.patch('/:requestId/reject',  can('kyc', 'manage'),     kycController.rejectKYC);
 
 export default router;

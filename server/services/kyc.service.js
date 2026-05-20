@@ -96,7 +96,7 @@ export const submitKYCService = async (
   }
 
   const updatedUser = await prisma.user.findUnique({
-    where: { id: userId },
+    where:  { id: userId },
     select: {
       id: true,
       firstName: true,
@@ -118,7 +118,7 @@ export const submitKYCService = async (
     message: `Dear ${userFullName}, your KYC request has been submitted successfully.`,
     data: {
       kycRequest: {
-        id: kycRequest.id,
+        id:             kycRequest.id,
         documentType,
         frontSideImage: kycRequest.frontSideImage,
         backSideImage: kycRequest.backSideImage,
@@ -184,7 +184,7 @@ export const getMyKYCStatusService = async (
 
   const result = {
     kycSubmitted: true,
-    status: kycRequest.status,
+    status:       kycRequest.status,
     documentType: kycRequest.documentType,
     submittedAt: kycRequest.createdAt,
     nextAction: statusMap[kycRequest.status].nextAction,
@@ -278,7 +278,7 @@ export const getAllKYCService = async (status, page, limit) => {
 
 export const getKYCByIdService = async (requestId) => {
   const kycRequest = await prisma.kYCRequest.findUnique({
-    where: { id: requestId },
+    where:   { id: requestId },
     include: {
       user: {
         select: {
@@ -358,12 +358,18 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
     }),
   ]);
 
+  notifyKYCApproved({
+    userId:    kycRequest.userId,
+    userEmail: kycRequest.user.email,
+    firstName: kycRequest.user.firstName,
+  }).catch((err) => console.error('notifyKYCApproved error:', err));
+
   return {
     success: true,
     message: "KYC approved successfully",
     data: {
       kycRequest: {
-        id: kycRequest.id,
+        id:           kycRequest.id,
         documentType: kycRequest.documentType,
         status: "approved",
         approvedAt,
@@ -445,12 +451,19 @@ export const rejectKYCService = async (
     }),
   ]);
 
+  notifyKYCRejected({
+    userId:     kycRequest.userId,
+    userEmail:  kycRequest.user.email,
+    firstName:  kycRequest.user.firstName,
+    reviewNote: reason,
+  }).catch((err) => console.error('notifyKYCRejected error:', err));
+
   return {
     success: true,
     message: "KYC rejected successfully",
     data: {
       kycRequest: {
-        id: kycRequest.id,
+        id:           kycRequest.id,
         documentType: kycRequest.documentType,
         status: "rejected",
         rejectedAt,
