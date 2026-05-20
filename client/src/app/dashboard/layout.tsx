@@ -57,7 +57,7 @@ export default function DashboardLayout({
     },
     {
       id: "services",
-      label: "Services",
+      label: "Other Services",
       icon: Wrench,
       post: "/dashboard/services/post",
       view: "/dashboard/services/manage",

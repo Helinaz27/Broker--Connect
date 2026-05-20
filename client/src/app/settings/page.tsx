@@ -19,9 +19,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { ArrowLeft, User, Bell, Lock, Shield, ChevronRight } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import {
+  ArrowLeft,
+  User,
+  Bell,
+  Lock,
+  Shield,
+  ChevronRight,
+} from "lucide-react";
+
 import { useState } from "react";
 import { PasswordInput } from "@/components/ui/password-input";
 import { toast } from "sonner";
@@ -31,7 +37,6 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
       <main className="flex-1 py-12 md:py-20 relative z-10">
         <div className="container mx-auto px-4 max-w-2xl animate-fade-in">
           <Link
@@ -40,12 +45,14 @@ export default function SettingsPage() {
           >
             <ArrowLeft className="h-3 w-3" /> Back to profile
           </Link>
-          
+
           <div className="mb-10">
             <h1 className="text-4xl font-black text-foreground tracking-tight italic">
               Platform Settings.
             </h1>
-            <p className="text-muted-foreground font-medium mt-2">Manage your broker account preferences and security protocols.</p>
+            <p className="text-muted-foreground font-medium mt-2">
+              Manage your broker account preferences and security protocols.
+            </p>
           </div>
 
           <div className="space-y-4">
@@ -57,7 +64,9 @@ export default function SettingsPage() {
                 <User className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">Profile Configuration</p>
+                <p className="font-bold text-foreground">
+                  Profile Configuration
+                </p>
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
                   Update your professional name, email, and mobile link
                 </p>
@@ -91,7 +100,9 @@ export default function SettingsPage() {
                   Coming soon: Configure real-time alert preferences
                 </p>
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-1 rounded-md">Alpha</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                Alpha
+              </span>
             </div>
 
             <Link
@@ -172,7 +183,6 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
-      <Footer />
     </div>
   );
 }

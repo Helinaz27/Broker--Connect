@@ -4,8 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+
 import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
@@ -57,8 +56,6 @@ export default function ListingPage({
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-
       <main className="flex-1 py-8 md:py-16">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8 mb-16">
@@ -124,10 +121,8 @@ export default function ListingPage({
       </main>
 
       <Chat />
-      <Footer />
     </div>
   );
 }
 
-// Helper to allow icon access in empty state
 ListingPage.Icon = FilterSection;

@@ -6,7 +6,6 @@ import {
   Menu,
   Eye,
   Loader2,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Pencil,
@@ -55,11 +54,14 @@ import {
 import type { Listing, ListingStatus } from "@/store/apis/listingsApi";
 import { toast } from "sonner";
 
+type ListingModeFilter = "all" | "rent" | "sell";
+
 export default function HouseManagePage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [modeFilter, setModeFilter] = useState<ListingModeFilter>("all");
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -75,10 +77,22 @@ export default function HouseManagePage() {
     listingType: "house",
     status:
       statusFilter === "all" ? undefined : (statusFilter as ListingStatus),
+    listingMode: modeFilter === "all" ? undefined : modeFilter,
   });
 
   const [updateListingStatus, { isLoading: isUpdating }] =
     useUpdateListingStatusMutation();
+
+  // reset to page 1 whenever filters change
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  const handleModeFilterChange = (value: ListingModeFilter) => {
+    setModeFilter(value);
+    setPage(1);
+  };
 
   const handleStatusUpdate = async () => {
     if (!listingToUpdate) return;
@@ -110,6 +124,22 @@ export default function HouseManagePage() {
       sold: "bg-blue-500 hover:bg-blue-600",
     };
     return <Badge className={variants[status]}>{status}</Badge>;
+  };
+
+  const getModeBadge = (mode: string | undefined) => {
+    if (!mode) return <span className="text-muted-foreground">—</span>;
+    return (
+      <Badge
+        variant="outline"
+        className={
+          mode === "rent"
+            ? "border-violet-500/50 text-violet-600 bg-violet-500/5"
+            : "border-blue-500/50 text-blue-600 bg-blue-500/5"
+        }
+      >
+        {mode === "rent" ? "Rent" : "Sale"}
+      </Badge>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -162,20 +192,53 @@ export default function HouseManagePage() {
             <CardTitle className="text-lg sm:text-xl">
               Houses {pagination && `(${pagination.total})`}
             </CardTitle>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="occupied">Occupied</SelectItem>
-                <SelectItem value="sold">Sold</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* ── filters row ─────────────────────────────────────────────── */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Listing mode segmented filter */}
+              <div className="flex items-center rounded-xl border border-border overflow-hidden">
+                {(["all", "rent", "sell"] as ListingModeFilter[]).map(
+                  (mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleModeFilterChange(mode)}
+                      className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        modeFilter === mode
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`}
+                    >
+                      {mode === "all"
+                        ? "All"
+                        : mode === "rent"
+                          ? "Rent"
+                          : "Sale"}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              {/* Status dropdown */}
+              <Select
+                value={statusFilter}
+                onValueChange={handleStatusFilterChange}
+              >
+                <SelectTrigger className="w-full sm:w-36">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="occupied">Occupied</SelectItem>
+                  <SelectItem value="sold">Sold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
+
         <CardContent className="p-0 sm:p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -194,7 +257,11 @@ export default function HouseManagePage() {
             </div>
           ) : listings.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-muted-foreground">No house listings found</p>
+              <p className="text-muted-foreground">
+                {modeFilter !== "all" || statusFilter !== "all"
+                  ? "No listings match the selected filters."
+                  : "No house listings found."}
+              </p>
               <Button
                 variant="outline"
                 className="mt-4 gap-2"
@@ -206,7 +273,7 @@ export default function HouseManagePage() {
           ) : (
             <>
               <div className="overflow-x-auto w-full">
-                <div className="min-w-[800px] lg:min-w-full">
+                <div className="min-w-[900px] lg:min-w-full">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -214,7 +281,10 @@ export default function HouseManagePage() {
                           Title
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Price
+                          Price(ETB)
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          Mode
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
                           Location
@@ -246,7 +316,10 @@ export default function HouseManagePage() {
                             {listing.title}
                           </TableCell>
                           <TableCell className="whitespace-nowrap font-mono">
-                            ${listing.price.toLocaleString()}
+                            {listing.price.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {getModeBadge(listing.listingMode)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {listing.location?.city || "-"}
@@ -363,6 +436,7 @@ export default function HouseManagePage() {
         </CardContent>
       </Card>
 
+      {/* View dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -384,10 +458,16 @@ export default function HouseManagePage() {
             )}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Price</p>
+                <p className="text-sm text-muted-foreground">Price(ETB)</p>
                 <p className="font-medium">
-                  ${selectedListing?.price?.toLocaleString()}
+                  {selectedListing?.price?.toLocaleString()}
                 </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Mode</p>
+                <div className="mt-0.5">
+                  {getModeBadge(selectedListing?.listingMode)}
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Location</p>

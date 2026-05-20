@@ -66,7 +66,7 @@ export default function Chat() {
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -91,11 +91,15 @@ export default function Chat() {
       {/* Chat Panel */}
       <div
         className={`fixed bottom-0 right-0 md:right-6 z-[70] w-full md:w-[400px] bg-card border border-border md:rounded-t-2xl shadow-2xl transition-all duration-500 ease-in-out transform ${
-          isOpen ? "translate-y-0" : "translate-y-full opacity-0 pointer-events-none"
+          isOpen
+            ? "translate-y-0"
+            : "translate-y-full opacity-0 pointer-events-none"
         }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border md:rounded-t-2xl bg-primary text-primary-foreground cursor-pointer" onClick={() => setIsOpen(false)}>
+        <div
+          className="flex items-center justify-between p-4 border-b border-border md:rounded-t-2xl bg-primary text-primary-foreground cursor-pointer"
+          onClick={() => setIsOpen(false)}
+        >
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
@@ -105,7 +109,9 @@ export default function Chat() {
             </div>
             <div>
               <h3 className="font-bold text-sm">John Doe</h3>
-              <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Online Now</p>
+              <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">
+                Online Now
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -131,7 +137,9 @@ export default function Chat() {
                     : "bg-card border border-border text-foreground rounded-bl-none"
                 }`}
               >
-                <p className="text-sm leading-relaxed break-words font-medium">{message.text}</p>
+                <p className="text-sm leading-relaxed break-words font-medium">
+                  {message.text}
+                </p>
               </div>
               <span className="text-[10px] text-muted-foreground mt-1 px-1 font-bold">
                 {formatTime(message.timestamp)}

@@ -91,7 +91,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
       {/* Modal */}
       <div className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-primary/10">
@@ -856,7 +855,6 @@ export default function ProfilePage() {
 
       <main className="min-h-screen bg-background py-8 sm:py-12">
         <div className="container mx-auto px-4 sm:px-6">
-          {/* Header */}
           <div className="mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-1 sm:mb-2">

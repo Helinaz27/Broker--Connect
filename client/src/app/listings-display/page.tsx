@@ -49,7 +49,6 @@ export default function ListingsDisplayPage() {
   return (
     <main className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-6">
-        {/* Header */}
         <div className="mb-12">
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2 mb-4">
@@ -61,7 +60,8 @@ export default function ListingsDisplayPage() {
             Search Results
           </h1>
           <p className="text-lg text-muted-foreground">
-            Found {allListings.length} listing{allListings.length !== 1 ? "s" : ""}
+            Found {allListings.length} listing
+            {allListings.length !== 1 ? "s" : ""}
           </p>
         </div>
 
@@ -81,7 +81,6 @@ export default function ListingsDisplayPage() {
           <div className="lg:col-span-3">
             <ListingsGrid
               listings={allListings}
-              
               emptyMessage="No listings match your filters. Try adjusting your search criteria."
             />
           </div>

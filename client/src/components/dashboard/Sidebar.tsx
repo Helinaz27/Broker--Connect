@@ -74,7 +74,6 @@ export function Sidebar({
           w-72 bg-card border-r border-border transition-all duration-300 flex flex-col shadow-sm
         `}
       >
-        {/* Header */}
         <div className="p-6 border-b border-border flex items-center justify-between">
           {isExpanded && (
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -96,19 +95,16 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {/* Performance Hub */}
           <button
             onClick={() => navigate("/dashboard")}
             className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group ${
               pathname === "/dashboard"
-                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                ? "bg-primary text-white shadow-lg"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             <LayoutDashboard className="h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-105" />
-            {isExpanded && (
-              <span className="font-semibold text-sm">Performance Hub</span>
-            )}
+            {isExpanded && <span className="text-sm">Overview</span>}
           </button>
 
           <div className="h-px bg-border/50 my-6 mx-4" />
