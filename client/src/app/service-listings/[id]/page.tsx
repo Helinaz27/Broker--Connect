@@ -1,22 +1,46 @@
 "use client";
 
 import { useState } from "react";
-
 import { useParams, useRouter } from "next/navigation";
+import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
-import { getOtherServiceById } from "@/data/listings";
-import { MapPin, ArrowLeft, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  MapPin,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Briefcase,
+  Clock,
+} from "lucide-react";
 import Link from "next/link";
 
 export default function ServiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
-  const service = id ? getOtherServiceById(id) : null;
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  if (!service) {
+  const { data, isLoading, isError } = useGetListingByIdQuery(id, {
+    skip: !id,
+  });
+
+  const service = data?.data?.listing;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </main>
+      </div>
+    );
+  }
+
+  if (isError || !service) {
     return (
       <div className="flex flex-col min-h-screen">
         <main className="flex-1 container px-4 py-16 text-center">
@@ -29,145 +53,184 @@ export default function ServiceDetailPage() {
     );
   }
 
-  const images = service.images && service.images.length > 0 
-    ? service.images 
-    : [service.image, service.image, service.image, service.image];
+  const images =
+    service.images && service.images.length > 0
+      ? service.images
+      : ["/placeholder.jpg"];
 
-  const nextImage = () => {
+  const nextImage = () =>
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
 
-  const prevImage = () => {
+  const prevImage = () =>
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+
+  const fullAddress =
+    service.location?.fullAddress ??
+    [
+      service.location?.placeName,
+      service.location?.subCity,
+      service.location?.city,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+  const hasSpecs =
+    service.serviceType !== undefined || service.rentalPeriod !== undefined;
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-1 py-8 md:py-12">
-        <div className="container mx-auto px-4 max-w-5xl">
+      <main className="flex-1 py-8 md:py-16">
+        <div className="container mx-auto px-6 max-w-4xl">
           <Link
             href="/service-listings"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
           >
             <ArrowLeft className="h-4 w-4" /> Back to services
           </Link>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Image Gallery */}
-            <div className="md:col-span-2">
-              <div className="space-y-4">
-                {/* Main Image */}
-                <div className="relative bg-muted rounded-lg overflow-hidden aspect-video group">
-                  <img
-                    src={images[currentImageIndex]}
-                    alt={service.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <span className="absolute top-3 left-3 bg-background/90 text-xs font-medium uppercase tracking-wider px-2 py-1 rounded">
-                    Service
-                  </span>
+          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-glass">
+            <div className="aspect-[16/10] bg-muted relative overflow-hidden">
+              <img
+                src={images[currentImageIndex]}
+                alt={service.title}
+                className="w-full h-full object-cover transition-opacity duration-300"
+              />
 
-                  {/* Navigation Buttons */}
-                  {images.length > 1 && (
-                    <>
+              <div className="absolute top-4 left-4 flex gap-2">
+                <span className="bg-background/90 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/20">
+                  Service
+                </span>
+                {service.serviceType && (
+                  <Badge
+                    variant="outline"
+                    className="bg-purple-500/90 text-white border-0 text-[10px] uppercase tracking-widest"
+                  >
+                    {service.serviceType}
+                  </Badge>
+                )}
+              </div>
+
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background rounded-full p-1.5 transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background rounded-full p-1.5 transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {images.map((_, i) => (
                       <button
-                        onClick={prevImage}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </>
+                        key={i}
+                        onClick={() => setCurrentImageIndex(i)}
+                        className={`h-1.5 rounded-full transition-all ${
+                          i === currentImageIndex
+                            ? "w-4 bg-white"
+                            : "w-1.5 bg-white/50"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {images.length > 1 && (
+              <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-muted/30 border-b border-border scrollbar-hide">
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentImageIndex(i)}
+                    className={`flex-shrink-0 w-20 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                      i === currentImageIndex
+                        ? "border-primary opacity-100"
+                        : "border-transparent opacity-50 hover:opacity-80"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${service.title} image ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="p-8 md:p-12">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <MapPin className="h-4 w-4" /> {fullAddress}
+                </span>
+              </div>
+
+              <h1 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-4">
+                {service.title}
+              </h1>
+
+              <p className="text-3xl font-bold text-primary mb-6">
+                {service.price.toLocaleString()}{" "}
+                <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+                  Br{service.rentalPeriod ? ` / ${service.rentalPeriod}` : ""}
+                </span>
+              </p>
+
+              {hasSpecs && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+                  {service.serviceType && (
+                    <div className="flex flex-col items-center gap-1.5 bg-muted/50 rounded-xl px-3 py-4 border border-border">
+                      <Briefcase className="h-5 w-5 text-primary" />
+                      <span className="text-base font-bold text-foreground capitalize">
+                        {service.serviceType}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        Service Type
+                      </span>
+                    </div>
                   )}
-
-                  {/* Image Counter */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 bg-background/80 text-xs font-medium px-2 py-1 rounded">
-                      {currentImageIndex + 1} / {images.length}
+                  {service.rentalPeriod && (
+                    <div className="flex flex-col items-center gap-1.5 bg-muted/50 rounded-xl px-3 py-4 border border-border">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <span className="text-base font-bold text-foreground capitalize">
+                        {service.rentalPeriod}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        Period
+                      </span>
                     </div>
                   )}
                 </div>
+              )}
 
-                {/* Thumbnail Gallery */}
-                {images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {images.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentImageIndex(idx)}
-                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                          idx === currentImageIndex
-                            ? "border-primary"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <img
-                          src={img}
-                          alt={`${service.title} - ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="h-px bg-border/50 w-full mb-8" />
+
+              <div className="space-y-3 mb-10">
+                <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                  Description
+                </h3>
+                <p className="text-muted-foreground leading-relaxed font-medium">
+                  {service.description ||
+                    "No description provided for this service."}
+                </p>
               </div>
+
+              <Button
+                asChild
+                className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
+              >
+                <a
+                  href={`mailto:${service.owner?.email ?? "contact@digitalbroker.et"}?subject=Inquiry: ${encodeURIComponent(service.title)}`}
+                >
+                  Contact Agent
+                </a>
+              </Button>
             </div>
-
-            {/* Details Sidebar */}
-            <div className="md:col-span-1 space-y-6">
-              <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className="h-5 w-5 fill-amber-500 text-amber-500" />
-                    <span className="font-semibold text-foreground">
-                      {service.rating}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                    <MapPin className="h-4 w-4" />
-                    <span className="text-sm">{service.location}</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm text-muted-foreground mb-2">Price</p>
-                  <p className="text-3xl font-bold text-primary">
-                    {service.price.toLocaleString()}
-                    <span className="text-base font-normal text-muted-foreground">
-                      {" "}
-                      Birr
-                    </span>
-                  </p>
-                </div>
-
-                <Button asChild className="w-full">
-                  <a
-                    href={`mailto:contact@digitalbroker.example.com?subject=Inquiry: ${encodeURIComponent(
-                      service.title
-                    )}`}
-                  >
-                    Request Service
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="mt-12 bg-card border border-border rounded-lg p-6 md:p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              {service.title}
-            </h2>
-            {service.description && (
-              <p className="text-muted-foreground leading-relaxed text-lg">
-                {service.description}
-              </p>
-            )}
           </div>
         </div>
       </main>

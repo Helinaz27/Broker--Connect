@@ -3,61 +3,102 @@
 import ListingCard from "@/components/ListingCard";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { houses, cars, otherServices } from "@/data/listings";
+import { useState, useCallback } from "react";
+import { useSearchListingsQuery } from "@/store/apis/listingsApi";
+import type { ListingQueryParams } from "@/store/apis/listingsApi";
+
+const DEFAULT_FILTERS = {
+  search: "",
+  city: "",
+  minPrice: undefined as number | undefined,
+  maxPrice: undefined as number | undefined,
+  category: "all" as "all" | "house" | "car" | "service",
+};
 
 export default function Index() {
-  const [filters, setFilters] = useState({
-    search: "",
-    location: "",
-    priceMin: 0,
-    priceMax: 100000,
-    category: "all",
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  const update = useCallback(
+    (patch: Partial<typeof DEFAULT_FILTERS>) =>
+      setFilters((prev) => ({ ...prev, ...patch })),
+    [],
+  );
+
+  const handleReset = () => setFilters(DEFAULT_FILTERS);
+
+  const sharedParams: Omit<ListingQueryParams, "listingType"> = {
+    limit: 8,
+    page: 1,
+    ...(filters.search && { search: filters.search }),
+    ...(filters.city && { city: filters.city }),
+    ...(filters.minPrice !== undefined && { minPrice: filters.minPrice }),
+    ...(filters.maxPrice !== undefined && { maxPrice: filters.maxPrice }),
+  };
+
+  const showHouses = filters.category === "all" || filters.category === "house";
+  const showCars = filters.category === "all" || filters.category === "car";
+  const showServices =
+    filters.category === "all" || filters.category === "service";
+
+  const {
+    data: housesData,
+    isLoading: housesLoading,
+    isError: housesError,
+  } = useSearchListingsQuery(
+    { ...sharedParams, listingType: "house" },
+    { skip: !showHouses },
+  );
+
+  const {
+    data: carsData,
+    isLoading: carsLoading,
+    isError: carsError,
+  } = useSearchListingsQuery(
+    { ...sharedParams, listingType: "car" },
+    { skip: !showCars },
+  );
+
+  const {
+    data: servicesData,
+    isLoading: servicesLoading,
+    isError: servicesError,
+  } = useSearchListingsQuery(
+    { ...sharedParams, listingType: "service" },
+    { skip: !showServices },
+  );
+
+  const houses = housesData?.data?.listings ?? [];
+  const cars = carsData?.data?.listings ?? [];
+  const services = servicesData?.data?.listings ?? [];
+
+  const houseTotal = housesData?.data?.pagination?.total ?? 0;
+  const carTotal = carsData?.data?.pagination?.total ?? 0;
+  const serviceTotal = servicesData?.data?.pagination?.total ?? 0;
+
+  const allEmpty =
+    !housesLoading &&
+    !carsLoading &&
+    !servicesLoading &&
+    houses.length === 0 &&
+    cars.length === 0 &&
+    services.length === 0;
+
+  const toCard = (
+    l: (typeof houses)[number],
+    category: "house" | "car" | "service",
+  ) => ({
+    id: l.id,
+    title: l.title,
+    price: l.price,
+    location: l.location?.fullAddress ?? l.location?.city ?? "—",
+    image: l.images?.[0] ?? "/placeholder.jpg",
+    category,
   });
-
-  const filterListings = (items: any[]) => {
-    return items.filter((item) => {
-      const priceMatch =
-        item.price >= filters.priceMin && item.price <= filters.priceMax;
-      const searchMatch =
-        !filters.search ||
-        item.title.toLowerCase().includes(filters.search.toLowerCase());
-      const locationMatch =
-        !filters.location ||
-        item.location.toLowerCase().includes(filters.location.toLowerCase());
-      return priceMatch && searchMatch && locationMatch;
-    });
-  };
-
-  const filteredHouses = filterListings(
-    filters.category === "all" || filters.category === "house" ? houses : []
-  );
-
-  const filteredCars = filterListings(
-    filters.category === "all" || filters.category === "car" ? cars : []
-  );
-
-  const filteredServices = filterListings(
-    filters.category === "all" || filters.category === "otherService"
-      ? otherServices
-      : []
-  );
-
-  const handleReset = () => {
-    setFilters({
-      search: "",
-      location: "",
-      priceMin: 0,
-      priceMax: 100000,
-      category: "all",
-    });
-  };
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Hero Section with Filters */}
       <section className="relative py-8 md:py-12 bg-gradient-to-b from-primary/5 to-background overflow-hidden">
         <div className="container mx-auto px-6">
           <div className="mb-8">
@@ -65,94 +106,95 @@ export default function Index() {
               Find Your Perfect Match
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Browse thousands of houses, cars, and services from trusted sellers in your area.
+              Browse thousands of houses, cars, and services from trusted
+              sellers in your area.
             </p>
           </div>
 
-          {/* Horizontal Filter Bar */}
-          <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div className="bg-card border border-border rounded-lg p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-              {/* Category Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Category</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Category
+                </label>
                 <select
                   value={filters.category}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      category: e.target.value as any,
-                    })
-                  }
+                  onChange={(e) => update({ category: e.target.value as any })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 >
                   <option value="all">All</option>
                   <option value="house">Houses</option>
                   <option value="car">Cars</option>
-                  <option value="otherService">Services</option>
+                  <option value="service">Services</option>
                 </select>
               </div>
 
-              {/* Search */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Search</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Search
+                </label>
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search…"
                   value={filters.search}
-                  onChange={(e) =>
-                    setFilters({ ...filters, search: e.target.value })
-                  }
+                  onChange={(e) => update({ search: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 />
               </div>
 
-              {/* Location */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  City
+                </label>
                 <input
                   type="text"
-                  placeholder="Location..."
-                  value={filters.location}
-                  onChange={(e) =>
-                    setFilters({ ...filters, location: e.target.value })
-                  }
+                  placeholder="e.g. Addis Ababa"
+                  value={filters.city}
+                  onChange={(e) => update({ city: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 />
               </div>
 
-              {/* Price Min */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Min Price</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Min Price
+                </label>
                 <input
                   type="number"
-                  value={filters.priceMin}
+                  min={0}
+                  placeholder="0"
+                  value={filters.minPrice ?? ""}
                   onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      priceMin: parseInt(e.target.value),
+                    update({
+                      minPrice: e.target.value
+                        ? parseInt(e.target.value)
+                        : undefined,
                     })
                   }
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 />
               </div>
 
-              {/* Price Max */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Max Price</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Max Price
+                </label>
                 <input
                   type="number"
-                  value={filters.priceMax}
+                  min={0}
+                  placeholder="Any"
+                  value={filters.maxPrice ?? ""}
                   onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      priceMax: parseInt(e.target.value),
+                    update({
+                      maxPrice: e.target.value
+                        ? parseInt(e.target.value)
+                        : undefined,
                     })
                   }
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 />
               </div>
 
-              {/* Reset Button */}
               <div className="flex items-end">
                 <Button
                   variant="outline"
@@ -168,150 +210,163 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Listings Sections */}
       <section className="py-16 container mx-auto px-6">
-        {/* Houses Section - Horizontal Scrollable */}
-        {(filters.category === "all" || filters.category === "house") &&
-          filteredHouses.length > 0 && (
-            <div className="mb-16">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                    Houses for {filters.category === "house" ? "Sale" : "Sale & Rent"}
-                  </h2>
+        {showHouses && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  Houses
+                </h2>
+                {!housesLoading && !housesError && (
                   <p className="text-muted-foreground mt-1">
-                    {filteredHouses.length} properties available
+                    {houseTotal} propert{houseTotal !== 1 ? "ies" : "y"}{" "}
+                    available
                   </p>
-                </div>
-                <Link href="/house-listings">
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </Link>
+                )}
               </div>
-              <div className="overflow-x-auto pb-4 -mx-6 px-6">
-                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
-                  {filteredHouses.slice(0, 8).map((listing) => (
-                    <div
-                      key={listing.id}
-                      className="flex-shrink-0 w-80"
-                    >
-                      <ListingCard
-                        id={listing.id}
-                        title={listing.title}
-                        image={listing.image}
-                        price={listing.price}
-                        location={listing.location}
-                        category={listing.category}
-                        rating={listing.rating}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <Link href="/house-listings">
+                <Button variant="outline" size="sm">
+                  View All
+                </Button>
+              </Link>
             </div>
-          )}
 
-        {/* Cars Section - Horizontal Scrollable */}
-        {(filters.category === "all" || filters.category === "car") &&
-          filteredCars.length > 0 && (
-            <div className="mb-16">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                    Cars for {filters.category === "car" ? "Sale" : "Sale & Rent"}
-                  </h2>
-                  <p className="text-muted-foreground mt-1">
-                    {filteredCars.length} vehicles available
-                  </p>
-                </div>
-                <Link href="/car-listings">
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </Link>
+            {housesLoading ? (
+              <div className="flex items-center gap-2 py-12 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading houses…</span>
               </div>
-              <div className="overflow-x-auto pb-4 -mx-6 px-6">
-                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
-                  {filteredCars.slice(0, 8).map((listing) => (
-                    <div
-                      key={listing.id}
-                      className="flex-shrink-0 w-80"
-                    >
-                      <ListingCard
-                        id={listing.id}
-                        title={listing.title}
-                        image={listing.image}
-                        price={listing.price}
-                        location={listing.location}
-                        category={listing.category}
-                        rating={listing.rating}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* Other Services Section - Horizontal Scrollable */}
-        {(filters.category === "all" || filters.category === "otherService") &&
-          filteredServices.length > 0 && (
-            <div className="mb-16">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                    Other Services
-                  </h2>
-                  <p className="text-muted-foreground mt-1">
-                    {filteredServices.length} services available
-                  </p>
-                </div>
-                <Link href="/service-listings">
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </Link>
-              </div>
-              <div className="overflow-x-auto pb-4 -mx-6 px-6">
-                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
-                  {filteredServices.slice(0, 8).map((listing) => (
-                    <div
-                      key={listing.id}
-                      className="flex-shrink-0 w-80"
-                    >
-                      <ListingCard
-                        id={listing.id}
-                        title={listing.title}
-                        image={listing.image}
-                        price={listing.price}
-                        location={listing.location}
-                        category={listing.category}
-                        rating={listing.rating}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* No Results */}
-        {filteredHouses.length === 0 &&
-          filteredCars.length === 0 &&
-          filteredServices.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-dashed border-border rounded-[2rem]">
-              <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
-                <ArrowRight className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">
-                No listings found
-              </h3>
-              <p className="text-muted-foreground max-w-xs">
-                Try adjusting your filters to find what you're looking for.
+            ) : housesError ? (
+              <p className="text-sm text-muted-foreground py-12">
+                Failed to load houses.
               </p>
+            ) : houses.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-12">
+                No houses match your filters.
+              </p>
+            ) : (
+              <div className="overflow-x-auto pb-4 -mx-6 px-6">
+                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
+                  {houses.map((listing) => (
+                    <div key={listing.id} className="flex-shrink-0 w-80">
+                      <ListingCard {...toCard(listing, "house")} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {showCars && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  Cars
+                </h2>
+                {!carsLoading && !carsError && (
+                  <p className="text-muted-foreground mt-1">
+                    {carTotal} vehicle{carTotal !== 1 ? "s" : ""} available
+                  </p>
+                )}
+              </div>
+              <Link href="/car-listings">
+                <Button variant="outline" size="sm">
+                  View All
+                </Button>
+              </Link>
             </div>
-          )}
+
+            {carsLoading ? (
+              <div className="flex items-center gap-2 py-12 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading cars…</span>
+              </div>
+            ) : carsError ? (
+              <p className="text-sm text-muted-foreground py-12">
+                Failed to load cars.
+              </p>
+            ) : cars.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-12">
+                No cars match your filters.
+              </p>
+            ) : (
+              <div className="overflow-x-auto pb-4 -mx-6 px-6">
+                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
+                  {cars.map((listing) => (
+                    <div key={listing.id} className="flex-shrink-0 w-80">
+                      <ListingCard {...toCard(listing, "car")} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {showServices && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  Services
+                </h2>
+                {!servicesLoading && !servicesError && (
+                  <p className="text-muted-foreground mt-1">
+                    {serviceTotal} service{serviceTotal !== 1 ? "s" : ""}{" "}
+                    available
+                  </p>
+                )}
+              </div>
+              <Link href="/service-listings">
+                <Button variant="outline" size="sm">
+                  View All
+                </Button>
+              </Link>
+            </div>
+
+            {servicesLoading ? (
+              <div className="flex items-center gap-2 py-12 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading services…</span>
+              </div>
+            ) : servicesError ? (
+              <p className="text-sm text-muted-foreground py-12">
+                Failed to load services.
+              </p>
+            ) : services.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-12">
+                No services match your filters.
+              </p>
+            ) : (
+              <div className="overflow-x-auto pb-4 -mx-6 px-6">
+                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
+                  {services.map((listing) => (
+                    <div key={listing.id} className="flex-shrink-0 w-80">
+                      <ListingCard {...toCard(listing, "service")} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {allEmpty && (
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-dashed border-border rounded-[2rem]">
+            <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
+              <ArrowRight className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              No listings found
+            </h3>
+            <p className="text-muted-foreground max-w-xs">
+              Try adjusting your filters to find what you're looking for.
+            </p>
+          </div>
+        )}
       </section>
 
       <Chat />
