@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 import Chat from "@/components/Chat";
+import ContactSection from "@/components/ContactSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,11 +30,15 @@ export default function HouseDetailPage() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const isAuthenticated = useSelector((s: RootState) => s.user.isAuthenticated);
+
   const { data, isLoading, isError } = useGetListingByIdQuery(id, {
     skip: !id,
   });
 
   const house = data?.data?.listing;
+  // API may or may not include hasContactAccess on data.data; coerce safely
+  const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
   if (isLoading) {
     return (
@@ -63,7 +70,6 @@ export default function HouseDetailPage() {
 
   const nextImage = () =>
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-
   const prevImage = () =>
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
 
@@ -242,7 +248,6 @@ export default function HouseDetailPage() {
                   {house.tanker !== undefined && (
                     <div className="flex flex-col items-center gap-1.5 bg-muted/50 rounded-xl px-3 py-4 border border-border">
                       <Droplets className="h-5 w-5 text-primary" />
-
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                         Tanker
                       </span>
@@ -266,16 +271,15 @@ export default function HouseDetailPage() {
                 </p>
               </div>
 
-              <Button
-                asChild
-                className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
-              >
-                <a
-                  href={`mailto:${house.owner?.email ?? "contact@digitalbroker.et"}?subject=Inquiry: ${encodeURIComponent(house.title)}`}
-                >
-                  Contact Agent
-                </a>
-              </Button>
+              <ContactSection
+                listingId={house.id}
+                listingTitle={house.title}
+                coinCost={house.contactCoinLimit}
+                hasContactAccess={hasContactAccess}
+                ownerPhone={house.owner?.phone}
+                ownerEmail={house.owner?.email}
+                isAuthenticated={isAuthenticated}
+              />
             </div>
           </div>
         </div>

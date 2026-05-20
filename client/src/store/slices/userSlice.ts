@@ -1,3 +1,4 @@
+//src/store/slices/userSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { User } from "../apis/userApi";
 

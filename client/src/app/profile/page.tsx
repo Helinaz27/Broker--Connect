@@ -734,7 +734,13 @@ function ListingRow({ access }: { access: ContactAccess }) {
       <td className="py-4 px-4 text-sm whitespace-nowrap">
         <div className="flex items-center gap-1 text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-          <span>{listing.location.split(",")[0]}</span>
+          <span>
+            {typeof listing.location === "string"
+              ? listing.location.split(",")[0]
+              : ((listing.location as any)?.placeName ??
+                (listing.location as any)?.subCity ??
+                (listing.location as any)?.city)}
+          </span>
         </div>
       </td>
       <td className="py-4 px-4">
@@ -790,7 +796,13 @@ function ListingCard({ access }: { access: ContactAccess }) {
           </p>
           <div className="flex items-center gap-1 mt-0.5 text-muted-foreground text-xs">
             <MapPin className="h-3 w-3" />
-            <span>{listing.location.split(",")[0]}</span>
+            <span>
+              {typeof listing.location === "string"
+                ? listing.location.split(",")[0]
+                : ((listing.location as any)?.placeName ??
+                  (listing.location as any)?.subCity ??
+                  (listing.location as any)?.city)}
+            </span>{" "}
           </div>
           <p className="font-bold text-primary text-sm mt-1">
             {listing.price.toLocaleString()} ETB

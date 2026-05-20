@@ -42,8 +42,7 @@ export default function Footer() {
               {[
                 { label: "Houses", href: "/house-listings" },
                 { label: "Cars", href: "/car-listings" },
-                { label: "Services", href: "/service-listings" },
-                { label: "Featured Deals", href: "/#listings" },
+                { label: "Other Services", href: "/service-listings" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link
@@ -104,30 +103,10 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="pt-2 border-t border-border/50 flex justify-center">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
             © 2026 Digital Broker Connect. All rights reserved.
           </p>
-          <div className="flex gap-8">
-            <Link
-              href="/privacy"
-              className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/terms"
-              className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/help"
-              className="text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors"
-            >
-              Help
-            </Link>
-          </div>
         </div>
       </div>
     </footer>

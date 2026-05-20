@@ -107,7 +107,7 @@ export default function Index() {
               Find Your Perfect Match
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Browse thousands of houses, cars, and services from trusted
+              Browse thousands of houses, cars, and other services from trusted
               sellers in your area.
             </p>
           </div>
@@ -126,7 +126,7 @@ export default function Index() {
                   <option value="all">All</option>
                   <option value="house">Houses</option>
                   <option value="car">Cars</option>
-                  <option value="service">Services</option>
+                  <option value="service">Other Services</option>
                 </select>
               </div>
 
@@ -312,11 +312,11 @@ export default function Index() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Services
+                  Other Services
                 </h2>
                 {!servicesLoading && !servicesError && (
                   <p className="text-muted-foreground mt-1">
-                    {serviceTotal} service{serviceTotal !== 1 ? "s" : ""}{" "}
+                    {serviceTotal} other service{serviceTotal !== 1 ? "s" : ""}{" "}
                     available
                   </p>
                 )}

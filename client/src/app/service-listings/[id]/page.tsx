@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 import Chat from "@/components/Chat";
+import ContactSection from "@/components/ContactSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,11 +27,16 @@ export default function ServiceDetailPage() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const isAuthenticated = useSelector((s: RootState) => s.user.isAuthenticated);
+
   const { data, isLoading, isError } = useGetListingByIdQuery(id, {
     skip: !id,
   });
 
   const service = data?.data?.listing;
+  // API response shape currently contains data: { listing: Listing }
+  // hasContactAccess may not be present on data.data, so safely fallback.
+  const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
   if (isLoading) {
     return (
@@ -60,7 +68,6 @@ export default function ServiceDetailPage() {
 
   const nextImage = () =>
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-
   const prevImage = () =>
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
 
@@ -220,16 +227,15 @@ export default function ServiceDetailPage() {
                 </p>
               </div>
 
-              <Button
-                asChild
-                className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
-              >
-                <a
-                  href={`mailto:${service.owner?.email ?? "contact@digitalbroker.et"}?subject=Inquiry: ${encodeURIComponent(service.title)}`}
-                >
-                  Contact Agent
-                </a>
-              </Button>
+              <ContactSection
+                listingId={service.id}
+                listingTitle={service.title}
+                coinCost={service.contactCoinLimit}
+                hasContactAccess={hasContactAccess}
+                ownerPhone={service.owner?.phone}
+                ownerEmail={service.owner?.email}
+                isAuthenticated={isAuthenticated}
+              />
             </div>
           </div>
         </div>

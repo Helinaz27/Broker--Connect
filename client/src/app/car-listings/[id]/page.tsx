@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 import Chat from "@/components/Chat";
+import ContactSection from "@/components/ContactSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,11 +29,14 @@ export default function CarDetailPage() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const isAuthenticated = useSelector((s: RootState) => s.user.isAuthenticated);
+
   const { data, isLoading, isError } = useGetListingByIdQuery(id, {
     skip: !id,
   });
 
   const car = data?.data?.listing;
+  const hasContactAccess = isAuthenticated;
 
   if (isLoading) {
     return (
@@ -60,7 +66,6 @@ export default function CarDetailPage() {
 
   const nextImage = () =>
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-
   const prevImage = () =>
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
 
@@ -253,16 +258,15 @@ export default function CarDetailPage() {
                 </p>
               </div>
 
-              <Button
-                asChild
-                className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
-              >
-                <a
-                  href={`mailto:${car.owner?.email ?? "contact@digitalbroker.et"}?subject=Inquiry: ${encodeURIComponent(car.title)}`}
-                >
-                  Contact Agent
-                </a>
-              </Button>
+              <ContactSection
+                listingId={car.id}
+                listingTitle={car.title}
+                coinCost={car.contactCoinLimit}
+                hasContactAccess={hasContactAccess}
+                ownerPhone={car.owner?.phone}
+                ownerEmail={car.owner?.email}
+                isAuthenticated={isAuthenticated}
+              />
             </div>
           </div>
         </div>

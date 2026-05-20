@@ -24,7 +24,12 @@ const uploadImagesToCloudinary = async (files) => {
   return await Promise.all(uploadPromises);
 };
 
-const formatListingResponse = (listing, isOwner = false, isAdmin = false) => {
+const formatListingResponse = (
+  listing,
+  isOwner = false,
+  isAdmin = false,
+  showContact = false,
+) => {
   const base = {
     id: listing.id,
     listingType: listing.listingType,
@@ -47,6 +52,10 @@ const formatListingResponse = (listing, isOwner = false, isAdmin = false) => {
     owner: listing.owner
       ? {
           id: listing.owner.id,
+          ...(showContact && {
+            phone: listing.owner.phone,
+            email: listing.owner.email,
+          }),
         }
       : undefined,
   };
@@ -560,13 +569,43 @@ export const getListingByIdCtrl = async (req, res) => {
     if (!listing) return errorResponse(res, "Listing not found", null, 404);
     if (listing.status !== "active")
       return errorResponse(res, "Listing not available", null, 404);
-
-    if (listing.paidUntil && new Date() > new Date(listing.paidUntil)) {
+    if (listing.paidUntil && new Date() > new Date(listing.paidUntil))
       return errorResponse(res, "Listing has expired", null, 404);
+
+    const viewer = req.user ?? null;
+
+    // guest
+    if (!viewer) {
+      return successResponse(res, "Listing retrieved successfully", {
+        listing: formatListingResponse(listing, false, false, false),
+        hasContactAccess: false,
+        isOwner: false,
+      });
     }
 
+    const isOwner = listing.ownerId === viewer.id;
+    const isAdmin = viewer.roles.includes("admin");
+
+    // owner or admin always sees contact
+    if (isOwner || isAdmin) {
+      return successResponse(res, "Listing retrieved successfully", {
+        listing: formatListingResponse(listing, isOwner, isAdmin, true),
+        hasContactAccess: true,
+        isOwner,
+      });
+    }
+
+    // logged-in user — check ContactAccess table
+    const access = await prisma.contactAccess.findFirst({
+      where: { viewerId: viewer.id, listingId: id, isActive: true },
+    });
+
+    const hasContactAccess = !!access;
+
     return successResponse(res, "Listing retrieved successfully", {
-      listing: formatListingResponse(listing, false, false),
+      listing: formatListingResponse(listing, false, false, hasContactAccess),
+      hasContactAccess,
+      isOwner: false,
     });
   } catch (error) {
     return errorResponse(res, "Server error", error.message);
