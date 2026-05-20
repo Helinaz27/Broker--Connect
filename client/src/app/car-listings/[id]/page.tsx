@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import Chat from "@/components/Chat";
 import ContactSection from "@/components/ContactSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +35,7 @@ export default function CarDetailPage() {
   });
 
   const car = data?.data?.listing;
-  const hasContactAccess = isAuthenticated;
+  const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
   if (isLoading) {
     return (
@@ -271,7 +270,6 @@ export default function CarDetailPage() {
           </div>
         </div>
       </main>
-      <Chat />
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import Chat from "@/components/Chat";
 import ContactSection from "@/components/ContactSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,8 +33,6 @@ export default function ServiceDetailPage() {
   });
 
   const service = data?.data?.listing;
-  // API response shape currently contains data: { listing: Listing }
-  // hasContactAccess may not be present on data.data, so safely fallback.
   const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
   if (isLoading) {
@@ -240,7 +237,6 @@ export default function ServiceDetailPage() {
           </div>
         </div>
       </main>
-      <Chat />
     </div>
   );
 }

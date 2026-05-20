@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -12,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Edit,
-  Eye,
   ShieldCheck,
   ShieldAlert,
   Clock,
@@ -30,7 +28,9 @@ import {
   Loader2,
   Phone,
   Mail,
-  ExternalLink,
+  Copy,
+  Check,
+  MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
@@ -48,13 +48,10 @@ import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
-// ─── Buy Coins Modal ──────────────────────────────────────────────────────────
-
 function BuyCoinsModal({ onClose }: { onClose: () => void }) {
   const [coinsRequested, setCoinsRequested] = useState(100);
   const [initiateChapa, { isLoading }] = useInitiateChapaMutation();
 
-  // Coin packages
   const packages = [
     { coins: 50, label: "Starter" },
     { coins: 100, label: "Basic" },
@@ -62,7 +59,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
     { coins: 500, label: "Pro" },
   ];
 
-  // 1 coin = 1 ETB (adjust COIN_PRICE_IN_BIRR as per your constants)
   const COIN_PRICE_IN_BIRR = 1;
   const totalBirr = coinsRequested * COIN_PRICE_IN_BIRR;
 
@@ -83,13 +79,10 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-
-      {/* Modal */}
       <div className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -111,7 +104,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Quick packages */}
         <div className="grid grid-cols-4 gap-2">
           {packages.map((pkg) => (
             <button
@@ -131,7 +123,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* Custom amount */}
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
             Custom Amount
@@ -148,7 +139,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        {/* Summary */}
         <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -172,7 +162,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* CTA */}
         <Button
           onClick={handleBuy}
           disabled={isLoading || coinsRequested < 1}
@@ -198,8 +187,6 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
-
-// ─── KYC status banner ────────────────────────────────────────────────────────
 
 function KYCStatusBanner({
   status,
@@ -259,8 +246,6 @@ function KYCStatusBanner({
     </div>
   );
 }
-
-// ─── Image upload field ───────────────────────────────────────────────────────
 
 function ImageUploadField({
   label,
@@ -331,8 +316,6 @@ function ImageUploadField({
   );
 }
 
-// ─── KYC section ─────────────────────────────────────────────────────────────
-
 function KYCSection() {
   const { data: kycData, isLoading } = useGetMyKYCStatusQuery();
   const [submitKYC, { isLoading: isSubmitting }] = useSubmitKYCMutation();
@@ -377,9 +360,7 @@ function KYCSection() {
         ...(backImage ? { backSideImage: backImage } : {}),
       }).unwrap();
       toast.success(
-        isEditing
-          ? "KYC updated successfully! We'll review it shortly."
-          : "KYC submitted successfully! We'll review it shortly.",
+        isEditing ? "KYC updated successfully!" : "KYC submitted successfully!",
       );
       setShowForm(false);
       setIsEditing(false);
@@ -398,7 +379,6 @@ function KYCSection() {
     setFrontImage(null);
     setBackImage(null);
   };
-
   const handleCancel = () => {
     setShowForm(false);
     setIsEditing(false);
@@ -573,6 +553,39 @@ function KYCSection() {
   );
 }
 
+function getListingDetailPath(listingType: string, id: string): string {
+  const type = listingType?.toLowerCase();
+  if (type === "house") return `/house-listings/${id}`;
+  if (type === "car") return `/car-listings/${id}`;
+  if (type === "service") return `/service-listings/${id}`;
+  return `/listings/${id}`;
+}
+
+function CopyContactButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success("Copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1 rounded hover:bg-muted transition-colors"
+      title="Copy"
+    >
+      {copied ? (
+        <Check className="h-3 w-3 text-emerald-500" />
+      ) : (
+        <Copy className="h-3 w-3 text-muted-foreground" />
+      )}
+    </button>
+  );
+}
+
 function MyListingsTab() {
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -628,7 +641,6 @@ function MyListingsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full min-w-[600px]">
           <thead>
@@ -640,6 +652,7 @@ function MyListingsTab() {
                 "Owner Contact",
                 "Coins Paid",
                 "Date",
+                "",
               ].map((h) => (
                 <th
                   key={h}
@@ -658,14 +671,12 @@ function MyListingsTab() {
         </table>
       </div>
 
-      {/* Mobile cards */}
       <div className="sm:hidden space-y-3">
         {accesses.map((access) => (
           <ListingCard key={access.id} access={access} />
         ))}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground">
@@ -697,16 +708,15 @@ function MyListingsTab() {
   );
 }
 
-// ─── Listing row (desktop) ────────────────────────────────────────────────────
-
 function ListingRow({ access }: { access: ContactAccess }) {
   const { listing } = access;
   const coverImage = listing.images?.[0];
+  const detailPath = getListingDetailPath(listing.listingType, listing.id);
 
   return (
     <tr className="border-b border-border hover:bg-muted/50 transition-colors">
       <td className="py-4 px-4">
-        <div className="flex items-center gap-3">
+        <Link href={detailPath} className="flex items-center gap-3 group">
           {coverImage ? (
             <img
               src={coverImage}
@@ -719,14 +729,14 @@ function ListingRow({ access }: { access: ContactAccess }) {
             </div>
           )}
           <div>
-            <p className="font-medium text-foreground text-sm line-clamp-1">
+            <p className="font-medium text-foreground text-sm line-clamp-1 group-hover:text-primary transition-colors">
               {listing.title}
             </p>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
               {listing.listingType}
             </p>
           </div>
-        </div>
+        </Link>
       </td>
       <td className="py-4 px-4 text-foreground font-semibold text-sm whitespace-nowrap">
         {listing.price.toLocaleString()} ETB
@@ -748,12 +758,14 @@ function ListingRow({ access }: { access: ContactAccess }) {
           <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
             <Phone className="h-3 w-3 text-primary flex-shrink-0" />
             <span>{listing.owner.phone}</span>
+            <CopyContactButton value={listing.owner.phone} />
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Mail className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate max-w-[140px]">
+            <span className="truncate max-w-[120px]">
               {listing.owner.email}
             </span>
+            <CopyContactButton value={listing.owner.email} />
           </div>
         </div>
       </td>
@@ -766,19 +778,30 @@ function ListingRow({ access }: { access: ContactAccess }) {
       <td className="py-4 px-4 text-muted-foreground text-sm whitespace-nowrap">
         {new Date(access.createdAt).toLocaleDateString()}
       </td>
+      <td className="py-4 px-4">
+        <Link href={`/chat?listingId=${listing.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Chat
+          </Button>
+        </Link>
+      </td>
     </tr>
   );
 }
 
-// ─── Listing card (mobile) ────────────────────────────────────────────────────
-
 function ListingCard({ access }: { access: ContactAccess }) {
   const { listing } = access;
   const coverImage = listing.images?.[0];
+  const detailPath = getListingDetailPath(listing.listingType, listing.id);
 
   return (
     <div className="p-4 rounded-2xl border border-border bg-card space-y-3">
-      <div className="flex items-center gap-3">
+      <Link href={detailPath} className="flex items-center gap-3 group">
         {coverImage ? (
           <img
             src={coverImage}
@@ -791,7 +814,7 @@ function ListingCard({ access }: { access: ContactAccess }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground text-sm line-clamp-1">
+          <p className="font-semibold text-foreground text-sm line-clamp-1 group-hover:text-primary transition-colors">
             {listing.title}
           </p>
           <div className="flex items-center gap-1 mt-0.5 text-muted-foreground text-xs">
@@ -802,41 +825,50 @@ function ListingCard({ access }: { access: ContactAccess }) {
                 : ((listing.location as any)?.placeName ??
                   (listing.location as any)?.subCity ??
                   (listing.location as any)?.city)}
-            </span>{" "}
+            </span>
           </div>
           <p className="font-bold text-primary text-sm mt-1">
             {listing.price.toLocaleString()} ETB
           </p>
         </div>
-      </div>
+      </Link>
 
-      {/* Unlocked contact */}
       <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-1.5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
           Unlocked Contact
         </p>
         <div className="flex items-center gap-1.5 text-sm text-foreground font-medium">
-          <Phone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          {listing.owner.phone}
+          <Phone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+          <span className="flex-1">{listing.owner.phone}</span>
+          <CopyContactButton value={listing.owner.phone} />
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Mail className="h-3.5 w-3.5" />
-          {listing.owner.email}
+          <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="flex-1 truncate">{listing.owner.email}</span>
+          <CopyContactButton value={listing.owner.email} />
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary font-bold">
           <Coins className="h-3 w-3" />
           {access.coinsPaid} coins paid
         </span>
         <span>{new Date(access.createdAt).toLocaleDateString()}</span>
+        <Link href={`/chat?listingId=${listing.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 rounded-lg text-xs font-bold uppercase tracking-widest"
+          >
+            <MessageCircle className="h-3 w-3" />
+            Chat
+          </Button>
+        </Link>
       </div>
     </div>
   );
 }
-
-// ─── page ─────────────────────────────────────────────────────────────────────
 
 type ProfileTab = "listings" | "kyc";
 
@@ -862,7 +894,6 @@ export default function ProfilePage() {
 
   return (
     <>
-      {/* Buy Coins Modal */}
       {showBuyCoins && <BuyCoinsModal onClose={() => setShowBuyCoins(false)} />}
 
       <main className="min-h-screen bg-background py-8 sm:py-12">
@@ -889,7 +920,6 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid lg:grid-cols-4 gap-6 lg:gap-8">
-            {/* Profile info sidebar */}
             <div className="lg:col-span-1">
               <Card className="bg-card border-border lg:sticky lg:top-24">
                 <CardHeader>
@@ -923,7 +953,6 @@ export default function ProfilePage() {
                     </p>
                   </div>
 
-                  {/* KYC badge */}
                   <div className="border-t border-border pt-5 sm:pt-6">
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
                       Identity
@@ -941,7 +970,6 @@ export default function ProfilePage() {
                     )}
                   </div>
 
-                  {/* Available Coins + Buy Button */}
                   <div className="border-t border-border pt-5 sm:pt-6 bg-primary/5 -mx-6 px-6 py-5 sm:py-6 rounded-b-lg space-y-3">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -963,9 +991,7 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            {/* Main content */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Tabs */}
               <div className="flex bg-muted/50 p-1 rounded-xl w-fit">
                 <button
                   onClick={() => setActiveTab("listings")}
@@ -992,7 +1018,6 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Listings tab */}
               {activeTab === "listings" && (
                 <Card className="bg-card border-border">
                   <CardHeader>
@@ -1009,7 +1034,6 @@ export default function ProfilePage() {
                 </Card>
               )}
 
-              {/* KYC tab */}
               {activeTab === "kyc" && (
                 <Card className="bg-card border-border">
                   <CardHeader>

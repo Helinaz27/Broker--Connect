@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import Chat from "@/components/Chat";
 import ContactSection from "@/components/ContactSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +36,6 @@ export default function HouseDetailPage() {
   });
 
   const house = data?.data?.listing;
-  // API may or may not include hasContactAccess on data.data; coerce safely
   const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
   if (isLoading) {
@@ -284,7 +282,6 @@ export default function HouseDetailPage() {
           </div>
         </div>
       </main>
-      <Chat />
     </div>
   );
 }
