@@ -4,14 +4,13 @@
 import { LayoutDashboard, Menu, ChevronDown } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
 
 interface MenuItem {
   id: string;
   label: string;
   icon: LucideIcon;
-  post: string; // href for "Post New Asset"
-  view: string; // href for "Manage Inventory"
+  post: string;
+  view: string;
   color: string;
 }
 
@@ -74,21 +73,27 @@ export function Sidebar({
           w-72 bg-card border-r border-border transition-all duration-300 flex flex-col shadow-sm
         `}
       >
+        {/* Sidebar header — label hidden on mobile (topbar shows it there) */}
         <div className="p-6 border-b border-border flex items-center justify-between">
+          {/* Only show "Broker Console" label on desktop */}
           {isExpanded && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <span className="hidden md:block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Broker Console
             </span>
           )}
+
+          {/* Collapse/expand toggle — desktop only */}
           <button
-            onClick={() => {
-              if (typeof window !== "undefined" && window.innerWidth < 768) {
-                setIsMobileSidebarOpen(false);
-              } else {
-                setIsSidebarCollapsed(!isSidebarCollapsed);
-              }
-            }}
-            className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="hidden md:flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all ml-auto"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          {/* Close button — mobile only, inside sidebar */}
+          <button
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="md:hidden h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all ml-auto"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -115,7 +120,6 @@ export function Sidebar({
             </p>
           )}
 
-          {/* Houses / Cars / Services */}
           {menuItems.map((cat) => {
             const isActive = pathname === cat.post || pathname === cat.view;
 

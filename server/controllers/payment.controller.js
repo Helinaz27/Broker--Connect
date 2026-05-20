@@ -130,7 +130,6 @@ export const verifyChapa = async (req, res) => {
 };
 
 export const chapaWebhook = async (req, res) => {
-  console.log("Received Chapa webhook:", JSON.stringify(req.body, null, 2));
   try {
     const signature = req.headers["x-chapa-signature"];
     const hash = crypto
@@ -142,8 +141,6 @@ export const chapaWebhook = async (req, res) => {
     }
 
     const { tx_ref, status } = req.body;
-
-    console.log(req.body);
 
     const payment = await getPaymentByTxRef(tx_ref);
     if (!payment) return res.sendStatus(200);

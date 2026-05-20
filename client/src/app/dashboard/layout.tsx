@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Users,
   DollarSign,
+  Menu,
 } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import Chat from "@/components/Chat";
@@ -93,6 +94,20 @@ export default function DashboardLayout({
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      {/* Mobile-only topbar — hidden on md+ where the sidebar is always visible */}
+      <div className="md:hidden sticky top-0 z-40 flex items-center gap-3 px-4 h-14 bg-card border-b border-border">
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="h-9 w-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+          aria-label="Open sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Broker Console
+        </span>
+      </div>
+
       <div className="flex-1 flex overflow-hidden relative">
         <Sidebar
           isAdmin={isAdmin}
