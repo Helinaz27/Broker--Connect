@@ -37,7 +37,7 @@ router.post(
 );
 router.post(
   "/change-password",
-  protect,
+  can("user", "updateOwn"),
   changePasswordValidator,
   userController.changePassword,
 );

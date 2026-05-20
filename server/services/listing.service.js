@@ -43,9 +43,11 @@ const buildWhereClause = (filters = {}) => {
   }
 
   if (filters.city) {
-    where['location.city'] = { equals: filters.city, mode: 'insensitive' };
-  }
-
+  where.location = {
+    path: ['city'],
+    equals: filters.city,
+  };
+}
   if (filters.brand) {
     where.brand = { contains: filters.brand, mode: 'insensitive' };
   }
