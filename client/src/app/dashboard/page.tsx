@@ -81,8 +81,7 @@ export default function DashboardPage() {
             Performance Overview
           </h1>
           <p className="text-muted-foreground font-medium">
-            Welcome back, {currentUser?.firstName ?? "—"}. Here's your portfolio
-            activity.
+            Welcome back, {currentUser?.firstName ?? "—"}. Here's your activity.
           </p>
         </div>
         <Button

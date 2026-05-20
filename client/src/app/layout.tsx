@@ -7,6 +7,7 @@ import StoreProvider from "@/store/storeProvider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -40,12 +41,14 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <StoreProvider>
-            <FavoritesProvider>
-              <Header />
-              {children}
-              <Footer />
-              <Toaster position="top-right" offset={72} />
-            </FavoritesProvider>
+            <AuthProvider>
+              <FavoritesProvider>
+                <Header />
+                {children}
+                <Footer />
+                <Toaster position="top-right" offset={72} />
+              </FavoritesProvider>
+            </AuthProvider>
           </StoreProvider>
         </ThemeProvider>
       </body>

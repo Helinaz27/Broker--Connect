@@ -64,6 +64,10 @@ export default function Header() {
     .join("")
     .toUpperCase();
 
+  // Helper function to check if user has access to dashboard
+  const hasDashboardAccess =
+    user?.roles?.some((role) => role === "client" || role === "admin") ?? false;
+
   const handleLogout = async () => {
     try {
       await logout().unwrap();
@@ -89,7 +93,7 @@ export default function Header() {
   }, []);
 
   const desktopMenuItems: MenuItem[] = [
-    ...(!user?.roles.includes("user")
+    ...(hasDashboardAccess
       ? [{ href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }]
       : []),
     { href: "/profile", icon: User, label: "My Profile" },
@@ -308,7 +312,7 @@ export default function Header() {
             <div className="h-px bg-border my-2" />
             {user ? (
               <>
-                {!user.roles.includes("user") && (
+                {hasDashboardAccess && (
                   <Link
                     href="/dashboard"
                     className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center gap-2"

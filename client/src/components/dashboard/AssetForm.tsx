@@ -300,7 +300,6 @@ export function AssetForm({
               value={(currentForm as any).title}
               onChange={(e) => handleChange("title", e.target.value)}
               className={inputStyle}
-              placeholder="e.g. Modern Villa in Bole"
               required
             />
           </div>

@@ -20,8 +20,6 @@ import {
   Droplets,
 } from "lucide-react";
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 export default function HouseDetailPage() {
   const params = useParams();
@@ -40,11 +38,9 @@ export default function HouseDetailPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </main>
-        <Footer />
       </div>
     );
   }
@@ -53,14 +49,12 @@ export default function HouseDetailPage() {
   if (isError || !house) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header />
         <main className="flex-1 container px-4 py-16 text-center">
           <p className="text-muted-foreground mb-4">House not found.</p>
           <Button variant="outline" onClick={() => router.back()}>
             Go back
           </Button>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -84,7 +78,6 @@ export default function HouseDetailPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
       <main className="flex-1 py-8 md:py-16">
         <div className="container mx-auto px-6 max-w-4xl">
           <Link
@@ -224,17 +217,6 @@ export default function HouseDetailPage() {
                 </p>
               </div>
 
-              {/* Owner contact */}
-              {house.owner && (
-                <div className="mb-8 p-4 bg-muted/50 rounded-xl text-sm">
-                  <p className="font-semibold text-foreground mb-1">
-                    {house.owner.name}
-                  </p>
-                  <p className="text-muted-foreground">{house.owner.phone}</p>
-                  <p className="text-muted-foreground">{house.owner.email}</p>
-                </div>
-              )}
-
               <Button
                 asChild
                 className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
@@ -250,7 +232,6 @@ export default function HouseDetailPage() {
         </div>
       </main>
       <Chat />
-      <Footer />
     </div>
   );
 }
