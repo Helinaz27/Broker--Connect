@@ -6,7 +6,6 @@ import { useFavorites } from "@/lib/FavoritesContext";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getListingPath } from "@/data/listings";
 
 export default function Favorites() {
   const { favorites } = useFavorites();
@@ -52,7 +51,6 @@ export default function Favorites() {
                   image={listing.image}
                   price={listing.price}
                   location={listing.location}
-                  rating={listing.rating || 4.8}
                   category={listing.category as any}
                 />
               ))}
