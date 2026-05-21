@@ -1,19 +1,22 @@
 import express from "express";
+import http from "http";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import { checkDbConnection, checkAdmin } from "./config/db.config.js";
 import env from "./utils/env.js";
 import router from "./routes/index.js";
-const app = express();
+import { initSocket } from "./socket/socket.js";
 
-// Middleware
+const app = express();
+const httpServer = http.createServer(app);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
   }),
 );
 
@@ -34,7 +37,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
 const startServer = async () => {
   try {
     const isConnected = await checkDbConnection();
@@ -43,8 +45,11 @@ const startServer = async () => {
       process.exit(1);
     }
     await checkAdmin();
+
+    initSocket(httpServer);
+
     const port = env.port || 5500;
-    app.listen(port, () => {
+    httpServer.listen(port, () => {
       console.log(`Server running on port ${port}`);
       console.log(`Environment: ${env.NODE_ENV || "development"}`);
     });

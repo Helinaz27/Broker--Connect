@@ -230,6 +230,7 @@ export default function ServiceDetailPage() {
                 coinCost={service.contactCoinLimit}
                 hasContactAccess={hasContactAccess}
                 ownerPhone={service.owner?.phone}
+                ownerId={service.owner?.id}
                 ownerEmail={service.owner?.email}
                 isAuthenticated={isAuthenticated}
               />

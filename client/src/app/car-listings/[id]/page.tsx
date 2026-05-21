@@ -263,6 +263,7 @@ export default function CarDetailPage() {
                 coinCost={car.contactCoinLimit}
                 hasContactAccess={hasContactAccess}
                 ownerPhone={car.owner?.phone}
+                ownerId={car.owner?.id}
                 ownerEmail={car.owner?.email}
                 isAuthenticated={isAuthenticated}
               />

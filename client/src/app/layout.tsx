@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ChatProvider } from "@/components/chat/ChatWidget";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -42,12 +43,14 @@ export default function RootLayout({
         >
           <StoreProvider>
             <AuthProvider>
-              <FavoritesProvider>
-                <Header />
-                {children}
-                <Footer />
-                <Toaster position="top-right" offset={72} />
-              </FavoritesProvider>
+              <ChatProvider>
+                <FavoritesProvider>
+                  <Header />
+                  {children}
+                  <Footer />
+                  <Toaster position="top-right" offset={72} />
+                </FavoritesProvider>
+              </ChatProvider>
             </AuthProvider>
           </StoreProvider>
         </ThemeProvider>

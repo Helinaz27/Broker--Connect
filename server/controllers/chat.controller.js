@@ -1,64 +1,288 @@
-import {
-  createRoomService,
-  getMyRoomsService,
-  getRoomByIdService,
-  adminGetAllRoomsService,
-  adminGetRoomByIdService,
-} from '../services/chat.service.js';
+import { prisma } from "../config/db.config.js";
+import { isUserOnline } from "../socket/socket.js";
 
-const handleError = (res, error) => {
-  if (error.status) {
-    return res.status(error.status).json({ success: false, message: error.message });
-  }
-  console.error(error);
-  return res.status(500).json({ success: false, message: 'Internal server error' });
+const uploadImagesToCloudinary = async (files) => {
+  const uploadPromises = files.map((file) => {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "listings", resource_type: "image" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result.secure_url);
+        },
+      );
+      uploadStream.end(file.buffer);
+    });
+  });
+  return await Promise.all(uploadPromises);
 };
 
-export const createRoom = async (req, res) => {
+export const initiateChat = async (req, res) => {
   try {
-    const room = await createRoomService(req.user.id, req.body.listingId, req.body.participantId);
-    return res.status(201).json({ success: true, data: room });
-  } catch (error) {
-    return handleError(res, error);
+    const userId = req.user.id;
+    const { listingId, otherUserId } = req.body;
+
+    if (userId === otherUserId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cannot chat with yourself" });
+    }
+
+    const otherUser = await prisma.user.findUnique({
+      where: { id: otherUserId },
+    });
+    if (!otherUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const access = await prisma.contactAccess.findFirst({
+      where: {
+        listingId,
+        isActive: true,
+        OR: [
+          { viewerId: userId, ownerId: otherUserId },
+          { viewerId: otherUserId, ownerId: userId },
+        ],
+      },
+    });
+
+    if (!access) {
+      return res.status(403).json({
+        success: false,
+        message: "You need contact access to this listing to start a chat",
+      });
+    }
+
+    const sortedIds = [userId, otherUserId].sort();
+
+    let room = await prisma.chatRoom.findFirst({
+      where: {
+        AND: [
+          { participants: { has: sortedIds[0] } },
+          { participants: { has: sortedIds[1] } },
+        ],
+      },
+    });
+
+    if (!room) {
+      room = await prisma.chatRoom.create({
+        data: { participants: sortedIds },
+      });
+    }
+
+    const messages = await prisma.message.findMany({
+      where: { roomId: room.id },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        room,
+        messages: messages.reverse(),
+        otherUser: {
+          id: otherUser.id,
+          firstName: otherUser.firstName,
+          lastName: otherUser.lastName,
+          profileImage: otherUser.profileImage,
+          isOnline: isUserOnline(otherUser.id),
+        },
+      },
+    });
+  } catch (err) {
+    console.error("initiateChat error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
-export const getMyRooms = async (req, res) => {
+export const getChatRooms = async (req, res) => {
   try {
+    const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const { rooms, total } = await getMyRoomsService(req.user.id, page, limit);
-    return res.status(200).json({ success: true, data: rooms, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
-  } catch (error) {
-    return handleError(res, error);
+    const skip = (page - 1) * limit;
+
+    const [rooms, total] = await Promise.all([
+      prisma.chatRoom.findMany({
+        where: { participants: { has: userId } },
+        orderBy: { updatedAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.chatRoom.count({ where: { participants: { has: userId } } }),
+    ]);
+
+    const enriched = await Promise.all(
+      rooms.map(async (room) => {
+        const otherUserId = room.participants.find((p) => p !== userId);
+
+        const [otherUser, lastMessage, unreadCount] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: otherUserId },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+            },
+          }),
+          prisma.message.findFirst({
+            where: { roomId: room.id },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.message.count({
+            where: {
+              roomId: room.id,
+              senderId: { not: userId },
+              isRead: false,
+            },
+          }),
+        ]);
+
+        return {
+          ...room,
+          otherUser: {
+            ...otherUser,
+            isOnline: isUserOnline(otherUserId),
+          },
+          lastMessage,
+          unreadCount,
+        };
+      }),
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        rooms: enriched,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      },
+    });
+  } catch (err) {
+    console.error("getChatRooms error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
-export const getRoomById = async (req, res) => {
+export const searchContacts = async (req, res) => {
   try {
-    const room = await getRoomByIdService(req.user.id, req.params.roomId);
-    return res.status(200).json({ success: true, data: room });
-  } catch (error) {
-    return handleError(res, error);
+    const userId = req.user.id;
+    const q = req.query.q?.trim();
+
+    if (!q) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Search query required" });
+    }
+
+    const rooms = await prisma.chatRoom.findMany({
+      where: { participants: { has: userId } },
+      select: { id: true, participants: true },
+    });
+
+    const otherUserIds = rooms.map((r) =>
+      r.participants.find((p) => p !== userId),
+    );
+
+    const matchedUsers = await prisma.user.findMany({
+      where: {
+        id: { in: otherUserIds },
+        OR: [
+          { firstName: { contains: q, mode: "insensitive" } },
+          { lastName: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true, firstName: true, lastName: true, profileImage: true },
+    });
+
+    const result = matchedUsers.map((u) => {
+      const room = rooms.find((r) => r.participants.includes(u.id));
+      return { ...u, roomId: room?.id, isOnline: isUserOnline(u.id) };
+    });
+
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    console.error("searchContacts error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
-export const adminGetAllRooms = async (req, res) => {
+export const getMessages = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const { rooms, total } = await adminGetAllRoomsService(page, limit);
-    return res.status(200).json({ success: true, data: rooms, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
-  } catch (error) {
-    return handleError(res, error);
+    const userId = req.user.id;
+    const { roomId } = req.params;
+    const limit = parseInt(req.query.limit) || 30;
+    const cursor = req.query.cursor; // last fetched message id (for older messages)
+
+    const room = await prisma.chatRoom.findFirst({
+      where: { id: roomId, participants: { has: userId } },
+    });
+    if (!room) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Room not found" });
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        roomId,
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+
+    const reversed = messages.reverse();
+    const nextCursor = messages.length === limit ? messages[0].id : null;
+
+    return res.status(200).json({
+      success: true,
+      data: { messages: reversed, nextCursor },
+    });
+  } catch (err) {
+    console.error("getMessages error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
-export const adminGetRoomById = async (req, res) => {
+export const uploadMessageFile = async (req, res) => {
   try {
-    const room = await adminGetRoomByIdService(req.params.roomId);
-    return res.status(200).json({ success: true, data: room });
-  } catch (error) {
-    return handleError(res, error);
+    const userId = req.user.id;
+    const { roomId } = req.params;
+
+    const room = await prisma.chatRoom.findFirst({
+      where: { id: roomId, participants: { has: userId } },
+    });
+    if (!room) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Room not found" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No file provided" });
+    }
+
+    const urls = await uploadImagesToCloudinary(req.files);
+
+    return res.status(200).json({ success: true, data: { urls } });
+  } catch (err) {
+    console.error("uploadMessageFile error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
