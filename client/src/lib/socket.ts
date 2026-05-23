@@ -5,12 +5,22 @@ let socket: Socket | null = null;
 export const getSocket = (): Socket => {
   if (!socket) {
     socket = io(
-      process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
+      process.env.NEXT_PUBLIC_SOCKET_URL ||
+        process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
         "http://localhost:5000",
       {
         withCredentials: true,
         autoConnect: false,
+        transports: ["polling", "websocket"],
       },
+    );
+
+    socket.on("connect", () => console.log(" Socket connected:", socket?.id));
+    socket.on("connect_error", (err) =>
+      console.error(" Socket connect error:", err.message),
+    );
+    socket.on("disconnect", (reason) =>
+      console.log("Socket disconnected:", reason),
     );
   }
   return socket;
@@ -22,7 +32,5 @@ export const connectSocket = () => {
 };
 
 export const disconnectSocket = () => {
-  if (socket?.connected) {
-    socket.disconnect();
-  }
+  if (socket?.connected) socket.disconnect();
 };

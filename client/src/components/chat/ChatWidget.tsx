@@ -14,11 +14,10 @@ import {
   ChevronLeft,
   Send,
   Paperclip,
-  Search,
-  Image as ImageIcon,
   File,
   Check,
   CheckCheck,
+  Search,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -35,12 +34,12 @@ import {
 } from "@/store/apis/chatApi";
 
 type ChatView = "contacts" | "messages";
-import { toast } from "sonner";
 
 interface ActiveRoom {
   room: ChatRoom;
   otherUser: OtherUser;
   initialMessages: ChatMessage[];
+  listingId: string;
 }
 
 interface ChatContextValue {
@@ -52,18 +51,26 @@ const ChatContext = createContext<ChatContextValue>({ openChat: () => {} });
 export const useChatWidget = () => useContext(ChatContext);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const [pendingOpen, setPendingOpen] = useState<{
-    listingId: string;
-    otherUserId: string;
-  } | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [activeRoom, setActiveRoom] = useState<ActiveRoom | null>(null);
+  const [initiateChat] = useInitiateChatMutation();
 
   const openChat = useCallback(
-    (opts: { listingId: string; otherUserId: string }) => {
-      setPendingOpen(opts);
+    async (opts: { listingId: string; otherUserId: string }) => {
       setIsOpen(true);
+      try {
+        const res = await initiateChat(opts).unwrap();
+        setActiveRoom({
+          room: res.data.room,
+          otherUser: res.data.otherUser,
+          initialMessages: res.data.messages,
+          listingId: opts.listingId,
+        });
+      } catch (err: any) {
+        console.error("Failed to initiate chat:", err);
+      }
     },
-    [],
+    [initiateChat],
   );
 
   return (
@@ -72,8 +79,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       <ChatWidget
         isOpen={isOpen}
         setIsOpen={setIsOpen}
-        pendingOpen={pendingOpen}
-        clearPending={() => setPendingOpen(null)}
+        activeRoom={activeRoom}
+        setActiveRoom={setActiveRoom}
       />
     </ChatContext.Provider>
   );
@@ -82,32 +89,50 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 interface ChatWidgetProps {
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
-  pendingOpen: { listingId: string; otherUserId: string } | null;
-  clearPending: () => void;
+  activeRoom: ActiveRoom | null;
+  setActiveRoom: (room: ActiveRoom | null) => void;
 }
 
 function ChatWidget({
   isOpen,
   setIsOpen,
-  pendingOpen,
-  clearPending,
+  activeRoom,
+  setActiveRoom,
 }: ChatWidgetProps) {
   const [view, setView] = useState<ChatView>("contacts");
-  const [activeRoom, setActiveRoom] = useState<ActiveRoom | null>(null);
   const [typingRooms, setTypingRooms] = useState<Record<string, string>>({});
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
-  const currentUser = useSelector((s: RootState) => {
-    const userState = s.user as {
-      user?: { id: string } | null;
-      currentUser?: { id: string } | null;
-    };
-    return userState.user ?? userState.currentUser ?? null;
-  });
+  const [liveLastMessages, setLiveLastMessages] = useState<
+    Record<string, ChatMessage>
+  >({});
+
+  const currentUser = useSelector((s: RootState) => s.user.currentUser);
+
+  useEffect(() => {
+    if (activeRoom) setView("messages");
+  }, [activeRoom]);
 
   useEffect(() => {
     if (!currentUser) return;
+
     connectSocket();
     const socket = getSocket();
+
+    socket.on("online_contacts", ({ userIds }: { userIds: string[] }) => {
+      setOnlineUsers(new Set(userIds));
+    });
+
+    socket.on("user_online", ({ userId }: { userId: string }) => {
+      setOnlineUsers((prev) => new Set(prev).add(userId));
+    });
+
+    socket.on("user_offline", ({ userId }: { userId: string }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    });
 
     socket.on(
       "typing_update",
@@ -129,56 +154,30 @@ function ChatWidget({
       },
     );
 
-    socket.on("user_online", ({ userId }: { userId: string }) => {
-      setOnlineUsers((prev) => new Set(prev).add(userId));
-    });
+    const handleWidgetNewMessage = (msg: ChatMessage) => {
+      setLiveLastMessages((prev) => ({
+        ...prev,
+        [msg.roomId]: msg,
+      }));
+    };
 
-    socket.on("user_offline", ({ userId }: { userId: string }) => {
-      setOnlineUsers((prev) => {
-        const next = new Set(prev);
-        next.delete(userId);
-        return next;
-      });
-    });
+    socket.on("new_message", handleWidgetNewMessage);
 
     return () => {
-      socket.off("typing_update");
+      socket.off("online_contacts");
       socket.off("user_online");
       socket.off("user_offline");
+      socket.off("typing_update");
+      socket.off("new_message", handleWidgetNewMessage);
     };
   }, [currentUser]);
-
-  const [initiateChat] = useInitiateChatMutation();
-
-  useEffect(() => {
-    if (!pendingOpen) return;
-
-    initiateChat(pendingOpen)
-      .unwrap()
-      .then((res) => {
-        setActiveRoom({
-          room: res.data.room,
-          otherUser: res.data.otherUser,
-          initialMessages: res.data.messages,
-        });
-        setView("messages");
-      })
-      .catch((err) => {
-        toast.error(
-          err?.data?.message ?? "You need contact access to start a chat",
-        );
-        setView("contacts");
-      });
-
-    clearPending();
-  }, [pendingOpen]);
 
   const handleRoomSelect = (
     room: ChatRoom,
     otherUser: OtherUser,
     initialMessages: ChatMessage[],
   ) => {
-    setActiveRoom({ room, otherUser, initialMessages });
+    setActiveRoom({ room, otherUser, initialMessages, listingId: "" });
     setView("messages");
   };
 
@@ -222,6 +221,7 @@ function ChatWidget({
             typingRooms={typingRooms}
             isOtherUserOnline={isOtherUserOnline}
             currentUserId={currentUser?.id ?? ""}
+            liveLastMessages={liveLastMessages}
           />
         ) : activeRoom ? (
           <MessagePanel
@@ -247,6 +247,7 @@ interface ContactsListProps {
   typingRooms: Record<string, string>;
   isOtherUserOnline: (id: string) => boolean;
   currentUserId: string;
+  liveLastMessages: Record<string, ChatMessage>;
 }
 
 function ContactsList({
@@ -255,14 +256,15 @@ function ContactsList({
   typingRooms,
   isOtherUserOnline,
   currentUserId,
+  liveLastMessages,
 }: ContactsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
 
-  const { data: roomsData, isLoading } = useGetChatRoomsQuery({
-    page,
-    limit: 20,
-  });
+  const { data: roomsData, isLoading } = useGetChatRoomsQuery(
+    { page, limit: 20 },
+    { refetchOnMountOrArgChange: true },
+  );
   const { data: searchData } = useSearchContactsQuery(searchQuery, {
     skip: searchQuery.length < 1,
   });
@@ -283,6 +285,21 @@ function ContactsList({
   const handleSelect = (room: ChatRoom) => {
     onSelectRoom(room, room.otherUser, []);
   };
+
+  const enrichedRooms = rooms
+    .map((room) => ({
+      ...room,
+      lastMessage: liveLastMessages[room.id] ?? room.lastMessage,
+    }))
+    .sort((a, b) => {
+      const aTime = a.lastMessage
+        ? new Date(a.lastMessage.createdAt).getTime()
+        : new Date(a.updatedAt).getTime();
+      const bTime = b.lastMessage
+        ? new Date(b.lastMessage.createdAt).getTime()
+        : new Date(b.updatedAt).getTime();
+      return bTime - aTime;
+    });
 
   return (
     <div className="flex flex-col h-full">
@@ -358,7 +375,7 @@ function ContactsList({
               </button>
             ))
           )
-        ) : rooms.length === 0 && !isLoading ? (
+        ) : enrichedRooms.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
             <MessageCircle className="w-10 h-10 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">
@@ -369,7 +386,7 @@ function ContactsList({
             </p>
           </div>
         ) : (
-          rooms.map((room) => {
+          enrichedRooms.map((room) => {
             const isTyping = typingRooms[room.id] === room.otherUser.id;
             const isOnline = isOtherUserOnline(room.otherUser.id);
             const isUnread = room.unreadCount > 0;
@@ -468,32 +485,68 @@ function MessagePanel({
   currentUserId,
   typingRooms,
 }: MessagePanelProps) {
-  const { room, otherUser } = activeRoom;
+  const { room, otherUser, initialMessages } = activeRoom;
+  const [listingId, setListingId] = useState<string>(
+    activeRoom.listingId || initialMessages[0]?.listingId || "",
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const topRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const socketMessageBuffer = useRef<ChatMessage[]>([]);
+  const messagesLoadedRef = useRef(false);
 
   const [uploadFile] = useUploadMessageFileMutation();
 
-  const { data: initialData } = useGetMessagesQuery(
+  const shouldFetch = initialMessages.length === 0;
+
+  const { data: fetchedData } = useGetMessagesQuery(
     { roomId: room.id, limit: 30 },
-    { skip: false },
+    { skip: !shouldFetch, refetchOnMountOrArgChange: true },
   );
 
   useEffect(() => {
-    if (initialData?.data) {
-      setMessages(initialData.data.messages);
-      setCursor(initialData.data.nextCursor);
-      setHasMore(!!initialData.data.nextCursor);
+    if (initialMessages.length > 0) {
+      setMessages(initialMessages);
+      setCursor(initialMessages.length === 30 ? initialMessages[0].id : null);
+      setHasMore(initialMessages.length === 30);
+      messagesLoadedRef.current = true;
+      if (socketMessageBuffer.current.length > 0) {
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newOnes = socketMessageBuffer.current.filter(
+            (m) => !existingIds.has(m.id),
+          );
+          socketMessageBuffer.current = [];
+          return [...prev, ...newOnes];
+        });
+      }
     }
-  }, [initialData]);
+  }, [room.id]);
+
+  useEffect(() => {
+    if (fetchedData?.data) {
+      const fetched = fetchedData.data.messages;
+      setCursor(fetchedData.data.nextCursor);
+      setHasMore(!!fetchedData.data.nextCursor);
+      if (!listingId && fetched[0]?.listingId)
+        setListingId(fetched[0].listingId);
+      setMessages(() => {
+        const existingIds = new Set(fetched.map((m) => m.id));
+        const buffered = socketMessageBuffer.current.filter(
+          (m) => !existingIds.has(m.id),
+        );
+        socketMessageBuffer.current = [];
+        messagesLoadedRef.current = true;
+        return [...fetched, ...buffered];
+      });
+    }
+  }, [fetchedData]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -502,30 +555,42 @@ function MessagePanel({
   useEffect(() => {
     const socket = getSocket();
 
+    socket.emit("join_room", { roomId: room.id });
     socket.emit("messages_read", { roomId: room.id });
 
-    socket.on("new_message", (msg: ChatMessage) => {
-      if (msg.roomId === room.id) {
-        setMessages((prev) => [...prev, msg]);
+    const handleNewMessage = (msg: ChatMessage) => {
+      if (msg.roomId !== room.id) return;
+      if (!listingId && msg.listingId) setListingId(msg.listingId);
+      if (!messagesLoadedRef.current) {
+        socketMessageBuffer.current.push(msg);
+      } else {
+        setMessages((prev) => {
+          if (prev.find((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
         socket.emit("messages_read", { roomId: room.id });
       }
-    });
+    };
 
-    socket.on("messages_read_ack", ({ roomId }: { roomId: string }) => {
+    const handleReadAck = ({ roomId }: { roomId: string }) => {
       if (roomId === room.id) {
         setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
       }
-    });
+    };
+
+    socket.on("new_message", handleNewMessage);
+    socket.on("messages_read_ack", handleReadAck);
 
     return () => {
-      socket.off("new_message");
-      socket.off("messages_read_ack");
+      socket.off("new_message", handleNewMessage);
+      socket.off("messages_read_ack", handleReadAck);
+      messagesLoadedRef.current = false;
+      socketMessageBuffer.current = [];
     };
   }, [room.id]);
 
   const loadOlderMessages = useCallback(async () => {
     if (!hasMore || !cursor) return;
-    const socket = getSocket();
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/chat/rooms/${room.id}/messages?cursor=${cursor}&limit=30`,
       { credentials: "include" },
@@ -535,8 +600,11 @@ function MessagePanel({
       setMessages((prev) => [...json.data.messages, ...prev]);
       setCursor(json.data.nextCursor);
       setHasMore(!!json.data.nextCursor);
+      if (!listingId && json.data.messages[0]?.listingId) {
+        setListingId(json.data.messages[0].listingId);
+      }
     }
-  }, [hasMore, cursor, room.id]);
+  }, [hasMore, cursor, room.id, listingId]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -556,13 +624,10 @@ function MessagePanel({
     const socket = getSocket();
     socket.emit(
       "send_message",
-      {
-        roomId: room.id,
-        listingId: messages[0]?.listingId ?? "",
-        content,
-        messageType,
+      { roomId: room.id, listingId, content, messageType },
+      (ack: any) => {
+        if (ack?.error) console.error("send_message error:", ack.error);
       },
-      () => {},
     );
   };
 
@@ -619,15 +684,9 @@ function MessagePanel({
 
   return (
     <div className="flex flex-col h-full">
-      <div
-        className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground md:rounded-t-2xl cursor-pointer"
-        onClick={onBack}
-      >
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground md:rounded-t-2xl">
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onBack();
-          }}
+          onClick={onBack}
           className="p-1 hover:bg-white/10 rounded-full transition-colors"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -655,7 +714,6 @@ function MessagePanel({
             Load older messages
           </button>
         )}
-        <div ref={topRef} />
 
         {messages.map((msg, idx) => {
           const isMine = msg.senderId === currentUserId;

@@ -5,12 +5,12 @@ import { prisma } from "../config/db.config.js";
 import env from "../utils/env.js";
 
 const onlineUsers = new Map();
-
 const typingUsers = new Map();
 
 const getUsersInRoom = (roomId) => typingUsers.get(roomId) ?? new Set();
 
 export const initSocket = (httpServer) => {
+  console.log("Initializing Socket.IO server...");
   const io = new Server(httpServer, {
     cors: {
       origin: process.env.FRONTEND_URL,
@@ -20,12 +20,19 @@ export const initSocket = (httpServer) => {
 
   io.use(async (socket, next) => {
     try {
-      const rawCookie = socket.handshake.headers.cookie;
-      if (!rawCookie) return next(new Error("No cookie provided"));
+      let token = null;
 
-      const parsed = cookie.parse(rawCookie);
-      const token = parsed.token;
-      if (!token) return next(new Error("No token in cookie"));
+      const rawCookie = socket.handshake.headers.cookie;
+      if (rawCookie) {
+        const parsed = cookie.parse(rawCookie);
+        token = parsed.token;
+      }
+
+      if (!token && socket.handshake.auth?.token) {
+        token = socket.handshake.auth.token;
+      }
+
+      if (!token) return next(new Error("No token provided"));
 
       const decoded = jwt.verify(token, env.jwtSecret);
       const user = await prisma.user.findUnique({ where: { id: decoded.id } });
@@ -35,6 +42,7 @@ export const initSocket = (httpServer) => {
       socket.user = user;
       next();
     } catch (err) {
+      console.error("Socket auth error:", err.message);
       next(new Error("Authentication failed"));
     }
   });
@@ -47,12 +55,34 @@ export const initSocket = (httpServer) => {
 
     const rooms = await prisma.chatRoom.findMany({
       where: { participants: { has: userId } },
-      select: { id: true },
+      select: { id: true, participants: true },
     });
+
     rooms.forEach(({ id }) => socket.join(id));
+
+    const contactUserIds = [
+      ...new Set(
+        rooms.flatMap(({ participants }) =>
+          participants.filter((p) => p !== userId),
+        ),
+      ),
+    ];
+
+    const onlineContactIds = contactUserIds.filter((id) => onlineUsers.has(id));
+    socket.emit("online_contacts", { userIds: onlineContactIds });
 
     rooms.forEach(({ id }) => {
       socket.to(id).emit("user_online", { userId });
+    });
+
+    socket.on("join_room", async ({ roomId }) => {
+      const room = await prisma.chatRoom.findFirst({
+        where: { id: roomId, participants: { has: userId } },
+      });
+      if (room) {
+        socket.join(roomId);
+        console.log(`User ${userId} joined room ${roomId}`);
+      }
     });
 
     socket.on("send_message", async (data, ack) => {
@@ -81,8 +111,21 @@ export const initSocket = (httpServer) => {
         });
 
         io.to(roomId).emit("new_message", message);
+
+        room.participants.forEach((participantId) => {
+          if (participantId !== userId) {
+            const participantSockets = onlineUsers.get(participantId);
+            if (participantSockets) {
+              participantSockets.forEach((socketId) => {
+                io.to(socketId).emit("new_message", message);
+              });
+            }
+          }
+        });
+
         ack?.({ success: true, message });
       } catch (err) {
+        console.error("send_message error:", err);
         ack?.({ error: "Failed to send message" });
       }
     });
