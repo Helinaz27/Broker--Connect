@@ -275,6 +275,7 @@ export default function HouseDetailPage() {
                 coinCost={house.contactCoinLimit}
                 hasContactAccess={hasContactAccess}
                 ownerPhone={house.owner?.phone}
+                ownerId={house.owner?.id}
                 ownerEmail={house.owner?.email}
                 isAuthenticated={isAuthenticated}
               />

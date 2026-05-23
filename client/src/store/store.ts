@@ -6,6 +6,7 @@ import { kycApi } from "./apis/kycApi";
 import { accessApi } from "./apis/accessApi";
 import { paymentApi } from "./apis/paymentApi";
 import { platformFeeApi } from "./apis/platformFeeApi";
+import { chatApi } from "./apis/chatApi";
 import userReducer from "./slices/userSlice";
 
 export const store = configureStore({
@@ -18,6 +19,7 @@ export const store = configureStore({
     [accessApi.reducerPath]: accessApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
     [platformFeeApi.reducerPath]: platformFeeApi.reducer,
+    [chatApi.reducerPath]: chatApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -27,7 +29,8 @@ export const store = configureStore({
       .concat(kycApi.middleware)
       .concat(accessApi.middleware)
       .concat(paymentApi.middleware)
-      .concat(platformFeeApi.middleware),
+      .concat(platformFeeApi.middleware)
+      .concat(chatApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

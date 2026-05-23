@@ -32,6 +32,7 @@ import { useLogoutMutation } from "@/store/apis/userApi";
 import { clearUser } from "@/store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
+import { disconnectSocket } from "@/lib/socket";
 
 type MenuItem = {
   href: string;
@@ -71,6 +72,7 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await logout().unwrap();
+      disconnectSocket();
       dispatch(clearUser());
       toast.success("Logged out successfully");
       setMobileMenuOpen(false);

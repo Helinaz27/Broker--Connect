@@ -20,6 +20,7 @@ import { RootState } from "@/store/store";
 import { useAccessContactMutation } from "@/store/apis/accessApi";
 import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
+import { useChatWidget } from "@/components/chat/ChatWidget";
 
 interface Props {
   listingId: string;
@@ -27,6 +28,7 @@ interface Props {
   coinCost: number;
   hasContactAccess: boolean;
   ownerPhone?: string;
+  ownerId?: string;
   ownerEmail?: string;
   isAuthenticated: boolean;
 }
@@ -204,6 +206,7 @@ export default function ContactSection({
   coinCost,
   hasContactAccess,
   ownerPhone,
+  ownerId,
   ownerEmail,
   isAuthenticated,
 }: Props) {
@@ -216,6 +219,8 @@ export default function ContactSection({
   const [localAccess, setLocalAccess] = useState(hasContactAccess);
   const [localPhone, setLocalPhone] = useState(ownerPhone);
   const [localEmail, setLocalEmail] = useState(ownerEmail);
+
+  const { openChat } = useChatWidget();
 
   if (!isAuthenticated) {
     return (
@@ -254,7 +259,12 @@ export default function ContactSection({
           <CopyButton value={localEmail} />
         </div>
         <Button
-          onClick={() => router.push(`/chat?listingId=${listingId}`)}
+          onClick={() =>
+            openChat({
+              listingId: listingId,
+              otherUserId: ownerId ?? "",
+            })
+          }
           variant="outline"
           className="h-12 rounded-2xl font-bold uppercase tracking-widest text-xs gap-2 border-primary/30 text-primary hover:bg-primary/5"
         >

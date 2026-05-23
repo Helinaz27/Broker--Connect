@@ -58,4 +58,10 @@ export const permissions = {
     client: ["createOwn", "readOwn"],
     user: ["createOwn", "readOwn"],
   },
+
+  chat: {
+    user: ["createOwn", "readOwn"],
+    client: ["createOwn", "readOwn"],
+    admin: ["manage"],
+  },
 };
