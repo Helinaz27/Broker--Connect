@@ -1,8 +1,5 @@
-// store/apis/paymentApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../store";
-
-// ─── types ────────────────────────────────────────────────────────────────────
 
 export type PaymentStatus = "pending" | "processing" | "success" | "failed";
 export type PaymentMethod = "chapa";
@@ -89,8 +86,6 @@ export interface UpdatePaymentStatusRequest {
   completedAt?: string;
 }
 
-// ─── api ──────────────────────────────────────────────────────────────────────
-
 export const paymentApi = createApi({
   reducerPath: "paymentApi",
   baseQuery: fetchBaseQuery({
@@ -104,7 +99,6 @@ export const paymentApi = createApi({
   }),
   tagTypes: ["Payment", "CoinBalance"],
   endpoints: (builder) => ({
-    // USER: initiate Chapa payment
     initiateChapa: builder.mutation<
       ApiResponse<InitiateChapaResponse>,
       InitiateChapaRequest
@@ -116,13 +110,12 @@ export const paymentApi = createApi({
       }),
     }),
 
-    // USER: verify payment after redirect
+    // ✅ Fixed: /payments/verify/ (was /payment/verify/)
     verifyChapa: builder.query<ApiResponse<VerifyChapaResponse>, string>({
-      query: (tx_ref) => `/payment/verify/${tx_ref}`,
+      query: (tx_ref) => `/payments/verify/${tx_ref}`,
       providesTags: ["CoinBalance", "Payment"],
     }),
 
-    // USER: get my payments (paginated)
     getMyPayments: builder.query<
       ApiResponse<MyPaymentsData>,
       PaginationParams | void
@@ -134,13 +127,12 @@ export const paymentApi = createApi({
       providesTags: ["Payment"],
     }),
 
-    // USER: get coin balance
+    // ✅ Fixed: /payments/check-balance (was /payment/check-balance)
     getCoinBalance: builder.query<ApiResponse<CoinBalanceData>, void>({
-      query: () => "/payment/check-balance",
+      query: () => "/payments/check-balance",
       providesTags: ["CoinBalance"],
     }),
 
-    // ADMIN: get all payments
     adminGetAllPayments: builder.query<
       ApiResponse<MyPaymentsData>,
       AdminGetAllPaymentsParams | void
@@ -152,7 +144,6 @@ export const paymentApi = createApi({
       providesTags: ["Payment"],
     }),
 
-    // ADMIN: search payments
     adminSearchPayment: builder.query<
       ApiResponse<MyPaymentsData>,
       AdminSearchPaymentParams | void
@@ -164,7 +155,6 @@ export const paymentApi = createApi({
       providesTags: ["Payment"],
     }),
 
-    // ADMIN: update payment status
     adminUpdatePaymentStatus: builder.mutation<
       ApiResponse<{ payment: Payment }>,
       UpdatePaymentStatusRequest
@@ -177,7 +167,6 @@ export const paymentApi = createApi({
       invalidatesTags: ["Payment"],
     }),
 
-    // ADMIN: delete payment
     adminDeletePayment: builder.mutation<ApiResponse, string>({
       query: (id) => ({
         url: `/payments/admin/delete/${id}`,

@@ -38,7 +38,7 @@ export const initiateChapa = async (req, res) => {
         last_name: user.lastName,
         phone_number: user.phone,
         tx_ref,
-        return_url: `${process.env.FRONTEND_URL}/payment-result`,
+        return_url: `${process.env.FRONTEND_URL}/payment/result?tx_ref=${tx_ref}`,
         "customization[title]": "Buy Coins",
         "customization[description]": `Purchase of ${coinsRequested} coins`,
       },
