@@ -1,21 +1,24 @@
-import { prisma } from '../config/db.config.js';
+import { prisma } from "../config/db.config.js";
 
 const ownerSelect = {
-  select: { id: true, firstName: true, lastName: true, phone: true, email: true }
+  select: {
+    id: true,
+    firstName: true,
+    lastName: true,
+    phone: true,
+    email: true,
+  },
 };
 
 const buildWhereClause = (filters = {}) => {
   const where = {};
 
-  if (filters.status && filters.status !== 'all') {
+  if (filters.status && filters.status !== "all") {
     where.status = filters.status;
   }
 
   if (filters.excludeExpired) {
-    where.OR = [
-      { paidUntil: null },
-      { paidUntil: { gt: new Date() } }
-    ];
+    where.OR = [{ paidUntil: null }, { paidUntil: { gt: new Date() } }];
   }
 
   if (filters.ownerId) where.ownerId = filters.ownerId;
@@ -27,8 +30,10 @@ const buildWhereClause = (filters = {}) => {
   if (filters.serviceType) where.serviceType = filters.serviceType;
   if (filters.rentalPeriod) where.rentalPeriod = filters.rentalPeriod;
 
-  if (filters.bedrooms !== undefined) where.bedrooms = parseInt(filters.bedrooms);
-  if (filters.bathrooms !== undefined) where.bathrooms = parseInt(filters.bathrooms);
+  if (filters.bedrooms !== undefined)
+    where.bedrooms = parseInt(filters.bedrooms);
+  if (filters.bathrooms !== undefined)
+    where.bathrooms = parseInt(filters.bathrooms);
 
   if (filters.minArea || filters.maxArea) {
     where.area_sqm = {};
@@ -43,18 +48,22 @@ const buildWhereClause = (filters = {}) => {
   }
 
   if (filters.city) {
-    where['location.city'] = { equals: filters.city, mode: 'insensitive' };
+    where.location = {
+      is: {
+        city: { equals: filters.city, mode: "insensitive" },
+      },
+    };
   }
 
   if (filters.brand) {
-    where.brand = { contains: filters.brand, mode: 'insensitive' };
+    where.brand = { contains: filters.brand, mode: "insensitive" };
   }
 
   if (filters.search) {
     where.OR = [
       ...(where.OR || []),
-      { title: { contains: filters.search, mode: 'insensitive' } },
-      { description: { contains: filters.search, mode: 'insensitive' } }
+      { title: { contains: filters.search, mode: "insensitive" } },
+      { description: { contains: filters.search, mode: "insensitive" } },
     ];
   }
 
@@ -62,24 +71,28 @@ const buildWhereClause = (filters = {}) => {
 };
 export const createListing = async (listingData) => {
   const { ownerId, ...restData } = listingData;
-  
-  const data = ownerId 
-    ? { 
+
+  const data = ownerId
+    ? {
         owner: { connect: { id: ownerId } },
-        ...restData 
+        ...restData,
       }
     : restData;
-  
+
   return await prisma.listing.create({ data });
 };
 export const getListingById = async (id) => {
   return await prisma.listing.findUnique({
     where: { id },
-    include: { owner: ownerSelect }
+    include: { owner: ownerSelect },
   });
 };
 
-export const getPaginatedListings = async ({ filters = {}, page = 1, limit = 20 } = {}) => {
+export const getPaginatedListings = async ({
+  filters = {},
+  page = 1,
+  limit = 20,
+} = {}) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const where = buildWhereClause(filters);
 
@@ -89,9 +102,9 @@ export const getPaginatedListings = async ({ filters = {}, page = 1, limit = 20 
       include: { owner: ownerSelect },
       skip,
       take: parseInt(limit),
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     }),
-    prisma.listing.count({ where })
+    prisma.listing.count({ where }),
   ]);
 
   return { listings, total };
@@ -101,6 +114,6 @@ export const updateListing = async (id, updateData) => {
   return await prisma.listing.update({
     where: { id },
     data: updateData,
-    include: { owner: ownerSelect }
+    include: { owner: ownerSelect },
   });
 };

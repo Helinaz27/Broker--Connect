@@ -5,7 +5,7 @@ import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useSearchListingsQuery } from "@/store/apis/listingsApi";
 import type { ListingQueryParams } from "@/store/apis/listingsApi";
 
@@ -17,12 +17,12 @@ const DEFAULT_FILTERS = {
   category: "all" as "all" | "house" | "car" | "service",
 };
 
-const isDefault = (filters: typeof DEFAULT_FILTERS) =>
-  filters.search === DEFAULT_FILTERS.search &&
-  filters.city === DEFAULT_FILTERS.city &&
-  filters.minPrice === DEFAULT_FILTERS.minPrice &&
-  filters.maxPrice === DEFAULT_FILTERS.maxPrice &&
-  filters.category === DEFAULT_FILTERS.category;
+const filtersEqual = (a: typeof DEFAULT_FILTERS, b: typeof DEFAULT_FILTERS) =>
+  a.search === b.search &&
+  a.city === b.city &&
+  a.minPrice === b.minPrice &&
+  a.maxPrice === b.maxPrice &&
+  a.category === b.category;
 
 export default function Index() {
   const [draft, setDraft] = useState(DEFAULT_FILTERS);
@@ -52,7 +52,8 @@ export default function Index() {
     }
   };
 
-  const showReset = !isDefault(draft) || !isDefault(applied);
+  const showApply = !filtersEqual(draft, applied);
+  const showReset = !filtersEqual(applied, DEFAULT_FILTERS);
 
   const sharedParams: Omit<ListingQueryParams, "listingType"> = {
     limit: 8,
@@ -224,13 +225,15 @@ export default function Index() {
               </div>
 
               <div className="flex flex-col gap-2 justify-end">
-                <Button
-                  size="sm"
-                  onClick={() => applyFilters()}
-                  className="w-full"
-                >
-                  Apply Filters
-                </Button>
+                {showApply && (
+                  <Button
+                    size="sm"
+                    onClick={() => applyFilters()}
+                    className="w-full"
+                  >
+                    Apply Filters
+                  </Button>
+                )}
                 {showReset && (
                   <Button
                     variant="outline"
