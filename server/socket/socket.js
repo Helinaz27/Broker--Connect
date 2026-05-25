@@ -7,7 +7,19 @@ import env from "../utils/env.js";
 const onlineUsers = new Map();
 const typingUsers = new Map();
 
+let _io = null;
+
 const getUsersInRoom = (roomId) => typingUsers.get(roomId) ?? new Set();
+
+export const emitToUser = (userId, event, data) => {
+  if (!_io) return;
+  const sockets = onlineUsers.get(userId);
+  if (sockets) {
+    sockets.forEach((socketId) => {
+      _io.to(socketId).emit(event, data);
+    });
+  }
+};
 
 export const initSocket = (httpServer) => {
   console.log("Initializing Socket.IO server...");
@@ -17,6 +29,8 @@ export const initSocket = (httpServer) => {
       credentials: true,
     },
   });
+
+  _io = io;
 
   io.use(async (socket, next) => {
     try {

@@ -32,7 +32,9 @@ import { useLogoutMutation } from "@/store/apis/userApi";
 import { clearUser } from "@/store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "sonner";
-import { disconnectSocket } from "@/lib/socket";
+import { disconnectSocket, connectSocket, getSocket } from "@/lib/socket";
+import { useGetUnreadCountQuery } from "@/store/apis/notificationApi";
+import { AppNotification } from "@/store/apis/notificationApi";
 
 type MenuItem = {
   href: string;
@@ -46,6 +48,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [liveUnread, setLiveUnread] = useState(0);
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
@@ -65,9 +68,44 @@ export default function Header() {
     .join("")
     .toUpperCase();
 
-  // Helper function to check if user has access to dashboard
   const hasDashboardAccess =
     user?.roles?.some((role) => role === "client" || role === "admin") ?? false;
+
+  const { data: unreadData, refetch: refetchUnread } = useGetUnreadCountQuery(
+    undefined,
+    {
+      skip: !isAuthenticated,
+      pollingInterval: 60000,
+    },
+  );
+
+  const serverUnread = unreadData?.data?.unreadCount ?? 0;
+  const totalUnread = serverUnread + liveUnread;
+  const showBadge = totalUnread > 0;
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+    connectSocket();
+    const socket = getSocket();
+
+    const handleNewNotification = (notification: AppNotification) => {
+      setLiveUnread((prev) => prev + 1);
+      toast(notification.title, {
+        description: notification.body,
+        duration: 5000,
+      });
+    };
+
+    socket.on("new_notification", handleNewNotification);
+    return () => {
+      socket.off("new_notification", handleNewNotification);
+    };
+  }, [isAuthenticated, currentUser]);
+
+  useEffect(() => {
+    setLiveUnread(0);
+    refetchUnread();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -87,9 +125,7 @@ export default function Header() {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 0);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 0);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -111,7 +147,6 @@ export default function Header() {
       <div className="container flex h-14 items-center justify-between">
         <Logo size="md" />
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-0.5">
           <Link
             href="/"
@@ -148,7 +183,6 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-2">
           <ModeToggle />
 
-          {/* Notification Icon - Only when authenticated */}
           {user && (
             <Button
               variant="ghost"
@@ -156,14 +190,17 @@ export default function Header() {
               className="h-9 w-9 relative"
               asChild
             >
-              <Link href="/notifications">
+              <Link href="/notifications" onClick={() => setLiveUnread(0)}>
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+                {showBadge && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
               </Link>
             </Button>
           )}
 
-          {/* Favorites Icon */}
           <Link href="/favorites">
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <Heart className="h-5 w-5" />
@@ -236,7 +273,6 @@ export default function Header() {
           )}
         </div>
 
-        {/* Mobile Actions */}
         <div className="flex items-center gap-2 md:hidden">
           <ModeToggle />
           {user && (
@@ -246,9 +282,13 @@ export default function Header() {
               className="h-9 w-9 relative"
               asChild
             >
-              <Link href="/notifications">
+              <Link href="/notifications" onClick={() => setLiveUnread(0)}>
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+                {showBadge && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
               </Link>
             </Button>
           )}
@@ -272,7 +312,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 flex flex-col gap-2">

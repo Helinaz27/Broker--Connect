@@ -7,11 +7,13 @@ import { accessApi } from "./apis/accessApi";
 import { paymentApi } from "./apis/paymentApi";
 import { platformFeeApi } from "./apis/platformFeeApi";
 import { chatApi } from "./apis/chatApi";
+import { notificationApi } from "./apis/notificationApi";
 import userReducer from "./slices/userSlice";
 
 export const store = configureStore({
   reducer: {
     user: userReducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [listingsApi.reducerPath]: listingsApi.reducer,
     [adminApi.reducerPath]: adminApi.reducer,
@@ -30,7 +32,8 @@ export const store = configureStore({
       .concat(accessApi.middleware)
       .concat(paymentApi.middleware)
       .concat(platformFeeApi.middleware)
-      .concat(chatApi.middleware),
+      .concat(chatApi.middleware)
+      .concat(notificationApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
