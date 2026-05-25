@@ -4,9 +4,13 @@ import cloudinary from "../config/cloudinary.config.js";
 
 const uploadImagesToCloudinary = async (files) => {
   const uploadPromises = files.map((file) => {
+    const isImage = file.mimetype.startsWith("image/");
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "listings", resource_type: "image" },
+        {
+          folder: "listings",
+          resource_type: isImage ? "image" : "raw",
+        },
         (error, result) => {
           if (error) reject(error);
           else resolve(result.secure_url);

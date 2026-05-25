@@ -19,6 +19,7 @@ import {
   CheckCheck,
   Search,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -515,6 +516,36 @@ function ListingCard({ listing }: { listing: ListingInfo }) {
   );
 }
 
+function PdfViewer({ url, onClose }: { url: string; onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-10 bg-background flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary text-primary-foreground shrink-0">
+        <p className="text-sm font-bold truncate">PDF Viewer</p>
+        <div className="flex items-center gap-2">
+          <a
+            href={url}
+            download
+            className="text-[11px] font-semibold px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+          >
+            Download
+          </a>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <iframe
+        src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`}
+        className="flex-1 w-full border-none"
+        title="PDF Viewer"
+      />
+    </div>
+  );
+}
+
 interface MessagePanelProps {
   activeRoom: ActiveRoom;
   onBack: () => void;
@@ -539,6 +570,8 @@ function MessagePanel({
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -709,15 +742,27 @@ function MessagePanel({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const formData = new FormData();
-    Array.from(files).forEach((f) => formData.append("files", f));
-    const res = await uploadFile({ roomId: room.id, files: formData }).unwrap();
-    const isImage = files[0].type.startsWith("image/");
-    res.data.urls.forEach((url) =>
-      sendMessage(url, isImage ? "image" : "file"),
-    );
-    e.target.value = "";
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((f) => formData.append("files", f));
+      const res = await uploadFile({
+        roomId: room.id,
+        files: formData,
+      }).unwrap();
+      const isImage = files[0].type.startsWith("image/");
+      res.data.urls.forEach((url) =>
+        sendMessage(url, isImage ? "image" : "file"),
+      );
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
   };
+
+  const isPdf = (url: string) =>
+    url.toLowerCase().includes(".pdf") ||
+    url.toLowerCase().includes("/raw/upload/");
 
   const otherIsTyping = typingRooms[room.id] === otherUser.id;
 
@@ -730,7 +775,9 @@ function MessagePanel({
   const seenListingIds = useRef<Set<string>>(new Set());
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
+      {pdfUrl && <PdfViewer url={pdfUrl} onClose={() => setPdfUrl(null)} />}
+
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground md:rounded-t-2xl">
         <button
           onClick={onBack}
@@ -748,6 +795,15 @@ function MessagePanel({
           </p>
         </div>
       </div>
+
+      {isUploading && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border-b border-primary/20">
+          <Loader2 className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
+          <p className="text-xs font-semibold text-primary">
+            Uploading file...
+          </p>
+        </div>
+      )}
 
       <div
         ref={containerRef}
@@ -827,15 +883,19 @@ function MessagePanel({
                       </a>
                     )}
                     {msg.messageType === "file" && (
-                      <a
-                        href={msg.content}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm underline"
+                      <button
+                        onClick={() =>
+                          isPdf(msg.content)
+                            ? setPdfUrl(msg.content)
+                            : window.open(msg.content, "_blank")
+                        }
+                        className="flex items-center gap-2 text-sm underline text-left"
                       >
                         <File className="h-4 w-4 shrink-0" />
-                        <span className="truncate">Download file</span>
-                      </a>
+                        <span className="truncate">
+                          {isPdf(msg.content) ? "View PDF" : "Download file"}
+                        </span>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -869,10 +929,15 @@ function MessagePanel({
         <div className="flex items-end gap-2 bg-muted/50 rounded-xl border border-border px-3 py-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="text-muted-foreground hover:text-primary transition-colors mb-1 shrink-0"
+            disabled={isUploading}
+            className="text-muted-foreground hover:text-primary transition-colors mb-1 shrink-0 disabled:opacity-40"
             title="Attach file or image"
           >
-            <Paperclip className="h-4 w-4" />
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Paperclip className="h-4 w-4" />
+            )}
           </button>
           <input
             ref={fileInputRef}
