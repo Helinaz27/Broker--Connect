@@ -104,8 +104,10 @@ export default function Header() {
 
   useEffect(() => {
     setLiveUnread(0);
-    refetchUnread();
-  }, []);
+    if (isAuthenticated) {
+      refetchUnread();
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
     try {
