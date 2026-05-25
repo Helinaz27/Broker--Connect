@@ -105,25 +105,35 @@ export const initSocket = (httpServer) => {
           },
         });
 
+        let listing = null;
+        if (listingId) {
+          listing = await prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true, title: true, images: true, listingType: true },
+          });
+        }
+
+        const messageWithListing = { ...message, listing };
+
         await prisma.chatRoom.update({
           where: { id: roomId },
           data: { updatedAt: new Date() },
         });
 
-        io.to(roomId).emit("new_message", message);
+        io.to(roomId).emit("new_message", messageWithListing);
 
         room.participants.forEach((participantId) => {
           if (participantId !== userId) {
             const participantSockets = onlineUsers.get(participantId);
             if (participantSockets) {
               participantSockets.forEach((socketId) => {
-                io.to(socketId).emit("new_message", message);
+                io.to(socketId).emit("new_message", messageWithListing);
               });
             }
           }
         });
 
-        ack?.({ success: true, message });
+        ack?.({ success: true, message: messageWithListing });
       } catch (err) {
         console.error("send_message error:", err);
         ack?.({ error: "Failed to send message" });
@@ -133,35 +143,24 @@ export const initSocket = (httpServer) => {
     socket.on("typing_start", ({ roomId }) => {
       if (!typingUsers.has(roomId)) typingUsers.set(roomId, new Set());
       typingUsers.get(roomId).add(userId);
-
-      socket.to(roomId).emit("typing_update", {
-        roomId,
-        userId,
-        isTyping: true,
-      });
+      socket
+        .to(roomId)
+        .emit("typing_update", { roomId, userId, isTyping: true });
     });
 
     socket.on("typing_stop", ({ roomId }) => {
       getUsersInRoom(roomId).delete(userId);
-
-      socket.to(roomId).emit("typing_update", {
-        roomId,
-        userId,
-        isTyping: false,
-      });
+      socket
+        .to(roomId)
+        .emit("typing_update", { roomId, userId, isTyping: false });
     });
 
     socket.on("messages_read", async ({ roomId }) => {
       try {
         await prisma.message.updateMany({
-          where: {
-            roomId,
-            senderId: { not: userId },
-            isRead: false,
-          },
+          where: { roomId, senderId: { not: userId }, isRead: false },
           data: { isRead: true },
         });
-
         socket.to(roomId).emit("messages_read_ack", { roomId, readBy: userId });
       } catch (err) {
         console.error("Read receipt error:", err);
@@ -182,11 +181,9 @@ export const initSocket = (httpServer) => {
           typingUsers.forEach((users, roomId) => {
             if (users.has(userId)) {
               users.delete(userId);
-              socket.to(roomId).emit("typing_update", {
-                roomId,
-                userId,
-                isTyping: false,
-              });
+              socket
+                .to(roomId)
+                .emit("typing_update", { roomId, userId, isTyping: false });
             }
           });
         }

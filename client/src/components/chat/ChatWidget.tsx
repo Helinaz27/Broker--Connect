@@ -18,8 +18,10 @@ import {
   Check,
   CheckCheck,
   Search,
+  ExternalLink,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 import { RootState } from "@/store/store";
 import { getSocket, connectSocket } from "@/lib/socket";
 import {
@@ -31,6 +33,7 @@ import {
   ChatMessage,
   ChatRoom,
   OtherUser,
+  ListingInfo,
 } from "@/store/apis/chatApi";
 
 type ChatView = "contacts" | "messages";
@@ -155,10 +158,7 @@ function ChatWidget({
     );
 
     const handleWidgetNewMessage = (msg: ChatMessage) => {
-      setLiveLastMessages((prev) => ({
-        ...prev,
-        [msg.roomId]: msg,
-      }));
+      setLiveLastMessages((prev) => ({ ...prev, [msg.roomId]: msg }));
     };
 
     socket.on("new_message", handleWidgetNewMessage);
@@ -472,6 +472,49 @@ function ContactsList({
   );
 }
 
+const LISTING_TYPE_ROUTES: Record<string, string> = {
+  house: "house-listings",
+  car: "car-listings",
+  service: "service-listings",
+};
+
+function getListingRoute(listingType: string, listingId: string): string {
+  const segment = LISTING_TYPE_ROUTES[listingType.toLowerCase()] ?? "listings";
+  return `/${segment}/${listingId}`;
+}
+
+function ListingCard({ listing }: { listing: ListingInfo }) {
+  const router = useRouter();
+  const href = getListingRoute(listing.listingType, listing.id);
+  const image = listing.images?.[0];
+
+  return (
+    <button
+      onClick={() => router.push(href)}
+      className="w-full text-left rounded-xl overflow-hidden border border-border bg-background hover:border-primary/50 transition-colors mb-1.5"
+    >
+      {image && (
+        <img
+          src={image}
+          alt={listing.title}
+          className="w-full h-28 object-cover"
+        />
+      )}
+      <div className="px-3 py-2 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-foreground truncate">
+            {listing.title}
+          </p>
+          <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
+            {listing.listingType} listing
+          </p>
+        </div>
+        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      </div>
+    </button>
+  );
+}
+
 interface MessagePanelProps {
   activeRoom: ActiveRoom;
   onBack: () => void;
@@ -684,6 +727,8 @@ function MessagePanel({
       minute: "2-digit",
     });
 
+  const seenListingIds = useRef<Set<string>>(new Set());
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground md:rounded-t-2xl">
@@ -717,74 +762,97 @@ function MessagePanel({
           </button>
         )}
 
-        {messages.map((msg, idx) => {
-          const isMine = msg.senderId === currentUserId;
-          const showTime =
-            idx === 0 ||
-            new Date(msg.createdAt).getTime() -
-              new Date(messages[idx - 1].createdAt).getTime() >
-              5 * 60 * 1000;
+        {(() => {
+          seenListingIds.current = new Set();
+          return messages.map((msg, idx) => {
+            const isMine = msg.senderId === currentUserId;
+            const showTime =
+              idx === 0 ||
+              new Date(msg.createdAt).getTime() -
+                new Date(messages[idx - 1].createdAt).getTime() >
+                5 * 60 * 1000;
 
-          return (
-            <div key={msg.id}>
-              {showTime && (
-                <p className="text-center text-[10px] text-muted-foreground my-2">
-                  {formatTime(msg.createdAt)}
-                </p>
-              )}
-              <div
-                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-              >
+            const showListingCard =
+              !!msg.listing &&
+              !seenListingIds.current.has(msg.listing.id) &&
+              (() => {
+                seenListingIds.current.add(msg.listing!.id);
+                return true;
+              })();
+
+            return (
+              <div key={msg.id}>
+                {showTime && (
+                  <p className="text-center text-[10px] text-muted-foreground my-2">
+                    {formatTime(msg.createdAt)}
+                  </p>
+                )}
+
+                {showListingCard && (
+                  <div
+                    className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1`}
+                  >
+                    <div className="max-w-[78%] w-full">
+                      <ListingCard listing={msg.listing!} />
+                    </div>
+                  </div>
+                )}
+
                 <div
-                  className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                    isMine
-                      ? "bg-primary text-primary-foreground rounded-br-none"
-                      : "bg-card border border-border text-foreground rounded-bl-none"
-                  }`}
+                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.messageType === "text" && (
-                    <p className="text-sm leading-relaxed break-words">
-                      {msg.content}
-                    </p>
-                  )}
-                  {msg.messageType === "image" && (
-                    <a
-                      href={msg.content}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <img
-                        src={msg.content}
-                        alt="sent image"
-                        className="rounded-lg max-w-full max-h-48 object-cover"
-                      />
-                    </a>
-                  )}
-                  {msg.messageType === "file" && (
-                    <a
-                      href={msg.content}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm underline"
-                    >
-                      <File className="h-4 w-4 shrink-0" />
-                      <span className="truncate">Download file</span>
-                    </a>
-                  )}
+                  <div
+                    className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
+                      isMine
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-card border border-border text-foreground rounded-bl-none"
+                    }`}
+                  >
+                    {msg.messageType === "text" && (
+                      <p className="text-sm leading-relaxed break-words">
+                        {msg.content}
+                      </p>
+                    )}
+                    {msg.messageType === "image" && (
+                      <a
+                        href={msg.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={msg.content}
+                          alt="sent image"
+                          className="rounded-lg max-w-full max-h-48 object-cover"
+                        />
+                      </a>
+                    )}
+                    {msg.messageType === "file" && (
+                      <a
+                        href={msg.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm underline"
+                      >
+                        <File className="h-4 w-4 shrink-0" />
+                        <span className="truncate">Download file</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
+
+                {isMine && idx === messages.length - 1 && (
+                  <div className="flex justify-end pr-1 mt-0.5">
+                    {msg.isRead ? (
+                      <CheckCheck className="h-3 w-3 text-primary" />
+                    ) : (
+                      <Check className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
+                )}
               </div>
-              {isMine && idx === messages.length - 1 && (
-                <div className="flex justify-end pr-1 mt-0.5">
-                  {msg.isRead ? (
-                    <CheckCheck className="h-3 w-3 text-primary" />
-                  ) : (
-                    <Check className="h-3 w-3 text-muted-foreground" />
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
 
         {otherIsTyping && (
           <div className="flex justify-start">

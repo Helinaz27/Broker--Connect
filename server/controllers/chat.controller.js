@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.config.js";
 import { isUserOnline } from "../socket/socket.js";
+import cloudinary from "../config/cloudinary.config.js";
 
 const uploadImagesToCloudinary = async (files) => {
   const uploadPromises = files.map((file) => {
@@ -17,6 +18,26 @@ const uploadImagesToCloudinary = async (files) => {
   return await Promise.all(uploadPromises);
 };
 
+const attachListingToMessages = async (messages) => {
+  const listingIds = [
+    ...new Set(messages.map((m) => m.listingId).filter(Boolean)),
+  ];
+  if (listingIds.length === 0)
+    return messages.map((m) => ({ ...m, listing: null }));
+
+  const listings = await prisma.listing.findMany({
+    where: { id: { in: listingIds } },
+    select: { id: true, title: true, images: true, listingType: true },
+  });
+
+  const listingMap = Object.fromEntries(listings.map((l) => [l.id, l]));
+
+  return messages.map((m) => ({
+    ...m,
+    listing: m.listingId ? (listingMap[m.listingId] ?? null) : null,
+  }));
+};
+
 export const initiateChat = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -32,7 +53,6 @@ export const initiateChat = async (req, res) => {
     const otherUser = await prisma.user.findUnique({
       where: { id: otherUserId },
     });
-
     if (!otherUser) {
       return res
         .status(404)
@@ -62,9 +82,7 @@ export const initiateChat = async (req, res) => {
     const sortedIds = [userId, otherUserId].sort();
 
     let room = await prisma.chatRoom.findFirst({
-      where: {
-        participants: { hasEvery: sortedIds },
-      },
+      where: { participants: { hasEvery: sortedIds } },
     });
 
     if (!room) {
@@ -73,17 +91,19 @@ export const initiateChat = async (req, res) => {
       });
     }
 
-    const messages = await prisma.message.findMany({
+    const rawMessages = await prisma.message.findMany({
       where: { roomId: room.id },
       orderBy: { createdAt: "desc" },
       take: 30,
     });
 
+    const messages = await attachListingToMessages(rawMessages.reverse());
+
     return res.status(200).json({
       success: true,
       data: {
         room,
-        messages: messages.reverse(),
+        messages,
         otherUser: {
           id: otherUser.id,
           firstName: otherUser.firstName,
@@ -147,10 +167,7 @@ export const getChatRooms = async (req, res) => {
 
         return {
           ...room,
-          otherUser: {
-            ...otherUser,
-            isOnline: isUserOnline(otherUserId),
-          },
+          otherUser: { ...otherUser, isOnline: isUserOnline(otherUserId) },
           lastMessage,
           unreadCount,
         };
@@ -222,7 +239,7 @@ export const getMessages = async (req, res) => {
     const userId = req.user.id;
     const { roomId } = req.params;
     const limit = parseInt(req.query.limit) || 30;
-    const cursor = req.query.cursor; // last fetched message id (for older messages)
+    const cursor = req.query.cursor;
 
     const room = await prisma.chatRoom.findFirst({
       where: { id: roomId, participants: { has: userId } },
@@ -233,7 +250,7 @@ export const getMessages = async (req, res) => {
         .json({ success: false, message: "Room not found" });
     }
 
-    const messages = await prisma.message.findMany({
+    const rawMessages = await prisma.message.findMany({
       where: {
         roomId,
         ...(cursor ? { id: { lt: cursor } } : {}),
@@ -242,12 +259,13 @@ export const getMessages = async (req, res) => {
       take: limit,
     });
 
-    const reversed = messages.reverse();
-    const nextCursor = messages.length === limit ? messages[0].id : null;
+    const reversed = rawMessages.reverse();
+    const messages = await attachListingToMessages(reversed);
+    const nextCursor = rawMessages.length === limit ? rawMessages[0].id : null;
 
     return res.status(200).json({
       success: true,
-      data: { messages: reversed, nextCursor },
+      data: { messages, nextCursor },
     });
   } catch (err) {
     console.error("getMessages error:", err);
