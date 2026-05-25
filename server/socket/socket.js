@@ -98,7 +98,7 @@ export const initSocket = (httpServer) => {
           data: {
             roomId,
             senderId: userId,
-            listingId,
+            ...(listingId ? { listingId } : {}),
             messageType,
             content,
             isRead: false,

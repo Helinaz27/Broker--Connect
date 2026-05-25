@@ -21,6 +21,7 @@ export const initiateChat = async (req, res) => {
   try {
     const userId = req.user.id;
     const { listingId, otherUserId } = req.body;
+    const isAdmin = (req.user.roles || []).includes("admin");
 
     if (userId === otherUserId) {
       return res
@@ -31,38 +32,38 @@ export const initiateChat = async (req, res) => {
     const otherUser = await prisma.user.findUnique({
       where: { id: otherUserId },
     });
+
     if (!otherUser) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
 
-    const access = await prisma.contactAccess.findFirst({
-      where: {
-        listingId,
-        isActive: true,
-        OR: [
-          { viewerId: userId, ownerId: otherUserId },
-          { viewerId: otherUserId, ownerId: userId },
-        ],
-      },
-    });
-
-    if (!access) {
-      return res.status(403).json({
-        success: false,
-        message: "You need contact access to this listing to start a chat",
+    if (!isAdmin) {
+      const access = await prisma.contactAccess.findFirst({
+        where: {
+          listingId,
+          isActive: true,
+          OR: [
+            { viewerId: userId, ownerId: otherUserId },
+            { viewerId: otherUserId, ownerId: userId },
+          ],
+        },
       });
+
+      if (!access) {
+        return res.status(403).json({
+          success: false,
+          message: "You need contact access to this listing to start a chat",
+        });
+      }
     }
 
     const sortedIds = [userId, otherUserId].sort();
 
     let room = await prisma.chatRoom.findFirst({
       where: {
-        AND: [
-          { participants: { has: sortedIds[0] } },
-          { participants: { has: sortedIds[1] } },
-        ],
+        participants: { hasEvery: sortedIds },
       },
     });
 

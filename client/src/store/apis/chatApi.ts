@@ -13,7 +13,7 @@ export interface ChatMessage {
   id: string;
   roomId: string;
   senderId: string;
-  listingId: string;
+  listingId: string | null;
   messageType: "text" | "image" | "file";
   content: string;
   isRead: boolean;

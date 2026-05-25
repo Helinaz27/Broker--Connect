@@ -177,7 +177,9 @@ function ChatWidget({
     otherUser: OtherUser,
     initialMessages: ChatMessage[],
   ) => {
-    setActiveRoom({ room, otherUser, initialMessages, listingId: "" });
+    const listingId =
+      liveLastMessages[room.id]?.listingId || room.lastMessage?.listingId || "";
+    setActiveRoom({ room, otherUser, initialMessages, listingId });
     setView("messages");
   };
 
