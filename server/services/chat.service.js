@@ -1,28 +1,44 @@
-import { prisma } from '../config/db.config.js';
+import { prisma } from "../config/db.config.js";
 
-export const createRoomService = async (creatorId, listingId, participantId) => {
+export const createRoomService = async (
+  creatorId,
+  listingId,
+  participantId,
+  creatorRoles = [],
+) => {
+  const isAdmin = creatorRoles.includes("admin");
+
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
-  if (!listing) throw { status: 404, message: 'Listing not found' };
-  if (listing.status !== 'active') throw { status: 400, message: 'Listing is not active' };
+  if (!listing) throw { status: 404, message: "Listing not found" };
+  if (!isAdmin && listing.status !== "active")
+    throw { status: 400, message: "Listing is not active" };
 
-  const participant = await prisma.user.findUnique({ where: { id: participantId } });
-  if (!participant) throw { status: 404, message: 'Participant not found' };
+  const participant = await prisma.user.findUnique({
+    where: { id: participantId },
+  });
+  if (!participant) throw { status: 404, message: "Participant not found" };
 
   if (creatorId === participantId) {
-    throw { status: 400, message: 'You cannot create a chat room with yourself' };
+    throw {
+      status: 400,
+      message: "You cannot create a chat room with yourself",
+    };
   }
 
-  const isCreatorOwner = creatorId === listing.ownerId;
-  const isParticipantOwner = participantId === listing.ownerId;
+  if (!isAdmin) {
+    const isCreatorOwner = creatorId === listing.ownerId;
+    const isParticipantOwner = participantId === listing.ownerId;
 
-  if (!isCreatorOwner && !isParticipantOwner) {
-    throw { status: 400, message: 'Chat must be between the listing owner and an interested user' };
-  }
+    if (!isCreatorOwner && !isParticipantOwner) {
+      throw {
+        status: 400,
+        message:
+          "Chat must be between the listing owner and an interested user",
+      };
+    }
 
-  // Fix 4: Gate chat behind contact access — the non-owner must have paid
-  const buyerId = isCreatorOwner ? participantId : creatorId;
+    const buyerId = isCreatorOwner ? participantId : creatorId;
 
-  if (buyerId !== listing.ownerId) {
     const access = await prisma.contactAccess.findFirst({
       where: {
         viewerId: buyerId,
@@ -34,7 +50,8 @@ export const createRoomService = async (creatorId, listingId, participantId) => 
     if (!access) {
       throw {
         status: 403,
-        message: 'Contact access not unlocked. Pay the required coins to chat with this listing owner',
+        message:
+          "Contact access not unlocked. Pay the required coins to chat with this listing owner",
       };
     }
   }
@@ -44,6 +61,7 @@ export const createRoomService = async (creatorId, listingId, participantId) => 
       participants: { hasEvery: [creatorId, participantId] },
     },
   });
+
   if (existing) return existing;
 
   const room = await prisma.chatRoom.create({
@@ -61,7 +79,7 @@ export const getMyRoomsService = async (userId, page, limit) => {
   const [rooms, total] = await Promise.all([
     prisma.chatRoom.findMany({
       where: { participants: { has: userId } },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { updatedAt: "desc" },
       skip,
       take: limit,
     }),
@@ -73,10 +91,10 @@ export const getMyRoomsService = async (userId, page, limit) => {
 
 export const getRoomByIdService = async (userId, roomId) => {
   const room = await prisma.chatRoom.findUnique({ where: { id: roomId } });
-  if (!room) throw { status: 404, message: 'Chat room not found' };
+  if (!room) throw { status: 404, message: "Chat room not found" };
 
   if (!room.participants.includes(userId)) {
-    throw { status: 403, message: 'You are not a participant of this room' };
+    throw { status: 403, message: "You are not a participant of this room" };
   }
 
   return room;
@@ -87,7 +105,7 @@ export const adminGetAllRoomsService = async (page, limit) => {
 
   const [rooms, total] = await Promise.all([
     prisma.chatRoom.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip,
       take: limit,
     }),
@@ -99,6 +117,6 @@ export const adminGetAllRoomsService = async (page, limit) => {
 
 export const adminGetRoomByIdService = async (roomId) => {
   const room = await prisma.chatRoom.findUnique({ where: { id: roomId } });
-  if (!room) throw { status: 404, message: 'Chat room not found' };
+  if (!room) throw { status: 404, message: "Chat room not found" };
   return room;
 };

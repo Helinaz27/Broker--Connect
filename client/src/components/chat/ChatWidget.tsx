@@ -18,8 +18,11 @@ import {
   Check,
   CheckCheck,
   Search,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 import { RootState } from "@/store/store";
 import { getSocket, connectSocket } from "@/lib/socket";
 import {
@@ -31,6 +34,7 @@ import {
   ChatMessage,
   ChatRoom,
   OtherUser,
+  ListingInfo,
 } from "@/store/apis/chatApi";
 
 type ChatView = "contacts" | "messages";
@@ -155,10 +159,7 @@ function ChatWidget({
     );
 
     const handleWidgetNewMessage = (msg: ChatMessage) => {
-      setLiveLastMessages((prev) => ({
-        ...prev,
-        [msg.roomId]: msg,
-      }));
+      setLiveLastMessages((prev) => ({ ...prev, [msg.roomId]: msg }));
     };
 
     socket.on("new_message", handleWidgetNewMessage);
@@ -177,7 +178,9 @@ function ChatWidget({
     otherUser: OtherUser,
     initialMessages: ChatMessage[],
   ) => {
-    setActiveRoom({ room, otherUser, initialMessages, listingId: "" });
+    const listingId =
+      liveLastMessages[room.id]?.listingId || room.lastMessage?.listingId || "";
+    setActiveRoom({ room, otherUser, initialMessages, listingId });
     setView("messages");
   };
 
@@ -470,6 +473,79 @@ function ContactsList({
   );
 }
 
+const LISTING_TYPE_ROUTES: Record<string, string> = {
+  house: "house-listings",
+  car: "car-listings",
+  service: "service-listings",
+};
+
+function getListingRoute(listingType: string, listingId: string): string {
+  const segment = LISTING_TYPE_ROUTES[listingType.toLowerCase()] ?? "listings";
+  return `/${segment}/${listingId}`;
+}
+
+function ListingCard({ listing }: { listing: ListingInfo }) {
+  const router = useRouter();
+  const href = getListingRoute(listing.listingType, listing.id);
+  const image = listing.images?.[0];
+
+  return (
+    <button
+      onClick={() => router.push(href)}
+      className="w-full text-left rounded-xl overflow-hidden border border-border bg-background hover:border-primary/50 transition-colors mb-1.5"
+    >
+      {image && (
+        <img
+          src={image}
+          alt={listing.title}
+          className="w-full h-28 object-cover"
+        />
+      )}
+      <div className="px-3 py-2 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-foreground truncate">
+            {listing.title}
+          </p>
+          <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
+            {listing.listingType} listing
+          </p>
+        </div>
+        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      </div>
+    </button>
+  );
+}
+
+function PdfViewer({ url, onClose }: { url: string; onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-10 bg-background flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary text-primary-foreground shrink-0">
+        <p className="text-sm font-bold truncate">PDF Viewer</p>
+        <div className="flex items-center gap-2">
+          <a
+            href={url}
+            download
+            className="text-[11px] font-semibold px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+          >
+            Download
+          </a>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <iframe
+        src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`}
+        className="flex-1 w-full border-none"
+        title="PDF Viewer"
+      />
+    </div>
+  );
+}
+
 interface MessagePanelProps {
   activeRoom: ActiveRoom;
   onBack: () => void;
@@ -494,6 +570,8 @@ function MessagePanel({
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -664,15 +742,27 @@ function MessagePanel({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const formData = new FormData();
-    Array.from(files).forEach((f) => formData.append("files", f));
-    const res = await uploadFile({ roomId: room.id, files: formData }).unwrap();
-    const isImage = files[0].type.startsWith("image/");
-    res.data.urls.forEach((url) =>
-      sendMessage(url, isImage ? "image" : "file"),
-    );
-    e.target.value = "";
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((f) => formData.append("files", f));
+      const res = await uploadFile({
+        roomId: room.id,
+        files: formData,
+      }).unwrap();
+      const isImage = files[0].type.startsWith("image/");
+      res.data.urls.forEach((url) =>
+        sendMessage(url, isImage ? "image" : "file"),
+      );
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
   };
+
+  const isPdf = (url: string) =>
+    url.toLowerCase().includes(".pdf") ||
+    url.toLowerCase().includes("/raw/upload/");
 
   const otherIsTyping = typingRooms[room.id] === otherUser.id;
 
@@ -682,8 +772,12 @@ function MessagePanel({
       minute: "2-digit",
     });
 
+  const seenListingIds = useRef<Set<string>>(new Set());
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
+      {pdfUrl && <PdfViewer url={pdfUrl} onClose={() => setPdfUrl(null)} />}
+
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground md:rounded-t-2xl">
         <button
           onClick={onBack}
@@ -702,6 +796,15 @@ function MessagePanel({
         </div>
       </div>
 
+      {isUploading && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border-b border-primary/20">
+          <Loader2 className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
+          <p className="text-xs font-semibold text-primary">
+            Uploading file...
+          </p>
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-muted/20"
@@ -715,74 +818,101 @@ function MessagePanel({
           </button>
         )}
 
-        {messages.map((msg, idx) => {
-          const isMine = msg.senderId === currentUserId;
-          const showTime =
-            idx === 0 ||
-            new Date(msg.createdAt).getTime() -
-              new Date(messages[idx - 1].createdAt).getTime() >
-              5 * 60 * 1000;
+        {(() => {
+          seenListingIds.current = new Set();
+          return messages.map((msg, idx) => {
+            const isMine = msg.senderId === currentUserId;
+            const showTime =
+              idx === 0 ||
+              new Date(msg.createdAt).getTime() -
+                new Date(messages[idx - 1].createdAt).getTime() >
+                5 * 60 * 1000;
 
-          return (
-            <div key={msg.id}>
-              {showTime && (
-                <p className="text-center text-[10px] text-muted-foreground my-2">
-                  {formatTime(msg.createdAt)}
-                </p>
-              )}
-              <div
-                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-              >
+            const showListingCard =
+              !!msg.listing &&
+              !seenListingIds.current.has(msg.listing.id) &&
+              (() => {
+                seenListingIds.current.add(msg.listing!.id);
+                return true;
+              })();
+
+            return (
+              <div key={msg.id}>
+                {showTime && (
+                  <p className="text-center text-[10px] text-muted-foreground my-2">
+                    {formatTime(msg.createdAt)}
+                  </p>
+                )}
+
+                {showListingCard && (
+                  <div
+                    className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1`}
+                  >
+                    <div className="max-w-[78%] w-full">
+                      <ListingCard listing={msg.listing!} />
+                    </div>
+                  </div>
+                )}
+
                 <div
-                  className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                    isMine
-                      ? "bg-primary text-primary-foreground rounded-br-none"
-                      : "bg-card border border-border text-foreground rounded-bl-none"
-                  }`}
+                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.messageType === "text" && (
-                    <p className="text-sm leading-relaxed break-words">
-                      {msg.content}
-                    </p>
-                  )}
-                  {msg.messageType === "image" && (
-                    <a
-                      href={msg.content}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <img
-                        src={msg.content}
-                        alt="sent image"
-                        className="rounded-lg max-w-full max-h-48 object-cover"
-                      />
-                    </a>
-                  )}
-                  {msg.messageType === "file" && (
-                    <a
-                      href={msg.content}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm underline"
-                    >
-                      <File className="h-4 w-4 shrink-0" />
-                      <span className="truncate">Download file</span>
-                    </a>
-                  )}
+                  <div
+                    className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
+                      isMine
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-card border border-border text-foreground rounded-bl-none"
+                    }`}
+                  >
+                    {msg.messageType === "text" && (
+                      <p className="text-sm leading-relaxed break-words">
+                        {msg.content}
+                      </p>
+                    )}
+                    {msg.messageType === "image" && (
+                      <a
+                        href={msg.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={msg.content}
+                          alt="sent image"
+                          className="rounded-lg max-w-full max-h-48 object-cover"
+                        />
+                      </a>
+                    )}
+                    {msg.messageType === "file" && (
+                      <button
+                        onClick={() =>
+                          isPdf(msg.content)
+                            ? setPdfUrl(msg.content)
+                            : window.open(msg.content, "_blank")
+                        }
+                        className="flex items-center gap-2 text-sm underline text-left"
+                      >
+                        <File className="h-4 w-4 shrink-0" />
+                        <span className="truncate">
+                          {isPdf(msg.content) ? "View PDF" : "Download file"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {isMine && idx === messages.length - 1 && (
+                  <div className="flex justify-end pr-1 mt-0.5">
+                    {msg.isRead ? (
+                      <CheckCheck className="h-3 w-3 text-primary" />
+                    ) : (
+                      <Check className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
+                )}
               </div>
-              {isMine && idx === messages.length - 1 && (
-                <div className="flex justify-end pr-1 mt-0.5">
-                  {msg.isRead ? (
-                    <CheckCheck className="h-3 w-3 text-primary" />
-                  ) : (
-                    <Check className="h-3 w-3 text-muted-foreground" />
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
 
         {otherIsTyping && (
           <div className="flex justify-start">
@@ -799,10 +929,15 @@ function MessagePanel({
         <div className="flex items-end gap-2 bg-muted/50 rounded-xl border border-border px-3 py-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="text-muted-foreground hover:text-primary transition-colors mb-1 shrink-0"
+            disabled={isUploading}
+            className="text-muted-foreground hover:text-primary transition-colors mb-1 shrink-0 disabled:opacity-40"
             title="Attach file or image"
           >
-            <Paperclip className="h-4 w-4" />
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Paperclip className="h-4 w-4" />
+            )}
           </button>
           <input
             ref={fileInputRef}

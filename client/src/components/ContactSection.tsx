@@ -258,19 +258,16 @@ export default function ContactSection({
           <span className="flex-1 truncate">{localEmail}</span>
           <CopyButton value={localEmail} />
         </div>
-        <Button
-          onClick={() =>
-            openChat({
-              listingId: listingId,
-              otherUserId: ownerId ?? "",
-            })
-          }
-          variant="outline"
-          className="h-12 rounded-2xl font-bold uppercase tracking-widest text-xs gap-2 border-primary/30 text-primary hover:bg-primary/5"
-        >
-          <MessageCircle className="h-4 w-4" />
-          Chat with Agent
-        </Button>
+        {currentUser?.id !== ownerId && (
+          <Button
+            onClick={() => openChat({ listingId, otherUserId: ownerId ?? "" })}
+            variant="outline"
+            className="h-12 rounded-2xl font-bold uppercase tracking-widest text-xs gap-2 border-primary/30 text-primary hover:bg-primary/5"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Chat with Agent
+          </Button>
+        )}
       </div>
     );
   }

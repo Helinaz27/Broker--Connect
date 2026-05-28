@@ -137,7 +137,6 @@ model ChatRoom {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@unique([participants]) 
   @@map("chat_rooms")
 }
 
@@ -145,12 +144,12 @@ model Message {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   roomId      String        @db.ObjectId
   senderId    String        @db.ObjectId
-  listingId   String        @db.ObjectId
+  listingId   String?        @db.ObjectId
   messageType MessageType   @default(text)
   content     String
   isRead      Boolean
   createdAt   DateTime      @default(now())
-  listing     Listing       @relation(fields: [listingId], references: [id])
+  listing     Listing?       @relation(fields: [listingId], references: [id])
 
   @@map("messages")
 }

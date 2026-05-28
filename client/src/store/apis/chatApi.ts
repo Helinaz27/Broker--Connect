@@ -9,15 +9,23 @@ export interface OtherUser {
   isOnline: boolean;
 }
 
+export interface ListingInfo {
+  id: string;
+  title: string;
+  images: string[];
+  listingType: string;
+}
+
 export interface ChatMessage {
   id: string;
   roomId: string;
   senderId: string;
-  listingId: string;
+  listingId: string | null;
   messageType: "text" | "image" | "file";
   content: string;
   isRead: boolean;
   createdAt: string;
+  listing: ListingInfo | null;
 }
 
 export interface ChatRoom {
@@ -100,7 +108,7 @@ export const chatApi = createApi({
         params,
       }),
       providesTags: (_result, _err, { roomId }) => [
-        { type: "Messages", id: roomId },
+        { type: "Messages" as const, id: roomId },
       ],
     }),
 

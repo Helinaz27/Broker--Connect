@@ -17,30 +17,57 @@ const DEFAULT_FILTERS = {
   category: "all" as "all" | "house" | "car" | "service",
 };
 
+const filtersEqual = (a: typeof DEFAULT_FILTERS, b: typeof DEFAULT_FILTERS) =>
+  a.search === b.search &&
+  a.city === b.city &&
+  a.minPrice === b.minPrice &&
+  a.maxPrice === b.maxPrice &&
+  a.category === b.category;
+
 export default function Index() {
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [draft, setDraft] = useState(DEFAULT_FILTERS);
+  const [applied, setApplied] = useState(DEFAULT_FILTERS);
 
   const update = useCallback(
     (patch: Partial<typeof DEFAULT_FILTERS>) =>
-      setFilters((prev) => ({ ...prev, ...patch })),
+      setDraft((prev) => ({ ...prev, ...patch })),
     [],
   );
 
-  const handleReset = () => setFilters(DEFAULT_FILTERS);
+  const applyFilters = useCallback(
+    (filters = draft) => {
+      setApplied({ ...filters });
+    },
+    [draft],
+  );
+
+  const handleReset = () => {
+    setDraft(DEFAULT_FILTERS);
+    setApplied(DEFAULT_FILTERS);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      applyFilters();
+    }
+  };
+
+  const showApply = !filtersEqual(draft, applied);
+  const showReset = !filtersEqual(applied, DEFAULT_FILTERS);
 
   const sharedParams: Omit<ListingQueryParams, "listingType"> = {
     limit: 8,
     page: 1,
-    ...(filters.search && { search: filters.search }),
-    ...(filters.city && { city: filters.city }),
-    ...(filters.minPrice !== undefined && { minPrice: filters.minPrice }),
-    ...(filters.maxPrice !== undefined && { maxPrice: filters.maxPrice }),
+    ...(applied.search && { search: applied.search }),
+    ...(applied.city && { city: applied.city }),
+    ...(applied.minPrice !== undefined && { minPrice: applied.minPrice }),
+    ...(applied.maxPrice !== undefined && { maxPrice: applied.maxPrice }),
   };
 
-  const showHouses = filters.category === "all" || filters.category === "house";
-  const showCars = filters.category === "all" || filters.category === "car";
+  const showHouses = applied.category === "all" || applied.category === "house";
+  const showCars = applied.category === "all" || applied.category === "car";
   const showServices =
-    filters.category === "all" || filters.category === "service";
+    applied.category === "all" || applied.category === "service";
 
   const {
     data: housesData,
@@ -92,7 +119,7 @@ export default function Index() {
     id: l.id,
     title: l.title,
     price: l.price,
-    location: l.location?.fullAddress ?? l.location?.city ?? "—",
+    location: l.location?.fullAddress ?? l.location?.city ?? "",
     image: l.images?.[0] ?? "/placeholder.jpg",
     category,
     listingMode: l.listingMode,
@@ -119,7 +146,7 @@ export default function Index() {
                   Category
                 </label>
                 <select
-                  value={filters.category}
+                  value={draft.category}
                   onChange={(e) => update({ category: e.target.value as any })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 >
@@ -137,8 +164,9 @@ export default function Index() {
                 <input
                   type="text"
                   placeholder="Search…"
-                  value={filters.search}
+                  value={draft.search}
                   onChange={(e) => update({ search: e.target.value })}
+                  onKeyDown={handleSearchKeyDown}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 />
               </div>
@@ -150,7 +178,7 @@ export default function Index() {
                 <input
                   type="text"
                   placeholder="e.g. Addis Ababa"
-                  value={filters.city}
+                  value={draft.city}
                   onChange={(e) => update({ city: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 />
@@ -164,7 +192,7 @@ export default function Index() {
                   type="number"
                   min={0}
                   placeholder="0"
-                  value={filters.minPrice ?? ""}
+                  value={draft.minPrice ?? ""}
                   onChange={(e) =>
                     update({
                       minPrice: e.target.value
@@ -184,7 +212,7 @@ export default function Index() {
                   type="number"
                   min={0}
                   placeholder="Any"
-                  value={filters.maxPrice ?? ""}
+                  value={draft.maxPrice ?? ""}
                   onChange={(e) =>
                     update({
                       maxPrice: e.target.value
@@ -196,15 +224,26 @@ export default function Index() {
                 />
               </div>
 
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  className="w-full"
-                >
-                  Reset
-                </Button>
+              <div className="flex flex-col gap-2 justify-end">
+                {showApply && (
+                  <Button
+                    size="sm"
+                    onClick={() => applyFilters()}
+                    className="w-full"
+                  >
+                    Apply Filters
+                  </Button>
+                )}
+                {showReset && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    className="w-full"
+                  >
+                    Reset
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -236,7 +275,7 @@ export default function Index() {
             {housesLoading ? (
               <div className="flex items-center gap-2 py-12 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading houses…</span>
+                <span className="text-sm">Loading houses...</span>
               </div>
             ) : housesError ? (
               <p className="text-sm text-muted-foreground py-12">
@@ -283,7 +322,7 @@ export default function Index() {
             {carsLoading ? (
               <div className="flex items-center gap-2 py-12 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading cars…</span>
+                <span className="text-sm">Loading cars...</span>
               </div>
             ) : carsError ? (
               <p className="text-sm text-muted-foreground py-12">
@@ -331,7 +370,7 @@ export default function Index() {
             {servicesLoading ? (
               <div className="flex items-center gap-2 py-12 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading services…</span>
+                <span className="text-sm">Loading services...</span>
               </div>
             ) : servicesError ? (
               <p className="text-sm text-muted-foreground py-12">
@@ -364,7 +403,7 @@ export default function Index() {
               No listings found
             </h3>
             <p className="text-muted-foreground max-w-xs">
-              Try adjusting your filters to find what you're looking for.
+              Try adjusting your filters to find what you are looking for.
             </p>
           </div>
         )}

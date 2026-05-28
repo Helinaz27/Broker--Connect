@@ -1,5 +1,10 @@
 import { prisma } from "../config/db.config.js";
 import cloudinary from "../config/cloudinary.config.js";
+import { emitToUser } from "../socket/socket.js";
+import {
+  notifyKYCApproved,
+  notifyKYCRejected,
+} from "./notification.service.js";
 
 const uploadToCloudinary = (file, folder) => {
   return new Promise((resolve, reject) => {
@@ -95,8 +100,21 @@ export const submitKYCService = async (
     });
   }
 
+  const notification = await prisma.notification.create({
+    data: {
+      userId,
+      type: "kyc_submitted",
+      title: "KYC Submitted",
+      body: `Dear ${userFullName}, your KYC request has been submitted and is under review.`,
+      path: "/kyc/status",
+      isRead: false,
+    },
+  });
+
+  emitToUser(userId, "new_notification", notification);
+
   const updatedUser = await prisma.user.findUnique({
-    where:  { id: userId },
+    where: { id: userId },
     select: {
       id: true,
       firstName: true,
@@ -118,7 +136,7 @@ export const submitKYCService = async (
     message: `Dear ${userFullName}, your KYC request has been submitted successfully.`,
     data: {
       kycRequest: {
-        id:             kycRequest.id,
+        id: kycRequest.id,
         documentType,
         frontSideImage: kycRequest.frontSideImage,
         backSideImage: kycRequest.backSideImage,
@@ -184,7 +202,7 @@ export const getMyKYCStatusService = async (
 
   const result = {
     kycSubmitted: true,
-    status:       kycRequest.status,
+    status: kycRequest.status,
     documentType: kycRequest.documentType,
     submittedAt: kycRequest.createdAt,
     nextAction: statusMap[kycRequest.status].nextAction,
@@ -278,7 +296,7 @@ export const getAllKYCService = async (status, page, limit) => {
 
 export const getKYCByIdService = async (requestId) => {
   const kycRequest = await prisma.kYCRequest.findUnique({
-    where:   { id: requestId },
+    where: { id: requestId },
     include: {
       user: {
         select: {
@@ -328,11 +346,6 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
   const currentRoles = kycRequest.user.roles;
   const updatedRoles = Array.from(new Set([...currentRoles, "client"]));
 
-  console.log("Approving KYC for user:", {
-    updatedRoles,
-    userId: kycRequest.userId,
-  });
-
   const approvedAt = new Date();
 
   await Promise.all([
@@ -342,34 +355,35 @@ export const approveKYCService = async (requestId, adminId, adminFullName) => {
     }),
     prisma.user.update({
       where: { id: kycRequest.userId },
-      data: {
-        isKYCVerified: true,
-        roles: { set: updatedRoles },
-      },
-    }),
-    prisma.notification.create({
-      data: {
-        userId: kycRequest.userId,
-        type: "kyc_approved",
-        title: "KYC Approved",
-        body: `Dear ${kycRequest.user.firstName}, your KYC request has been approved. You can now create listings.`,
-        isRead: false,
-      },
+      data: { isKYCVerified: true, roles: { set: updatedRoles } },
     }),
   ]);
 
+  const notification = await prisma.notification.create({
+    data: {
+      userId: kycRequest.userId,
+      type: "kyc_approved",
+      title: "KYC Approved!",
+      body: "Congratulations! Your identity verification has been approved. You can now create listings.",
+      path: "/kyc/status",
+      isRead: false,
+    },
+  });
+
+  emitToUser(kycRequest.userId, "new_notification", notification);
+
   notifyKYCApproved({
-    userId:    kycRequest.userId,
+    userId: kycRequest.userId,
     userEmail: kycRequest.user.email,
     firstName: kycRequest.user.firstName,
-  }).catch((err) => console.error('notifyKYCApproved error:', err));
+  }).catch((err) => console.error("notifyKYCApproved error:", err));
 
   return {
     success: true,
     message: "KYC approved successfully",
     data: {
       kycRequest: {
-        id:           kycRequest.id,
+        id: kycRequest.id,
         documentType: kycRequest.documentType,
         status: "approved",
         approvedAt,
@@ -407,7 +421,6 @@ export const rejectKYCService = async (
     return { success: false, message: "KYC request not found", status: 404 };
   }
 
-  // Check if user exists
   if (!kycRequest.user) {
     return {
       success: false,
@@ -418,8 +431,6 @@ export const rejectKYCService = async (
 
   const rejectedAt = new Date();
   const reason = reviewNote || "Document image is blurry";
-
-  // Safely filter roles, ensuring user exists
   const updatedRoles =
     kycRequest.user.roles?.filter((role) => role !== "client") || [];
 
@@ -435,35 +446,36 @@ export const rejectKYCService = async (
     }),
     prisma.user.update({
       where: { id: kycRequest.userId },
-      data: {
-        isKYCVerified: false,
-        roles: { set: updatedRoles },
-      },
-    }),
-    prisma.notification.create({
-      data: {
-        userId: kycRequest.userId,
-        type: "kyc_rejected", // Changed from 'Type' to 'type' (lowercase)
-        title: "KYC Rejected",
-        body: `Dear ${kycRequest.user.firstName}, your KYC request was rejected. Reason: ${reason}. Please resubmit with clear images.`,
-        isRead: false,
-      },
+      data: { isKYCVerified: false, roles: { set: updatedRoles } },
     }),
   ]);
 
+  const notification = await prisma.notification.create({
+    data: {
+      userId: kycRequest.userId,
+      type: "kyc_rejected",
+      title: "KYC Verification Rejected",
+      body: `Your KYC was rejected. Reason: ${reason}. Please re-submit with correct documents.`,
+      path: "/kyc/submit",
+      isRead: false,
+    },
+  });
+
+  emitToUser(kycRequest.userId, "new_notification", notification);
+
   notifyKYCRejected({
-    userId:     kycRequest.userId,
-    userEmail:  kycRequest.user.email,
-    firstName:  kycRequest.user.firstName,
+    userId: kycRequest.userId,
+    userEmail: kycRequest.user.email,
+    firstName: kycRequest.user.firstName,
     reviewNote: reason,
-  }).catch((err) => console.error('notifyKYCRejected error:', err));
+  }).catch((err) => console.error("notifyKYCRejected error:", err));
 
   return {
     success: true,
     message: "KYC rejected successfully",
     data: {
       kycRequest: {
-        id:           kycRequest.id,
+        id: kycRequest.id,
         documentType: kycRequest.documentType,
         status: "rejected",
         rejectedAt,
