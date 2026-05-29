@@ -6,6 +6,7 @@ import {
   getListingById,
   getPaginatedListings,
   updateListing,
+  renewListing,
 } from "../services/listing.service.js";
 
 const uploadImagesToCloudinary = async (files) => {
@@ -705,6 +706,113 @@ export const searchAdminListingsCtrl = async (req, res) => {
         pages: Math.ceil(total / parseInt(limit)),
       },
     });
+  } catch (error) {
+    return errorResponse(res, "Server error", error.message);
+  }
+};
+
+export const renewListingCtrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { durationDays } = req.body;
+
+    const existingListing = await getListingById(id);
+    if (!existingListing)
+      return errorResponse(res, "Listing not found", null, 404);
+    if (existingListing.ownerId !== userId)
+      return errorResponse(
+        res,
+        "You are not authorized to renew this listing",
+        null,
+        403,
+      );
+
+    const postingFee = await prisma.platformFee.findFirst({
+      where: {
+        feeType: "posting_fee",
+        category: existingListing.listingType,
+        ...(existingListing.listingMode && {
+          listingMode: existingListing.listingMode,
+        }),
+        isActive: true,
+      },
+    });
+
+    if (!postingFee)
+      return errorResponse(
+        res,
+        `No active posting fee found for ${existingListing.listingType} listings. Please contact admin.`,
+        null,
+        400,
+      );
+
+    const totalCoinsNeeded = Math.ceil(
+      (parseInt(durationDays) * postingFee.coinAmount) /
+        postingFee.durationDays,
+    );
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true },
+    });
+
+    if (!user || user.coins < totalCoinsNeeded) {
+      return errorResponse(
+        res,
+        `Insufficient coins. You need ${totalCoinsNeeded} coins for ${durationDays} days but have ${user?.coins ?? 0}. Please buy more coins.`,
+        null,
+        400,
+      );
+    }
+
+    const now = new Date();
+    const base =
+      existingListing.paidUntil && new Date(existingListing.paidUntil) > now
+        ? new Date(existingListing.paidUntil)
+        : now;
+    const newPaidUntil = new Date(base);
+    newPaidUntil.setDate(newPaidUntil.getDate() + parseInt(durationDays));
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { coins: { decrement: totalCoinsNeeded } },
+      }),
+      prisma.coinTransaction.create({
+        data: {
+          userId,
+          type: "debit",
+          amount: totalCoinsNeeded,
+          reason: "renewal_fee",
+          description: `Paid ${totalCoinsNeeded} coins to renew listing for ${durationDays} days`,
+        },
+      }),
+    ]);
+
+    const updated = await renewListing(id, newPaidUntil);
+
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true },
+    });
+
+    return successResponse(
+      res,
+      `Listing renewed successfully for ${durationDays} days.`,
+      {
+        listing: {
+          ...formatListingResponse(updated, true, false),
+          renewalDetails: {
+            durationDays: parseInt(durationDays),
+            totalCoinsPaid: totalCoinsNeeded,
+            newPaidUntil,
+            isActive: true,
+          },
+          currentCoinsRemaining: updatedUser.coins,
+        },
+      },
+    );
   } catch (error) {
     return errorResponse(res, "Server error", error.message);
   }

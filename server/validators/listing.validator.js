@@ -395,6 +395,23 @@ export const searchQueryValidator = [
   handleValidationErrors,
 ];
 
+export const renewListingValidator = [
+  param("id")
+    .trim()
+    .notEmpty()
+    .withMessage("Listing ID is required")
+    .isMongoId()
+    .withMessage("Invalid listing ID format"),
+
+  body("durationDays")
+    .notEmpty()
+    .withMessage("Duration days is required")
+    .isInt({ min: 1 })
+    .withMessage("Duration days must be at least 1"),
+
+  handleValidationErrors,
+];
+
 export const idParamValidator = [
   param("id")
     .trim()

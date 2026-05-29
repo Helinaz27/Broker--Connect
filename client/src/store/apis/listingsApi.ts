@@ -1,8 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// ─────────────────────────────────────────────
-// Enums / constants (mirror backend)
-// ─────────────────────────────────────────────
 export type ListingType = "house" | "car" | "service";
 export type ListingMode = "rent" | "sell";
 export type ListingStatus = "active" | "inactive" | "occupied" | "sold";
@@ -10,9 +7,6 @@ export type CarType = "electric" | "fuel";
 export type CarCondition = "used" | "new";
 export type RentalPeriod = "daily" | "weekly" | "monthly" | "yearly";
 
-// ─────────────────────────────────────────────
-// Core types
-// ─────────────────────────────────────────────
 export interface ListingLocation {
   city: string;
   subCity?: string;
@@ -36,7 +30,13 @@ export interface PostingDetails {
   isActive: boolean;
 }
 
-/** Unified listing type — fields are present based on listingType */
+export interface RenewalDetails {
+  durationDays: number;
+  totalCoinsPaid: number;
+  newPaidUntil: string;
+  isActive: boolean;
+}
+
 export interface Listing {
   id: string;
   listingType: ListingType;
@@ -51,14 +51,12 @@ export interface Listing {
   createdAt: string;
   owner?: ListingOwner;
 
-  // Owner / admin only
   ownerId?: string;
   paidUntil?: string;
   updatedAt?: string;
   isExpired?: boolean;
   daysRemaining?: number;
 
-  // House fields
   houseType?: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -67,19 +65,14 @@ export interface Listing {
   parking?: number;
   rentalPeriod?: RentalPeriod;
 
-  // Car fields
   carType?: CarType;
   condition?: CarCondition;
   brand?: string;
   carModel?: string;
 
-  // Service fields
   serviceType?: string;
 }
 
-// ─────────────────────────────────────────────
-// Request / Response shapes
-// ─────────────────────────────────────────────
 export interface PaginatedListingsResponse {
   success: boolean;
   message: string;
@@ -117,9 +110,17 @@ export interface UpdateStatusResponse {
   data: { id: string; status: ListingStatus; updatedAt: string };
 }
 
-// ─────────────────────────────────────────────
-// Query / mutation param shapes
-// ─────────────────────────────────────────────
+export interface RenewListingResponse {
+  success: boolean;
+  message: string;
+  data: {
+    listing: Listing & {
+      renewalDetails: RenewalDetails;
+      currentCoinsRemaining: number;
+    };
+  };
+}
+
 export interface ListingQueryParams {
   page?: number;
   limit?: number;
@@ -142,12 +143,6 @@ export interface ListingQueryParams {
   rentalPeriod?: RentalPeriod;
 }
 
-/**
- * Pass all listing fields + images as FormData because the backend
- * uses multipart/form-data (multer upload middleware).
- *
- * Helper at bottom of file builds the FormData for you.
- */
 export interface CreateListingParams {
   listingType: ListingType;
   listingMode?: ListingMode;
@@ -159,7 +154,6 @@ export interface CreateListingParams {
   durationDays: number;
   images: File[];
 
-  // House
   houseType?: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -168,13 +162,11 @@ export interface CreateListingParams {
   parking?: number;
   rentalPeriod?: RentalPeriod;
 
-  // Car
   carType?: CarType;
   condition?: CarCondition;
   brand?: string;
   carModel?: string;
 
-  // Service
   serviceType?: string;
 }
 
@@ -191,26 +183,22 @@ export interface UpdateStatusParams {
   status: ListingStatus;
 }
 
-// ─────────────────────────────────────────────
-// API slice
-// ─────────────────────────────────────────────
+export interface RenewListingParams {
+  id: string;
+  durationDays: number;
+}
+
 export const listingsApi = createApi({
   reducerPath: "listingsApi",
 
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/listings`,
-    // Backend auth reads from req.cookies.token — NOT the Authorization header.
-    // credentials:"include" tells the browser to send cookies on every request,
-    // including cross-origin calls to the Express server.
     credentials: "include",
   }),
 
   tagTypes: ["Listing", "MyListings", "AdminListings"],
 
   endpoints: (builder) => ({
-    // ── Public ────────────────────────────────
-
-    /** GET /listings/get-all  (active, non-expired) */
     getAllListings: builder.query<
       PaginatedListingsResponse,
       ListingQueryParams | void
@@ -219,13 +207,11 @@ export const listingsApi = createApi({
       providesTags: ["Listing"],
     }),
 
-    /** GET /listings/:id/single-listing */
     getListingById: builder.query<SingleListingResponse, string>({
       query: (id) => `/${id}/single-listing`,
       providesTags: (_res, _err, id) => [{ type: "Listing", id }],
     }),
 
-    /** GET /listings/search  — public search with filters */
     searchListings: builder.query<
       PaginatedListingsResponse,
       ListingQueryParams
@@ -234,9 +220,6 @@ export const listingsApi = createApi({
       providesTags: ["Listing"],
     }),
 
-    // ── Authenticated user ────────────────────
-
-    /** GET /listings/get-my-listings */
     getMyListings: builder.query<
       PaginatedListingsResponse,
       ListingQueryParams | void
@@ -245,7 +228,6 @@ export const listingsApi = createApi({
       providesTags: ["MyListings"],
     }),
 
-    /** GET /listings/dashboard/search  — user's own listings with filters */
     searchMyListings: builder.query<
       PaginatedListingsResponse,
       ListingQueryParams
@@ -254,21 +236,18 @@ export const listingsApi = createApi({
       providesTags: ["MyListings"],
     }),
 
-    /** POST /listings/create  — multipart/form-data */
     createListing: builder.mutation<CreateListingResponse, CreateListingParams>(
       {
         query: (params) => ({
           url: "/create",
           method: "POST",
           body: buildFormData(params),
-          // Don't set Content-Type; browser sets it with the correct boundary
           formData: true,
         }),
         invalidatesTags: ["Listing", "MyListings"],
       },
     ),
 
-    /** PUT /listings/:id/update  — multipart/form-data */
     updateListing: builder.mutation<SingleListingResponse, UpdateListingParams>(
       {
         query: ({ id, body }) => ({
@@ -285,7 +264,6 @@ export const listingsApi = createApi({
       },
     ),
 
-    /** PUT /listings/:id/status */
     updateListingStatus: builder.mutation<
       UpdateStatusResponse,
       UpdateStatusParams
@@ -303,9 +281,19 @@ export const listingsApi = createApi({
       ],
     }),
 
-    // ── Admin ─────────────────────────────────
+    renewListing: builder.mutation<RenewListingResponse, RenewListingParams>({
+      query: ({ id, durationDays }) => ({
+        url: `/${id}/renewal`,
+        method: "PUT",
+        body: { durationDays },
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        "Listing",
+        "MyListings",
+        { type: "Listing", id },
+      ],
+    }),
 
-    /** GET /listings/admin/all */
     adminGetAllListings: builder.query<
       PaginatedListingsResponse,
       ListingQueryParams | void
@@ -314,7 +302,6 @@ export const listingsApi = createApi({
       providesTags: ["AdminListings"],
     }),
 
-    /** GET /listings/admin/search */
     adminSearchListings: builder.query<
       PaginatedListingsResponse,
       ListingQueryParams
@@ -325,36 +312,22 @@ export const listingsApi = createApi({
   }),
 });
 
-// ─────────────────────────────────────────────
-// Exported hooks
-// ─────────────────────────────────────────────
 export const {
-  // Public
   useGetAllListingsQuery,
   useGetListingByIdQuery,
   useSearchListingsQuery,
 
-  // Authenticated user
   useGetMyListingsQuery,
   useSearchMyListingsQuery,
   useCreateListingMutation,
   useUpdateListingMutation,
   useUpdateListingStatusMutation,
+  useRenewListingMutation,
 
-  // Admin
   useAdminGetAllListingsQuery,
   useAdminSearchListingsQuery,
 } = listingsApi;
 
-// ─────────────────────────────────────────────
-// FormData builder (used internally by mutations)
-// ─────────────────────────────────────────────
-// The backend validator runs BEFORE the controller, and checks
-// body("location.city") / body("location.placeName") as dot-notation
-// fields on the parsed body — it does NOT parse the JSON string itself.
-// So we send location fields in both forms:
-//   1. Dot-notation fields  → satisfy express-validator
-//   2. JSON string          → satisfy parseLocation() in the controller
 function buildFormData(
   params: Partial<CreateListingParams> & { images?: File[] },
 ): FormData {
@@ -362,7 +335,6 @@ function buildFormData(
 
   const { images, location, ...rest } = params;
 
-  // Scalar fields
   Object.entries(rest).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       fd.append(key, String(value));
@@ -370,10 +342,7 @@ function buildFormData(
   });
 
   if (location) {
-    // 1. JSON string — used by parseLocation() in the controller
     fd.append("location", JSON.stringify(location));
-
-    // 2. Dot-notation fields — used by express-validator before the controller runs
     fd.append("location.city", location.city);
     fd.append("location.placeName", location.placeName);
     if (location.subCity) fd.append("location.subCity", location.subCity);
@@ -383,7 +352,6 @@ function buildFormData(
     }
   }
 
-  // Images — multer expects field name "images"
   if (images && images.length > 0) {
     images.forEach((file) => fd.append("images", file));
   }

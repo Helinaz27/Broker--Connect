@@ -127,3 +127,14 @@ export const updateListing = async (id, updateData) => {
     include: { owner: ownerSelect },
   });
 };
+
+export const renewListing = async (id, newPaidUntil) => {
+  return await prisma.listing.update({
+    where: { id },
+    data: {
+      paidUntil: newPaidUntil,
+      status: "active",
+    },
+    include: { owner: ownerSelect },
+  });
+};
