@@ -134,6 +134,10 @@ const parseBool = (val) => {
   return Boolean(val);
 };
 
+const isListingExpired = (listing) => {
+  return listing.paidUntil && new Date() > new Date(listing.paidUntil);
+};
+
 export const createListingCtrl = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -420,12 +424,22 @@ export const updateListingStatusCtrl = async (req, res) => {
     const existingListing = await getListingById(id);
     if (!existingListing)
       return errorResponse(res, "Listing not found", null, 404);
+
     if (!isAdmin && existingListing.ownerId !== userId) {
       return errorResponse(
         res,
         "You are not authorized to update this listing status",
         null,
         403,
+      );
+    }
+
+    if (status === "active" && isListingExpired(existingListing)) {
+      return errorResponse(
+        res,
+        "This listing has expired and cannot be set to active. Please renew your listing first.",
+        null,
+        400,
       );
     }
 
@@ -484,7 +498,6 @@ export const getAllListingsCtrl = async (req, res) => {
 export const getMyListingsCtrl = async (req, res) => {
   try {
     const userId = req.user.id;
-    // ↓ add listingMode here
     const {
       page = 1,
       limit = 20,
@@ -497,7 +510,7 @@ export const getMyListingsCtrl = async (req, res) => {
       filters: {
         ownerId: userId,
         ...(listingType && { listingType }),
-        ...(listingMode && { listingMode }), // ← forward it
+        ...(listingMode && { listingMode }),
         ...(status && status !== "all" && { status }),
       },
       page,
@@ -569,12 +582,11 @@ export const getListingByIdCtrl = async (req, res) => {
     if (!listing) return errorResponse(res, "Listing not found", null, 404);
     if (listing.status !== "active")
       return errorResponse(res, "Listing not available", null, 404);
-    if (listing.paidUntil && new Date() > new Date(listing.paidUntil))
+    if (isListingExpired(listing))
       return errorResponse(res, "Listing has expired", null, 404);
 
     const viewer = req.user ?? null;
 
-    // guest
     if (!viewer) {
       return successResponse(res, "Listing retrieved successfully", {
         listing: formatListingResponse(listing, false, false, false),
@@ -586,7 +598,6 @@ export const getListingByIdCtrl = async (req, res) => {
     const isOwner = listing.ownerId === viewer.id;
     const isAdmin = viewer.roles.includes("admin");
 
-    // owner or admin always sees contact
     if (isOwner || isAdmin) {
       return successResponse(res, "Listing retrieved successfully", {
         listing: formatListingResponse(listing, isOwner, isAdmin, true),
@@ -595,7 +606,6 @@ export const getListingByIdCtrl = async (req, res) => {
       });
     }
 
-    // logged-in user — check ContactAccess table
     const access = await prisma.contactAccess.findFirst({
       where: { viewerId: viewer.id, listingId: id, isActive: true },
     });

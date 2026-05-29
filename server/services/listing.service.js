@@ -12,13 +12,16 @@ const ownerSelect = {
 
 const buildWhereClause = (filters = {}) => {
   const where = {};
+  const andClauses = [];
 
   if (filters.status && filters.status !== "all") {
     where.status = filters.status;
   }
 
   if (filters.excludeExpired) {
-    where.OR = [{ paidUntil: null }, { paidUntil: { gt: new Date() } }];
+    andClauses.push({
+      OR: [{ paidUntil: null }, { paidUntil: { gt: new Date() } }],
+    });
   }
 
   if (filters.ownerId) where.ownerId = filters.ownerId;
@@ -60,15 +63,21 @@ const buildWhereClause = (filters = {}) => {
   }
 
   if (filters.search) {
-    where.OR = [
-      ...(where.OR || []),
-      { title: { contains: filters.search, mode: "insensitive" } },
-      { description: { contains: filters.search, mode: "insensitive" } },
-    ];
+    andClauses.push({
+      OR: [
+        { title: { contains: filters.search, mode: "insensitive" } },
+        { description: { contains: filters.search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (andClauses.length > 0) {
+    where.AND = andClauses;
   }
 
   return where;
 };
+
 export const createListing = async (listingData) => {
   const { ownerId, ...restData } = listingData;
 
@@ -81,6 +90,7 @@ export const createListing = async (listingData) => {
 
   return await prisma.listing.create({ data });
 };
+
 export const getListingById = async (id) => {
   return await prisma.listing.findUnique({
     where: { id },
