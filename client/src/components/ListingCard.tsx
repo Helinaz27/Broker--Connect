@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getListingPath } from "@/data/listings";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface ListingCardProps {
   id: string;
@@ -28,6 +29,7 @@ export default function ListingCard({
   listingMode,
   contactLimit = 0,
 }: ListingCardProps) {
+  const { t } = useLanguage();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const pathname = usePathname();
   const isFavoritesPage = pathname === "/favorites";
@@ -39,14 +41,14 @@ export default function ListingCard({
 
     if (isFavoritesPage) {
       removeFavorite(id);
-      toast.success("Removed from favorites");
+      toast.success(t("common.removedFromFavorites"));
     } else {
       if (!liked) {
         addFavorite({ id, title, image, price, location, category });
-        toast.success("Added to favorites");
+        toast.success(t("common.addedToFavorites"));
       } else {
         removeFavorite(id);
-        toast.success("Removed from favorites");
+        toast.success(t("common.removedFromFavorites"));
       }
     }
   };
@@ -69,10 +71,10 @@ export default function ListingCard({
           <div className="absolute top-4 left-4 flex gap-2">
             <span className="bg-background/80 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg text-foreground border border-white/20 shadow-sm">
               {category === "car"
-                ? "Car"
+                ? t("common.car")
                 : category === "service" || category === "otherService"
-                  ? "Service"
-                  : "House"}
+                  ? t("common.service")
+                  : t("common.house")}
             </span>
             {showModeBadge && (
               <span
@@ -80,7 +82,7 @@ export default function ListingCard({
                   listingMode === "rent" ? "bg-blue-500/90" : "bg-green-500/90"
                 }`}
               >
-                {listingMode}
+                {listingMode === "rent" ? t("common.rent") : t("common.sell")}
               </span>
             )}
           </div>
@@ -116,10 +118,10 @@ export default function ListingCard({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Price
+                {t("common.price")}
               </p>
               <p className="text-xl font-bold text-foreground">
-                {price.toLocaleString()} Br
+                {price.toLocaleString()} {t("common.br")}
               </p>
             </div>
             <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
@@ -127,7 +129,7 @@ export default function ListingCard({
 
           {contactLimit > 0 && (
             <div className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-              {contactLimit} contact{contactLimit !== 1 ? "s" : ""} available
+              {t("common.contactsAvailable", { count: contactLimit })}
             </div>
           )}
         </div>

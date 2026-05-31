@@ -56,6 +56,7 @@ import {
 } from "@/store/apis/kycApi";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 // ─── KYC Detail Panel ─────────────────────────────────────────────────────────
 
@@ -72,8 +73,16 @@ function KYCDetailContent({
   isApproving: boolean;
   isRejecting: boolean;
 }) {
+  const { t } = useLanguage();
   const { data, isLoading, isError } = useGetKYCByIdQuery(requestId);
   const req = data?.data?.kycRequest;
+
+  const statusLabel = (status: string) => {
+    if (status === "approved") return t("dashboard.statusApproved");
+    if (status === "rejected") return t("dashboard.statusRejected");
+    if (status === "pending") return t("dashboard.statusPending");
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
 
   const statusColors: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800",
@@ -106,7 +115,7 @@ function KYCDetailContent({
           variant="outline"
           className={`${statusColors[req.status]} text-sm px-3 py-1`}
         >
-          {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+          {statusLabel(req.status)}
         </Badge>
         <span className="text-xs text-muted-foreground">
           ID: <span className="font-mono">{req.id}</span>
@@ -118,29 +127,29 @@ function KYCDetailContent({
       {/* User Info */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          User Information
+          {t("dashboard.userInformation")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InfoRow
             icon={<User className="h-4 w-4" />}
-            label="Full Name"
+            label={t("dashboard.fullName")}
             value={
               req.user ? `${req.user.firstName} ${req.user.lastName}` : "—"
             }
           />
           <InfoRow
             icon={<Mail className="h-4 w-4" />}
-            label="Email"
+            label={t("dashboard.tableEmail")}
             value={req.user?.email ?? "—"}
           />
           <InfoRow
             icon={<Phone className="h-4 w-4" />}
-            label="Phone"
+            label={t("dashboard.tablePhone")}
             value={req.user?.phone ?? "—"}
           />
           <InfoRow
             icon={<Calendar className="h-4 w-4" />}
-            label="Submitted"
+            label={t("dashboard.submitted")}
             value={new Date(req.submittedAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
@@ -155,18 +164,18 @@ function KYCDetailContent({
       {/* Document Info */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Document Details
+          {t("dashboard.documentDetails")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InfoRow
             icon={<FileText className="h-4 w-4" />}
-            label="Document Type"
+            label={t("dashboard.documentType")}
             value={req.documentType.replace(/_/g, " ")}
             className="capitalize"
           />
           <InfoRow
             icon={<FileText className="h-4 w-4" />}
-            label="Document Number"
+            label={t("dashboard.documentNumber")}
             value={req.documentNumber}
             className="font-mono"
           />
@@ -178,12 +187,18 @@ function KYCDetailContent({
       {/* Document Images */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Document Images
+          {t("dashboard.documentImages")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <DocumentImage label="Front Side" src={req.frontSideImage} />
+          <DocumentImage
+            label={t("dashboard.frontSide")}
+            src={req.frontSideImage}
+          />
           {req.backSideImage && (
-            <DocumentImage label="Back Side" src={req.backSideImage} />
+            <DocumentImage
+              label={t("dashboard.backSide")}
+              src={req.backSideImage}
+            />
           )}
         </div>
       </div>
@@ -194,7 +209,7 @@ function KYCDetailContent({
           <Separator />
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Rejection Reason
+              {t("dashboard.rejectionReason")}
             </h3>
             <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3 border border-red-100">
               {req.reason}
@@ -209,18 +224,18 @@ function KYCDetailContent({
           <Separator />
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Approval Info
+              {t("dashboard.approvalInfo")}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <InfoRow
                 icon={<User className="h-4 w-4" />}
-                label="Approved By"
+                label={t("dashboard.approvedBy")}
                 value={req.approvedBy.name}
               />
               {req.verifiedAt && (
                 <InfoRow
                   icon={<Calendar className="h-4 w-4" />}
-                  label="Approved At"
+                  label={t("dashboard.approvedAt")}
                   value={new Date(req.verifiedAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -249,7 +264,7 @@ function KYCDetailContent({
             ) : (
               <CheckCircle className="h-4 w-4" />
             )}
-            Approve KYC
+            {t("dashboard.approveKyc")}
           </Button>
           <Button
             variant="destructive"
@@ -262,7 +277,7 @@ function KYCDetailContent({
             ) : (
               <XCircle className="h-4 w-4" />
             )}
-            Reject KYC
+            {t("dashboard.rejectKyc")}
           </Button>
         </div>
       )}
@@ -281,10 +296,10 @@ function KYCDetailContent({
             ) : (
               <XCircle className="h-4 w-4" />
             )}
-            Revoke & Reject KYC
+            {t("dashboard.revokeRejectKycDetail")}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            This will remove the user's verified status and client role.
+            {t("dashboard.revokeStatusHint")}
           </p>
         </div>
       )}
@@ -302,10 +317,10 @@ function KYCDetailContent({
             ) : (
               <CheckCircle className="h-4 w-4" />
             )}
-            Approve KYC
+            {t("dashboard.approveKyc")}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            This will grant the user verified status and client role.
+            {t("dashboard.approveStatusHint")}
           </p>
         </div>
       )}
@@ -366,6 +381,7 @@ function DocumentImage({ label, src }: { label: string; src: string }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function KYCPage() {
+  const { t } = useLanguage();
   const currentUser = useSelector((state: RootState) => state.user.currentUser);
   const isAdmin = currentUser?.roles?.includes("admin") ?? false;
   const router = useRouter();
@@ -405,12 +421,12 @@ export default function KYCPage() {
     if (!id) return;
     try {
       await approveKYC(id).unwrap();
-      toast.success("KYC approved successfully");
+      toast.success(t("dashboard.kycApproved"));
       setApproveDialogOpen(false);
       setViewingId(null);
       setSelectedRequest(null);
     } catch {
-      toast.error("Failed to approve KYC");
+      toast.error(t("dashboard.failedApproveKyc"));
     }
   };
 
@@ -418,7 +434,7 @@ export default function KYCPage() {
     const id = selectedRequest?.id ?? viewingId;
     if (!id) return;
     if (!reviewNote.trim()) {
-      setReviewNoteError("Review note is required to reject a KYC request.");
+      setReviewNoteError(t("dashboard.reviewNoteRequiredForReject"));
       return;
     }
     try {
@@ -426,13 +442,13 @@ export default function KYCPage() {
         requestId: id,
         reviewNote: reviewNote.trim(),
       }).unwrap();
-      toast.success("KYC rejected successfully");
+      toast.success(t("dashboard.kycRejected"));
       setRejectDialogOpen(false);
       setViewingId(null);
       setSelectedRequest(null);
       setReviewNote("");
     } catch {
-      toast.error("Failed to reject KYC");
+      toast.error(t("dashboard.failedRejectKyc"));
     }
   };
 
@@ -460,52 +476,52 @@ export default function KYCPage() {
         <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl">
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="font-bold text-lg">Broker Console</h1>
+        <h1 className="font-bold text-lg">{t("dashboard.brokerConsole")}</h1>
       </div>
 
       {!isAdmin ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <ShieldCheck className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground font-medium text-center px-4">
-            You don't have permission to view this page.
+            {t("dashboard.noPermission")}
           </p>
           <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Go back to Dashboard
+            {t("dashboard.goBackDashboard")}
           </Button>
         </div>
       ) : (
         <>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              KYC Management
+              {t("dashboard.kycManagement")}
             </h1>
             <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
-              Review and approve KYC requests from users
+              {t("dashboard.reviewKycSubtitle")}
             </p>
           </div>
 
           <Card className="bg-card border-border">
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="text-base sm:text-lg">
-                KYC Requests
+                {t("dashboard.kycRequests")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
                 <div className="flex items-center justify-center h-40 gap-2 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Loading KYC requests...</span>
+                  <span>{t("dashboard.loadingKycRequests")}</span>
                 </div>
               ) : isError ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3 text-muted-foreground">
-                  <p className="text-sm">Failed to load KYC requests.</p>
+                  <p className="text-sm">{t("dashboard.failedLoadKycRequests")}</p>
                   <Button variant="outline" size="sm" onClick={() => refetch()}>
-                    Retry
+                    {t("dashboard.retry")}
                   </Button>
                 </div>
               ) : kycRequests.length === 0 ? (
                 <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
-                  No KYC requests found.
+                  {t("dashboard.noKycRequests")}
                 </div>
               ) : (
                 <div className="w-full overflow-x-auto">
@@ -513,22 +529,22 @@ export default function KYCPage() {
                     <TableHeader className="bg-muted/50">
                       <TableRow className="hover:bg-transparent">
                         <TableHead className="font-semibold pl-4 sm:pl-6 whitespace-nowrap">
-                          User
+                          {t("dashboard.tableUser")}
                         </TableHead>
                         <TableHead className="font-semibold whitespace-nowrap">
-                          Email
+                          {t("dashboard.tableEmail")}
                         </TableHead>
                         <TableHead className="font-semibold whitespace-nowrap">
-                          Document
+                          {t("dashboard.document")}
                         </TableHead>
                         <TableHead className="font-semibold whitespace-nowrap">
-                          Submitted
+                          {t("dashboard.submitted")}
                         </TableHead>
                         <TableHead className="font-semibold whitespace-nowrap">
-                          Status
+                          {t("dashboard.status")}
                         </TableHead>
                         <TableHead className="font-semibold text-right pr-4 sm:pr-6 whitespace-nowrap">
-                          Actions
+                          {t("dashboard.actions")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -565,7 +581,7 @@ export default function KYCPage() {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => setViewingId(req.id)}
-                                title="View details"
+                                title={t("dashboard.viewDetails")}
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -578,7 +594,7 @@ export default function KYCPage() {
                                     size="icon"
                                     className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                                     onClick={() => openApproveDialog(req)}
-                                    title="Approve"
+                                    title={t("dashboard.approve")}
                                   >
                                     <CheckCircle className="h-4 w-4" />
                                   </Button>
@@ -587,7 +603,7 @@ export default function KYCPage() {
                                     size="icon"
                                     className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                                     onClick={() => openRejectDialog(req)}
-                                    title="Reject"
+                                    title={t("dashboard.reject")}
                                   >
                                     <XCircle className="h-4 w-4" />
                                   </Button>
@@ -601,7 +617,7 @@ export default function KYCPage() {
                                   size="icon"
                                   className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   onClick={() => openRejectDialog(req)}
-                                  title="Revoke approval"
+                                  title={t("dashboard.revokeApprovalTitle")}
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
@@ -614,7 +630,7 @@ export default function KYCPage() {
                                   size="icon"
                                   className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                                   onClick={() => openApproveDialog(req)}
-                                  title="Approve"
+                                  title={t("dashboard.approve")}
                                 >
                                   <CheckCircle className="h-4 w-4" />
                                 </Button>
@@ -641,7 +657,7 @@ export default function KYCPage() {
                 className="h-[90vh] overflow-y-auto rounded-t-2xl px-4"
               >
                 <SheetHeader className="mb-2">
-                  <SheetTitle>KYC Request Details</SheetTitle>
+                  <SheetTitle>{t("dashboard.kycRequestDetails")}</SheetTitle>
                 </SheetHeader>
                 {detailContent}
               </SheetContent>
@@ -656,10 +672,9 @@ export default function KYCPage() {
             >
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>KYC Request Details</DialogTitle>
+                  <DialogTitle>{t("dashboard.kycRequestDetails")}</DialogTitle>
                   <DialogDescription>
-                    Review submitted documents and take action on this KYC
-                    request.
+                    {t("dashboard.reviewDocumentsDesc")}
                   </DialogDescription>
                 </DialogHeader>
                 {detailContent}
@@ -671,10 +686,9 @@ export default function KYCPage() {
           <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
             <DialogContent className="max-w-sm mx-4 sm:mx-auto">
               <DialogHeader>
-                <DialogTitle>Approve KYC Request</DialogTitle>
+                <DialogTitle>{t("dashboard.approveKycRequestTitle")}</DialogTitle>
                 <DialogDescription>
-                  Are you sure you want to approve this KYC request? The user
-                  will receive verified status and client access immediately.
+                  {t("dashboard.approveKycRequestDesc")}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -684,7 +698,7 @@ export default function KYCPage() {
                   onClick={() => setApproveDialogOpen(false)}
                   disabled={isApproving}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   className="w-full sm:w-auto gap-2"
@@ -692,7 +706,7 @@ export default function KYCPage() {
                   disabled={isApproving}
                 >
                   {isApproving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Approve
+                  {t("dashboard.approve")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -704,22 +718,23 @@ export default function KYCPage() {
               <DialogHeader>
                 <DialogTitle>
                   {selectedRequest?.status === "approved"
-                    ? "Revoke & Reject KYC"
-                    : "Reject KYC Request"}
+                    ? t("dashboard.revokeRejectTitle")
+                    : t("dashboard.rejectKycTitle")}
                 </DialogTitle>
                 <DialogDescription>
                   {selectedRequest?.status === "approved"
-                    ? "This will remove the user's verified status and client role. Provide a reason below."
-                    : "Provide a reason. The user will be notified and asked to resubmit."}
+                    ? t("dashboard.revokeRejectApprovedDesc")
+                    : t("dashboard.rejectKycDesc")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-2">
                 <Label htmlFor="reviewNote">
-                  Review Note <span className="text-destructive">*</span>
+                  {t("dashboard.reviewNote")}{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="reviewNote"
-                  placeholder="e.g. Document image is blurry, please resubmit with a clearer photo."
+                  placeholder={t("dashboard.reviewNotePlaceholder")}
                   value={reviewNote}
                   onChange={(e) => {
                     setReviewNote(e.target.value);
@@ -739,7 +754,7 @@ export default function KYCPage() {
                   onClick={() => setRejectDialogOpen(false)}
                   disabled={isRejecting}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -748,7 +763,9 @@ export default function KYCPage() {
                   disabled={isRejecting}
                 >
                   {isRejecting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {selectedRequest?.status === "approved" ? "Revoke" : "Reject"}
+                  {selectedRequest?.status === "approved"
+                    ? t("dashboard.revoke")
+                    : t("dashboard.reject")}
                 </Button>
               </DialogFooter>
             </DialogContent>

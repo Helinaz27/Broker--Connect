@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useState, useCallback } from "react";
 import { useSearchListingsQuery } from "@/store/apis/listingsApi";
 import type { ListingQueryParams } from "@/store/apis/listingsApi";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -25,6 +26,7 @@ const filtersEqual = (a: typeof DEFAULT_FILTERS, b: typeof DEFAULT_FILTERS) =>
   a.category === b.category;
 
 export default function Index() {
+  const { t } = useLanguage();
   const [draft, setDraft] = useState(DEFAULT_FILTERS);
   const [applied, setApplied] = useState(DEFAULT_FILTERS);
 
@@ -131,11 +133,10 @@ export default function Index() {
         <div className="container mx-auto px-6">
           <div className="mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3">
-              Find Your Perfect Match
+              {t("home.heroTitle")}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Browse thousands of houses, cars, and other services from trusted
-              sellers in your area.
+              {t("home.heroSubtitle")}
             </p>
           </div>
 
@@ -143,27 +144,27 @@ export default function Index() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Category
+                  {t("home.category")}
                 </label>
                 <select
                   value={draft.category}
                   onChange={(e) => update({ category: e.target.value as any })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
                 >
-                  <option value="all">All</option>
-                  <option value="house">Houses</option>
-                  <option value="car">Cars</option>
-                  <option value="service">Other Services</option>
+                  <option value="all">{t("home.all")}</option>
+                  <option value="house">{t("home.houses")}</option>
+                  <option value="car">{t("home.cars")}</option>
+                  <option value="service">{t("home.otherServices")}</option>
                 </select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Search
+                  {t("home.search")}
                 </label>
                 <input
                   type="text"
-                  placeholder="Search…"
+                  placeholder={t("home.searchPlaceholder")}
                   value={draft.search}
                   onChange={(e) => update({ search: e.target.value })}
                   onKeyDown={handleSearchKeyDown}
@@ -173,11 +174,11 @@ export default function Index() {
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  City
+                  {t("home.city")}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Addis Ababa"
+                  placeholder={t("home.cityPlaceholder")}
                   value={draft.city}
                   onChange={(e) => update({ city: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -186,7 +187,7 @@ export default function Index() {
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Min Price
+                  {t("home.minPrice")}
                 </label>
                 <input
                   type="number"
@@ -206,12 +207,12 @@ export default function Index() {
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Max Price
+                  {t("home.maxPrice")}
                 </label>
                 <input
                   type="number"
                   min={0}
-                  placeholder="Any"
+                  placeholder={t("home.maxPricePlaceholder")}
                   value={draft.maxPrice ?? ""}
                   onChange={(e) =>
                     update({
@@ -231,7 +232,7 @@ export default function Index() {
                     onClick={() => applyFilters()}
                     className="w-full"
                   >
-                    Apply Filters
+                    {t("home.applyFilters")}
                   </Button>
                 )}
                 {showReset && (
@@ -241,7 +242,7 @@ export default function Index() {
                     onClick={handleReset}
                     className="w-full"
                   >
-                    Reset
+                    {t("home.reset")}
                   </Button>
                 )}
               </div>
@@ -256,18 +257,19 @@ export default function Index() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Houses
+                  {t("home.houses")}
                 </h2>
                 {!housesLoading && !housesError && (
                   <p className="text-muted-foreground mt-1">
-                    {houseTotal} propert{houseTotal !== 1 ? "ies" : "y"}{" "}
-                    available
+                    {houseTotal === 1
+                      ? t("home.propertyAvailable", { count: houseTotal })
+                      : t("home.propertiesAvailable", { count: houseTotal })}
                   </p>
                 )}
               </div>
               <Link href="/house-listings">
                 <Button variant="outline" size="sm">
-                  View All
+                  {t("home.viewAll")}
                 </Button>
               </Link>
             </div>
@@ -275,15 +277,15 @@ export default function Index() {
             {housesLoading ? (
               <div className="flex items-center gap-2 py-12 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading houses...</span>
+                <span className="text-sm">{t("home.loadingHouses")}</span>
               </div>
             ) : housesError ? (
               <p className="text-sm text-muted-foreground py-12">
-                Failed to load houses.
+                {t("home.failedHouses")}
               </p>
             ) : houses.length === 0 ? (
               <p className="text-sm text-muted-foreground py-12">
-                No houses match your filters.
+                {t("home.noHouses")}
               </p>
             ) : (
               <div className="overflow-x-auto pb-4 -mx-6 px-6">
@@ -304,17 +306,19 @@ export default function Index() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Cars
+                  {t("home.cars")}
                 </h2>
                 {!carsLoading && !carsError && (
                   <p className="text-muted-foreground mt-1">
-                    {carTotal} vehicle{carTotal !== 1 ? "s" : ""} available
+                    {carTotal === 1
+                      ? t("home.vehicleAvailable", { count: carTotal })
+                      : t("home.vehiclesAvailable", { count: carTotal })}
                   </p>
                 )}
               </div>
               <Link href="/car-listings">
                 <Button variant="outline" size="sm">
-                  View All
+                  {t("home.viewAll")}
                 </Button>
               </Link>
             </div>
@@ -322,15 +326,15 @@ export default function Index() {
             {carsLoading ? (
               <div className="flex items-center gap-2 py-12 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading cars...</span>
+                <span className="text-sm">{t("home.loadingCars")}</span>
               </div>
             ) : carsError ? (
               <p className="text-sm text-muted-foreground py-12">
-                Failed to load cars.
+                {t("home.failedCars")}
               </p>
             ) : cars.length === 0 ? (
               <p className="text-sm text-muted-foreground py-12">
-                No cars match your filters.
+                {t("home.noCars")}
               </p>
             ) : (
               <div className="overflow-x-auto pb-4 -mx-6 px-6">
@@ -351,18 +355,19 @@ export default function Index() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Other Services
+                  {t("home.otherServices")}
                 </h2>
                 {!servicesLoading && !servicesError && (
                   <p className="text-muted-foreground mt-1">
-                    {serviceTotal} other service{serviceTotal !== 1 ? "s" : ""}{" "}
-                    available
+                    {serviceTotal === 1
+                      ? t("home.serviceAvailable", { count: serviceTotal })
+                      : t("home.servicesAvailable", { count: serviceTotal })}
                   </p>
                 )}
               </div>
               <Link href="/service-listings">
                 <Button variant="outline" size="sm">
-                  View All
+                  {t("home.viewAll")}
                 </Button>
               </Link>
             </div>
@@ -370,15 +375,15 @@ export default function Index() {
             {servicesLoading ? (
               <div className="flex items-center gap-2 py-12 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading services...</span>
+                <span className="text-sm">{t("home.loadingServices")}</span>
               </div>
             ) : servicesError ? (
               <p className="text-sm text-muted-foreground py-12">
-                Failed to load services.
+                {t("home.failedServices")}
               </p>
             ) : services.length === 0 ? (
               <p className="text-sm text-muted-foreground py-12">
-                No services match your filters.
+                {t("home.noServices")}
               </p>
             ) : (
               <div className="overflow-x-auto pb-4 -mx-6 px-6">
@@ -400,10 +405,10 @@ export default function Index() {
               <ArrowRight className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2">
-              No listings found
+              {t("home.noListingsTitle")}
             </h3>
             <p className="text-muted-foreground max-w-xs">
-              Try adjusting your filters to find what you are looking for.
+              {t("home.noListingsBody")}
             </p>
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
 import { useSelector } from "react-redux";
@@ -20,8 +20,28 @@ import {
   Gauge,
 } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import type { TranslationKey } from "@/i18n";
+
+const RENTAL_PERIOD_KEYS: Record<string, TranslationKey> = {
+  daily: "common.daily",
+  weekly: "common.weekly",
+  monthly: "common.monthly",
+  yearly: "common.yearly",
+};
+
+const CAR_TYPE_KEYS: Record<string, TranslationKey> = {
+  electric: "common.electric",
+  fuel: "common.fuel",
+};
+
+const CONDITION_KEYS: Record<string, TranslationKey> = {
+  new: "common.newCondition",
+  used: "common.usedCondition",
+};
 
 export default function CarDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -37,6 +57,33 @@ export default function CarDetailPage() {
   const car = data?.data?.listing;
   const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
+  const trRentalPeriod = useCallback(
+    (period?: string) => {
+      if (!period) return "";
+      const key = RENTAL_PERIOD_KEYS[period];
+      return key ? t(key) : period;
+    },
+    [t],
+  );
+
+  const trCarType = useCallback(
+    (type?: string) => {
+      if (!type) return "";
+      const key = CAR_TYPE_KEYS[type];
+      return key ? t(key) : type;
+    },
+    [t],
+  );
+
+  const trCondition = useCallback(
+    (condition?: string) => {
+      if (!condition) return "";
+      const key = CONDITION_KEYS[condition];
+      return key ? t(key) : condition;
+    },
+    [t],
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -51,9 +98,11 @@ export default function CarDetailPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <main className="flex-1 container px-4 py-16 text-center">
-          <p className="text-muted-foreground mb-4">Car not found.</p>
+          <p className="text-muted-foreground mb-4">
+            {t("listings.carNotFound")}
+          </p>
           <Button variant="outline" onClick={() => router.back()}>
-            Go back
+            {t("common.goBack")}
           </Button>
         </main>
       </div>
@@ -80,6 +129,13 @@ export default function CarDetailPage() {
     car.brand !== undefined ||
     car.carModel !== undefined;
 
+  const listingModeLabel =
+    car.listingMode === "rent"
+      ? t("common.rent")
+      : car.listingMode === "sell"
+        ? t("common.sell")
+        : car.listingMode;
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 py-8 md:py-16">
@@ -88,7 +144,7 @@ export default function CarDetailPage() {
             href="/car-listings"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to cars
+            <ArrowLeft className="h-4 w-4" /> {t("listings.backToCars")}
           </Link>
 
           <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-glass">
@@ -101,7 +157,7 @@ export default function CarDetailPage() {
 
               <div className="absolute top-4 left-4 flex gap-2">
                 <span className="bg-background/90 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/20">
-                  Car
+                  {t("common.car")}
                 </span>
                 {car.listingMode && (
                   <Badge
@@ -112,7 +168,7 @@ export default function CarDetailPage() {
                         : "bg-green-500/90 text-white border-0 text-[10px] uppercase tracking-widest"
                     }
                   >
-                    {car.listingMode}
+                    {listingModeLabel}
                   </Badge>
                 )}
               </div>
@@ -162,7 +218,10 @@ export default function CarDetailPage() {
                   >
                     <img
                       src={img}
-                      alt={`${car.title} image ${i + 1}`}
+                      alt={t("listings.listingImage", {
+                        title: car.title,
+                        index: i + 1,
+                      })}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -177,7 +236,7 @@ export default function CarDetailPage() {
                 </span>
                 {car.condition && (
                   <span className="capitalize text-xs bg-muted px-2 py-1 rounded-md">
-                    {car.condition}
+                    {trCondition(car.condition)}
                   </span>
                 )}
               </div>
@@ -189,7 +248,10 @@ export default function CarDetailPage() {
               <p className="text-3xl font-bold text-primary mb-6">
                 {car.price.toLocaleString()}{" "}
                 <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  Br{car.rentalPeriod ? ` / ${car.rentalPeriod}` : ""}
+                  {t("common.br")}
+                  {car.rentalPeriod
+                    ? ` / ${trRentalPeriod(car.rentalPeriod)}`
+                    : ""}
                 </span>
               </p>
 
@@ -202,7 +264,7 @@ export default function CarDetailPage() {
                         {car.brand}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Brand
+                        {t("common.brand")}
                       </span>
                     </div>
                   )}
@@ -213,7 +275,7 @@ export default function CarDetailPage() {
                         {car.carModel}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Model
+                        {t("common.model")}
                       </span>
                     </div>
                   )}
@@ -225,10 +287,10 @@ export default function CarDetailPage() {
                         <Fuel className="h-5 w-5 text-primary" />
                       )}
                       <span className="text-base font-bold text-foreground capitalize">
-                        {car.carType}
+                        {trCarType(car.carType)}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Fuel Type
+                        {t("common.fuelType")}
                       </span>
                     </div>
                   )}
@@ -236,10 +298,10 @@ export default function CarDetailPage() {
                     <div className="flex flex-col items-center gap-1.5 bg-muted/50 rounded-xl px-3 py-4 border border-border">
                       <Car className="h-5 w-5 text-primary" />
                       <span className="text-base font-bold text-foreground capitalize">
-                        {car.condition}
+                        {trCondition(car.condition)}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Condition
+                        {t("common.condition")}
                       </span>
                     </div>
                   )}
@@ -250,10 +312,10 @@ export default function CarDetailPage() {
 
               <div className="space-y-3 mb-10">
                 <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                  Description
+                  {t("common.description")}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed font-medium">
-                  {car.description || "No description provided for this car."}
+                  {car.description || t("listings.noCarDescription")}
                 </p>
               </div>
 

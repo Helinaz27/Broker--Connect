@@ -12,10 +12,12 @@ import {
   useResetPasswordMutation,
 } from "@/store/apis/userApi";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type Step = "email" | "otp" | "reset";
 
 export default function ForgottenPassword() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [resetToken, setResetToken] = useState("");
@@ -37,7 +39,8 @@ export default function ForgottenPassword() {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      const nextValue = name === "otp" ? value.replace(/\D/g, "").slice(0, 6) : value;
+      const nextValue =
+        name === "otp" ? value.replace(/\D/g, "").slice(0, 6) : value;
       setFormData((prev) => ({ ...prev, [name]: nextValue }));
       if (errors[name]) {
         setErrors((prev) => {
@@ -52,27 +55,27 @@ export default function ForgottenPassword() {
 
   const validateEmail = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.email.trim()) newErrors.email = t("auth.emailRequired");
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = "Invalid email address";
+      newErrors.email = t("auth.emailInvalid");
     return newErrors;
-  }, [formData.email]);
+  }, [formData.email, t]);
 
   const validateOTP = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    if (!formData.otp.trim()) newErrors.otp = "OTP is required";
-    else if (formData.otp.length !== 6) newErrors.otp = "OTP must be 6 digits";
+    if (!formData.otp.trim()) newErrors.otp = t("auth.otpRequired");
+    else if (formData.otp.length !== 6) newErrors.otp = t("auth.otpSixDigits");
     return newErrors;
-  }, [formData.otp]);
+  }, [formData.otp, t]);
 
   const validateReset = useCallback(() => {
     const newErrors: Record<string, string> = {};
     if (formData.newPassword.length < 6)
-      newErrors.newPassword = "Password must be at least 6 characters";
+      newErrors.newPassword = t("auth.passwordMinLength");
     if (formData.newPassword !== formData.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
+      newErrors.confirmPassword = t("auth.passwordsMustMatch");
     return newErrors;
-  }, [formData.newPassword, formData.confirmPassword]);
+  }, [formData.newPassword, formData.confirmPassword, t]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +90,12 @@ export default function ForgottenPassword() {
       if (response.success) {
         setErrors({});
         setStep("otp");
-        setSuccessMessage("Check your email for the verification code");
+        setSuccessMessage(t("auth.checkEmailCode"));
       }
     } catch (err: unknown) {
       const message =
         (err as { data?: { message?: string } })?.data?.message ||
-        "Failed to send verification code";
+        t("auth.sendCodeFailed");
       toast.error(message);
       setErrors({ email: message });
     }
@@ -121,7 +124,7 @@ export default function ForgottenPassword() {
     } catch (err: unknown) {
       const message =
         (err as { data?: { message?: string } })?.data?.message ||
-        "Invalid verification code";
+        t("auth.invalidVerificationCode");
       toast.error(message);
       setErrors({ otp: message });
     }
@@ -136,7 +139,7 @@ export default function ForgottenPassword() {
     }
 
     if (!resetToken) {
-      toast.error("Session expired. Please start again.");
+      toast.error(t("auth.sessionExpired"));
       setStep("email");
       return;
     }
@@ -149,20 +152,27 @@ export default function ForgottenPassword() {
 
       if (response.success) {
         setErrors({});
-        setSuccessMessage("Password has been reset successfully!");
-        toast.success("Password reset successfully!");
+        setSuccessMessage(t("auth.passwordUpdated"));
+        toast.success(t("auth.passwordUpdated"));
         setTimeout(() => router.push("/login"), 2000);
       }
     } catch (err: unknown) {
       const message =
         (err as { data?: { message?: string } })?.data?.message ||
-        "Failed to reset password";
+        t("auth.resetPasswordFailed");
       toast.error(message);
       setErrors({ form: message });
     }
   };
 
   const isLoading = isSending || isVerifying || isResetting;
+
+  const stepDescription =
+    step === "email"
+      ? t("auth.resetStepEmail")
+      : step === "otp"
+        ? t("auth.resetStepCode")
+        : t("auth.resetStepNew");
 
   return (
     <>
@@ -173,20 +183,14 @@ export default function ForgottenPassword() {
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8 text-sm font-medium group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Sign In
+            {t("auth.backToSignIn")}
           </Link>
 
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Reset Password
+              {t("auth.resetPassword")}
             </h1>
-            <p className="text-muted-foreground">
-              {step === "email"
-                ? "Enter your email address to receive an OTP"
-                : step === "otp"
-                  ? "Enter the 6-digit code sent to your email"
-                  : "Create a strong new password for your account"}
-            </p>
+            <p className="text-muted-foreground">{stepDescription}</p>
           </div>
 
           {successMessage && (
@@ -199,7 +203,7 @@ export default function ForgottenPassword() {
             <form onSubmit={handleEmailSubmit} className="space-y-6">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  Email Address
+                  {t("auth.email")}
                 </label>
                 <input
                   type="email"
@@ -207,7 +211,7 @@ export default function ForgottenPassword() {
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isLoading}
-                  placeholder="name@example.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   className={`w-full px-4 py-3 bg-muted/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50 ${
                     errors.email ? "border-red-500" : "border-border"
                   }`}
@@ -226,10 +230,10 @@ export default function ForgottenPassword() {
                 {isSending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    {t("auth.sending")}
                   </>
                 ) : (
-                  "Send Verification Code"
+                  t("auth.sendVerificationCode")
                 )}
               </Button>
             </form>
@@ -239,7 +243,7 @@ export default function ForgottenPassword() {
             <form onSubmit={handleOTPSubmit} className="space-y-6">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  Verification Code
+                  {t("auth.verificationCode")}
                 </label>
                 <input
                   type="text"
@@ -269,10 +273,10 @@ export default function ForgottenPassword() {
                 {isVerifying ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verifying...
+                    {t("auth.verifying")}
                   </>
                 ) : (
-                  "Verify Code"
+                  t("auth.verifyCode")
                 )}
               </Button>
               <button
@@ -280,7 +284,7 @@ export default function ForgottenPassword() {
                 onClick={() => setStep("email")}
                 className="w-full text-sm text-muted-foreground hover:text-primary font-medium transition-colors py-2"
               >
-                Resend code or use a different email
+                {t("auth.resendOrDifferentEmail")}
               </button>
             </form>
           )}
@@ -290,14 +294,14 @@ export default function ForgottenPassword() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    New Password
+                    {t("auth.newPassword")}
                   </label>
                   <PasswordInput
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleChange}
                     disabled={isResetting}
-                    placeholder="••••••••"
+                    placeholder={t("auth.passwordPlaceholder")}
                     className={`w-full px-4 py-3 bg-muted/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50 ${
                       errors.newPassword ? "border-red-500" : "border-border"
                     }`}
@@ -311,14 +315,14 @@ export default function ForgottenPassword() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    Confirm New Password
+                    {t("auth.confirmNewPassword")}
                   </label>
                   <PasswordInput
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     disabled={isResetting}
-                    placeholder="••••••••"
+                    placeholder={t("auth.passwordPlaceholder")}
                     className={`w-full px-4 py-3 bg-muted/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50 ${
                       errors.confirmPassword
                         ? "border-red-500"
@@ -341,10 +345,10 @@ export default function ForgottenPassword() {
                 {isResetting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
+                    {t("auth.updating")}
                   </>
                 ) : (
-                  "Update Password"
+                  t("auth.updatePassword")
                 )}
               </Button>
             </form>

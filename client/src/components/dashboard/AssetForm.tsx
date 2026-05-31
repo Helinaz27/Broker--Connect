@@ -18,6 +18,7 @@ import { useCreateListingMutation } from "@/store/apis/listingsApi";
 import { useSearchPlatformFeesQuery } from "@/store/apis/platformFeeApi";
 import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 // ─── form state shapes ────────────────────────────────────────────────────────
 
@@ -147,14 +148,15 @@ export const defaultServiceForm: ServiceFormState = {
 // ─── Buy Coins Modal ──────────────────────────────────────────────────────────
 
 function BuyCoinsModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage();
   const [coinsRequested, setCoinsRequested] = useState(100);
   const [initiateChapa, { isLoading }] = useInitiateChapaMutation();
 
   const packages = [
-    { coins: 50, label: "Starter" },
-    { coins: 100, label: "Basic" },
-    { coins: 250, label: "Popular" },
-    { coins: 500, label: "Pro" },
+    { coins: 50, label: t("dashboard.starter") },
+    { coins: 100, label: t("dashboard.basic") },
+    { coins: 250, label: t("dashboard.popular") },
+    { coins: 500, label: t("dashboard.pro") },
   ];
 
   const COIN_PRICE_IN_BIRR = 1;
@@ -162,7 +164,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
   const handleBuy = async () => {
     if (coinsRequested < 1) {
-      toast.error("Please enter a valid coin amount.");
+      toast.error(t("dashboard.validCoinAmount"));
       return;
     }
     try {
@@ -171,7 +173,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
         window.location.href = result.data.checkout_url;
       }
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to initiate payment.");
+      toast.error(err?.data?.message ?? t("dashboard.failedInitiatePayment"));
     }
   };
 
@@ -188,9 +190,9 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
               <Coins className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-lg">Buy Coins</h2>
+              <h2 className="font-bold text-lg">{t("dashboard.buyCoins")}</h2>
               <p className="text-xs text-muted-foreground">
-                Paid via Chapa · ETB
+                {t("dashboard.paidViaChapa")}
               </p>
             </div>
           </div>
@@ -223,7 +225,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
-            Custom Amount
+            {t("dashboard.customAmount")}
           </label>
           <input
             type="number"
@@ -233,29 +235,29 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
               setCoinsRequested(Math.max(1, parseInt(e.target.value) || 1))
             }
             className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-            placeholder="Enter coin amount"
+            placeholder={t("dashboard.enterCoinAmount")}
           />
         </div>
 
         <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              You Pay
+              {t("dashboard.youPay")}
             </p>
             <p className="text-2xl font-extrabold text-foreground">
               {totalBirr.toLocaleString()}{" "}
               <span className="text-sm font-bold text-muted-foreground">
-                ETB
+                {t("common.etb")}
               </span>
             </p>
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              You Get
+              {t("dashboard.youGet")}
             </p>
             <p className="text-2xl font-extrabold text-primary">
               {coinsRequested.toLocaleString()}{" "}
-              <span className="text-sm font-bold">coins</span>
+              <span className="text-sm font-bold">{t("common.coins")}</span>
             </p>
           </div>
         </div>
@@ -268,18 +270,18 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Redirecting…
+              {t("dashboard.redirecting")}
             </>
           ) : (
             <>
               <Coins className="h-4 w-4" />
-              Proceed to Payment
+              {t("dashboard.proceedToPayment")}
             </>
           )}
         </Button>
 
         <p className="text-center text-[10px] text-muted-foreground">
-          Powered by Chapa · Secure payment gateway
+          {t("dashboard.poweredByChapa")}
         </p>
       </div>
     </div>
@@ -329,12 +331,14 @@ function CoinCostPreview({
   noFeeFound: boolean;
   onBuyCoins: () => void;
 }) {
+  const { t } = useLanguage();
+
   if (isFeeLoading) {
     return (
       <div className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-muted/20">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         <span className="text-sm text-muted-foreground">
-          Calculating posting cost…
+          {t("dashboard.calculatingPostingCost")}
         </span>
       </div>
     );
@@ -345,8 +349,7 @@ function CoinCostPreview({
       <div className="flex items-start gap-3 p-4 rounded-2xl border border-destructive/30 bg-destructive/5">
         <AlertCircle className="h-4 w-4 mt-0.5 text-destructive flex-shrink-0" />
         <p className="text-sm text-destructive">
-          No active posting fee configured for this listing type. Please contact
-          admin.
+          {t("dashboard.noPostingFeeConfigured")}
         </p>
       </div>
     );
@@ -453,6 +456,7 @@ export function AssetForm({
   setServiceForm,
   onSuccess,
 }: AssetFormProps) {
+  const { t } = useLanguage();
   const currentUser = useSelector((state: RootState) => state.user.currentUser);
   const [createListing, { isLoading }] = useCreateListingMutation();
   const [showBuyCoins, setShowBuyCoins] = useState(false);
@@ -546,10 +550,10 @@ export function AssetForm({
   const isKycVerified = currentUser?.isKYCVerified ?? false;
   const coins = currentUser?.coins ?? 0;
   const pageTitle = isHouse
-    ? "Post House"
+    ? t("dashboard.postHouse")
     : isCar
-      ? "List Car"
-      : "Offer Service";
+      ? t("dashboard.postCar")
+      : t("dashboard.postService");
 
   if (!isKycVerified) {
     return (
@@ -557,8 +561,8 @@ export function AssetForm({
         <h1 className="text-3xl font-bold">{pageTitle}</h1>
         <GuardBanner
           icon={ShieldCheck}
-          title="KYC Verification Required"
-          message="You must complete identity verification before posting a listing. Go to your profile and submit your KYC documents."
+          title={t("dashboard.kycVerificationRequired")}
+          message={t("dashboard.kycVerificationMessage")}
           color="border-amber-500/30 bg-amber-500/5 text-amber-600"
         />
       </div>
@@ -575,8 +579,8 @@ export function AssetForm({
           <h1 className="text-3xl font-bold">{pageTitle}</h1>
           <GuardBanner
             icon={Coins}
-            title="Insufficient Coins"
-            message="You need coins to post a listing. Purchase coins to continue."
+            title={t("dashboard.insufficientCoinsTitle")}
+            message={t("dashboard.insufficientCoinsMessage")}
             color="border-blue-500/30 bg-blue-500/5 text-blue-600"
           />
           <Button
@@ -584,7 +588,7 @@ export function AssetForm({
             className="gap-2 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
           >
             <Coins className="h-4 w-4" />
-            Buy Coins
+            {t("dashboard.buyCoins")}
           </Button>
         </div>
       </>
@@ -604,13 +608,12 @@ export function AssetForm({
 
     const images = (currentForm as any).images as File[];
     if (!images || images.length === 0) {
-      toast.error("Please upload at least one image.");
+      toast.error(t("dashboard.pleaseUploadImage"));
       return;
     }
 
-    // Validate "other" free-text fields
     if (isHouse && houseForm.houseType === "others" && !houseTypeOther.trim()) {
-      toast.error("Please specify your house type.");
+      toast.error(t("dashboard.specifyHouseTypeError"));
       return;
     }
     if (
@@ -618,7 +621,7 @@ export function AssetForm({
       serviceForm.serviceType === "other" &&
       !serviceTypeOther.trim()
     ) {
-      toast.error("Please specify your service category.");
+      toast.error(t("dashboard.specifyServiceCategoryError"));
       return;
     }
 
@@ -701,10 +704,10 @@ export function AssetForm({
         }).unwrap();
       }
 
-      toast.success("Listing published successfully!");
+      toast.success(t("dashboard.listingPublished"));
       onSuccess?.();
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to publish listing.");
+      toast.error(err?.data?.message ?? t("dashboard.failedPublishListing"));
     }
   };
 
@@ -724,11 +727,11 @@ export function AssetForm({
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{pageTitle}</h1>
           <p className="text-muted-foreground font-medium">
-            Complete the asset dossier for global marketplace publishing.
+            {t("dashboard.completeAssetDossier")}
           </p>
           <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
             <Coins className="h-3.5 w-3.5" />
-            {coins} coins available
+            {t("dashboard.coinsAvailable", { count: coins })}
           </div>
         </div>
 
@@ -739,7 +742,7 @@ export function AssetForm({
           {/* Title, Price, Duration */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1 space-y-2">
-              <label className={labelStyle}>Asset Title</label>
+              <label className={labelStyle}>{t("dashboard.assetTitle")}</label>
               <input
                 type="text"
                 value={(currentForm as any).title}
@@ -749,7 +752,7 @@ export function AssetForm({
               />
             </div>
             <div className="space-y-2">
-              <label className={labelStyle}>Price (Br)</label>
+              <label className={labelStyle}>{t("dashboard.priceBr")}</label>
               <input
                 type="number"
                 value={(currentForm as any).price}
@@ -760,7 +763,7 @@ export function AssetForm({
               />
             </div>
             <div className="space-y-2">
-              <label className={labelStyle}>Duration (days)</label>
+              <label className={labelStyle}>{t("dashboard.durationDays")}</label>
               <input
                 type="number"
                 min={1}
@@ -777,7 +780,7 @@ export function AssetForm({
           {!isService && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className={labelStyle}>Listing Mode</label>
+                <label className={labelStyle}>{t("common.listingMode")}</label>
                 {/* FIX: value always bound to a concrete string from state */}
                 <select
                   className={inputStyle}
@@ -794,8 +797,8 @@ export function AssetForm({
                         )
                   }
                 >
-                  <option value="rent">For Rent</option>
-                  <option value="sell">For Sale</option>
+                  <option value="rent">{t("dashboard.forRent")}</option>
+                  <option value="sell">{t("dashboard.forSale")}</option>
                 </select>
               </div>
 
@@ -803,7 +806,7 @@ export function AssetForm({
               {((isHouse && houseForm.listingMode === "rent") ||
                 (isCar && carForm.listingMode === "rent")) && (
                 <div className="space-y-2 animate-in fade-in duration-300">
-                  <label className={labelStyle}>Rental Period</label>
+                  <label className={labelStyle}>{t("common.rentalPeriod")}</label>
                   <select
                     className={inputStyle}
                     value={
@@ -821,10 +824,10 @@ export function AssetForm({
                           )
                     }
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
+                    <option value="daily">{t("common.daily")}</option>
+                    <option value="weekly">{t("common.weekly")}</option>
+                    <option value="monthly">{t("common.monthly")}</option>
+                    <option value="yearly">{t("common.yearly")}</option>
                   </select>
                 </div>
               )}
@@ -833,12 +836,14 @@ export function AssetForm({
 
           {/* Description */}
           <div className="space-y-2">
-            <label className={labelStyle}>Detailed Description</label>
+            <label className={labelStyle}>
+              {t("dashboard.detailedDescription")}
+            </label>
             <textarea
               value={(currentForm as any).description}
               onChange={(e) => handleChange("description", e.target.value)}
               className={`${inputStyle} h-32 resize-none`}
-              placeholder="Provide comprehensive details about the asset..."
+              placeholder={t("dashboard.descriptionPlaceholder")}
               required
             />
           </div>
@@ -846,22 +851,22 @@ export function AssetForm({
           {/* Location */}
           <div className="space-y-4 pt-6 border-t border-border">
             <h3 className="text-sm font-bold text-foreground italic">
-              Location Details
+              {t("dashboard.locationDetails")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className={labelStyle}>City</label>
+                <label className={labelStyle}>{t("common.city")}</label>
                 <input
                   type="text"
                   value={(currentForm as any).locationCity}
                   onChange={(e) => handleChange("locationCity", e.target.value)}
                   className={inputStyle}
-                  placeholder="e.g. Addis Ababa"
+                  placeholder={t("common.cityPlaceholder")}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Place Name</label>
+                <label className={labelStyle}>{t("dashboard.placeName")}</label>
                 <input
                   type="text"
                   value={(currentForm as any).locationPlaceName}
@@ -874,7 +879,7 @@ export function AssetForm({
                 />
               </div>
               <div className="space-y-2">
-                <label className={labelStyle}>Sub City (Optional)</label>
+                <label className={labelStyle}>{t("dashboard.subCity")}</label>
                 <input
                   type="text"
                   value={(currentForm as any).locationSubCity}
@@ -887,7 +892,9 @@ export function AssetForm({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className={labelStyle}>Latitude (Opt)</label>
+                  <label className={labelStyle}>
+                    {t("dashboard.latitudeOpt")}
+                  </label>
                   <input
                     type="text"
                     value={(currentForm as any).lat}
@@ -897,7 +904,9 @@ export function AssetForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Longitude (Opt)</label>
+                  <label className={labelStyle}>
+                    {t("dashboard.longitudeOpt")}
+                  </label>
                   <input
                     type="text"
                     value={(currentForm as any).lng}
@@ -913,13 +922,13 @@ export function AssetForm({
           {/* Type-specific fields */}
           <div className="pt-6 border-t border-border">
             <h3 className="text-sm font-bold text-foreground italic mb-6">
-              Asset Specifics
+              {t("dashboard.assetSpecifics")}
             </h3>
 
             {isHouse && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
                 <div className="space-y-2">
-                  <label className={labelStyle}>House Type</label>
+                  <label className={labelStyle}>{t("common.houseType")}</label>
                   <select
                     className={inputStyle}
                     value={houseForm.houseType}
@@ -927,11 +936,13 @@ export function AssetForm({
                       handleHouseChange("houseType", e.target.value)
                     }
                   >
-                    <option value="apartment">Apartment</option>
-                    <option value="villa">Villa</option>
-                    <option value="condominium">Condominium</option>
-                    <option value="business">Business</option>
-                    <option value="others">Others</option>
+                    <option value="apartment">{t("common.apartment")}</option>
+                    <option value="villa">{t("common.villa")}</option>
+                    <option value="condominium">
+                      {t("common.condominium")}
+                    </option>
+                    <option value="business">{t("common.business")}</option>
+                    <option value="others">{t("common.others")}</option>
                   </select>
                   {houseForm.houseType === "others" && (
                     <input
@@ -939,14 +950,16 @@ export function AssetForm({
                       value={houseTypeOther}
                       onChange={(e) => setHouseTypeOther(e.target.value)}
                       className={`${inputStyle} mt-2 animate-in fade-in duration-200`}
-                      placeholder="Please specify house type…"
+                      placeholder={t("dashboard.specifyHouseType")}
                       required
                       autoFocus
                     />
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Bedrooms</label>
+                  <label className={labelStyle}>
+                    {t("common.bedroomsLabel")}
+                  </label>
                   <input
                     type="number"
                     min={0}
@@ -958,7 +971,9 @@ export function AssetForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Bathrooms</label>
+                  <label className={labelStyle}>
+                    {t("common.bathroomsLabel")}
+                  </label>
                   <input
                     type="number"
                     min={0}
@@ -970,7 +985,7 @@ export function AssetForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Area (sqm)</label>
+                  <label className={labelStyle}>{t("common.areaSqm")}</label>
                   <input
                     type="number"
                     min={1}
@@ -982,7 +997,9 @@ export function AssetForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Parking Slots</label>
+                  <label className={labelStyle}>
+                    {t("dashboard.parkingSlots")}
+                  </label>
                   <input
                     type="number"
                     min={0}
@@ -1005,7 +1022,7 @@ export function AssetForm({
                       className="h-5 w-5 rounded border-border text-primary focus:ring-primary/20"
                     />
                     <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-widest">
-                      Water Tanker
+                      {t("common.waterTanker")}
                     </span>
                   </label>
                 </div>
@@ -1015,7 +1032,7 @@ export function AssetForm({
             {isCar && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
                 <div className="space-y-2">
-                  <label className={labelStyle}>Brand</label>
+                  <label className={labelStyle}>{t("common.brand")}</label>
                   <input
                     type="text"
                     value={carForm.brand}
@@ -1025,7 +1042,7 @@ export function AssetForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Model</label>
+                  <label className={labelStyle}>{t("common.model")}</label>
                   <input
                     type="text"
                     value={carForm.carModel}
@@ -1037,7 +1054,7 @@ export function AssetForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Car Type</label>
+                  <label className={labelStyle}>{t("common.carType")}</label>
                   <select
                     className={inputStyle}
                     value={carForm.carType}
@@ -1048,8 +1065,8 @@ export function AssetForm({
                       )
                     }
                   >
-                    <option value="fuel">Fuel (ICE)</option>
-                    <option value="electric">Electric (EV)</option>
+                    <option value="fuel">{t("dashboard.fuelIce")}</option>
+                    <option value="electric">{t("dashboard.electricEv")}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -1064,8 +1081,8 @@ export function AssetForm({
                       )
                     }
                   >
-                    <option value="new">Brand New</option>
-                    <option value="used">Used</option>
+                    <option value="new">{t("dashboard.brandNew")}</option>
+                    <option value="used">{t("common.usedCondition")}</option>
                   </select>
                 </div>
               </div>
@@ -1074,7 +1091,9 @@ export function AssetForm({
             {isService && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
                 <div className="space-y-2">
-                  <label className={labelStyle}>Service Category</label>
+                  <label className={labelStyle}>
+                    {t("dashboard.serviceCategory")}
+                  </label>
                   <select
                     className={inputStyle}
                     value={serviceForm.serviceType}
@@ -1082,12 +1101,14 @@ export function AssetForm({
                       handleServiceChange("serviceType", e.target.value)
                     }
                   >
-                    <option value="plumber">Plumbing</option>
-                    <option value="electrician">Electrical</option>
-                    <option value="catering">Catering</option>
-                    <option value="cleaning">Cleaning</option>
-                    <option value="security">Security</option>
-                    <option value="other">Other</option>
+                    <option value="plumber">{t("dashboard.plumbing")}</option>
+                    <option value="electrician">
+                      {t("dashboard.electrical")}
+                    </option>
+                    <option value="catering">{t("dashboard.catering")}</option>
+                    <option value="cleaning">{t("dashboard.cleaning")}</option>
+                    <option value="security">{t("dashboard.security")}</option>
+                    <option value="other">{t("dashboard.other")}</option>
                   </select>
                   {serviceForm.serviceType === "other" && (
                     <input
@@ -1095,14 +1116,14 @@ export function AssetForm({
                       value={serviceTypeOther}
                       onChange={(e) => setServiceTypeOther(e.target.value)}
                       className={`${inputStyle} mt-2 animate-in fade-in duration-200`}
-                      placeholder="Please specify service category…"
+                      placeholder={t("dashboard.specifyServiceCategory")}
                       required
                       autoFocus
                     />
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>Rental Period</label>
+                  <label className={labelStyle}>{t("common.rentalPeriod")}</label>
                   <select
                     className={inputStyle}
                     value={serviceForm.rentalPeriod}
@@ -1113,10 +1134,10 @@ export function AssetForm({
                       )
                     }
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
+                    <option value="daily">{t("common.daily")}</option>
+                    <option value="weekly">{t("common.weekly")}</option>
+                    <option value="monthly">{t("common.monthly")}</option>
+                    <option value="yearly">{t("common.yearly")}</option>
                   </select>
                 </div>
               </div>
@@ -1127,20 +1148,17 @@ export function AssetForm({
           <div className="pt-6 border-t border-border space-y-3">
             <div>
               <h3 className="text-sm font-bold text-foreground italic">
-                Contact Access Settings
+                {t("dashboard.contactAccessSettings")}
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                By default, the platform sets a minimum coin cost for users to
-                unlock your contact details. You can raise it above the default
-                to reduce unwanted contacts — but you cannot set it below the
-                platform minimum.
+                {t("dashboard.contactAccessDesc")}
               </p>
             </div>
             <div className="space-y-2">
               <label className={labelStyle}>
-                Contact Coin Limit{" "}
+                {t("common.contactCoinLimit")}{" "}
                 <span className="normal-case tracking-normal font-normal text-muted-foreground">
-                  (optional — leave blank to use platform default)
+                  {t("dashboard.contactCoinLimitOptional")}
                 </span>
               </label>
               <input
@@ -1154,15 +1172,14 @@ export function AssetForm({
                 placeholder="e.g. 20"
               />
               <p className="text-[10px] text-muted-foreground ml-1">
-                If you enter a value lower than the platform fee, the platform
-                default is used automatically.
+                {t("dashboard.contactCoinLimitHint")}
               </p>
             </div>
           </div>
 
           {/* Image Upload */}
           <div className="pt-6 border-t border-border space-y-4">
-            <label className={labelStyle}>Visual Assets (Images)</label>
+            <label className={labelStyle}>{t("dashboard.visualAssets")}</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
               {((currentForm as any).images as File[])?.map(
                 (img: File, index: number) => (
@@ -1195,7 +1212,7 @@ export function AssetForm({
                 />
                 <Upload className="h-6 w-6 text-muted-foreground" />
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Upload
+                  {t("dashboard.upload")}
                 </span>
               </label>
             </div>
@@ -1224,19 +1241,19 @@ export function AssetForm({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Publishing…
+                {t("dashboard.publishing")}
               </>
             ) : !canPublish &&
               estimatedCost !== null &&
               coins < estimatedCost ? (
               <>
                 <ShoppingCart className="h-4 w-4" />
-                Insufficient Coins — Buy to Publish
+                {t("dashboard.insufficientCoinsBuyToPublish")}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4" />
-                Publish Asset to Marketplace
+                {t("dashboard.publishAssetToMarketplace")}
               </>
             )}
           </Button>

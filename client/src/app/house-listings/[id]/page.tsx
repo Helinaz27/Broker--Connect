@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGetListingByIdQuery } from "@/store/apis/listingsApi";
 import { useSelector } from "react-redux";
@@ -21,8 +21,26 @@ import {
   Droplets,
 } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import type { TranslationKey } from "@/i18n";
+
+const RENTAL_PERIOD_KEYS: Record<string, TranslationKey> = {
+  daily: "common.daily",
+  weekly: "common.weekly",
+  monthly: "common.monthly",
+  yearly: "common.yearly",
+};
+
+const HOUSE_TYPE_KEYS: Record<string, TranslationKey> = {
+  apartment: "common.apartment",
+  villa: "common.villa",
+  condominium: "common.condominium",
+  business: "common.business",
+  others: "common.others",
+};
 
 export default function HouseDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -38,6 +56,24 @@ export default function HouseDetailPage() {
   const house = data?.data?.listing;
   const hasContactAccess = (data as any)?.data?.hasContactAccess ?? false;
 
+  const trRentalPeriod = useCallback(
+    (period?: string) => {
+      if (!period) return "";
+      const key = RENTAL_PERIOD_KEYS[period];
+      return key ? t(key) : period;
+    },
+    [t],
+  );
+
+  const trHouseType = useCallback(
+    (type?: string) => {
+      if (!type) return "";
+      const key = HOUSE_TYPE_KEYS[type];
+      return key ? t(key) : type;
+    },
+    [t],
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -52,9 +88,11 @@ export default function HouseDetailPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <main className="flex-1 container px-4 py-16 text-center">
-          <p className="text-muted-foreground mb-4">House not found.</p>
+          <p className="text-muted-foreground mb-4">
+            {t("listings.houseNotFound")}
+          </p>
           <Button variant="outline" onClick={() => router.back()}>
-            Go back
+            {t("common.goBack")}
           </Button>
         </main>
       </div>
@@ -84,6 +122,13 @@ export default function HouseDetailPage() {
     (house.parking !== undefined && house.parking > 0) ||
     house.tanker !== undefined;
 
+  const listingModeLabel =
+    house.listingMode === "rent"
+      ? t("common.rent")
+      : house.listingMode === "sell"
+        ? t("common.sell")
+        : house.listingMode;
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 py-8 md:py-16">
@@ -92,7 +137,7 @@ export default function HouseDetailPage() {
             href="/house-listings"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to houses
+            <ArrowLeft className="h-4 w-4" /> {t("listings.backToHouses")}
           </Link>
 
           <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-glass">
@@ -105,7 +150,7 @@ export default function HouseDetailPage() {
 
               <div className="absolute top-4 left-4 flex gap-2">
                 <span className="bg-background/90 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/20">
-                  House
+                  {t("common.house")}
                 </span>
                 {house.listingMode && (
                   <Badge
@@ -116,7 +161,7 @@ export default function HouseDetailPage() {
                         : "bg-green-500/90 text-white border-0 text-[10px] uppercase tracking-widest"
                     }
                   >
-                    {house.listingMode}
+                    {listingModeLabel}
                   </Badge>
                 )}
               </div>
@@ -166,7 +211,10 @@ export default function HouseDetailPage() {
                   >
                     <img
                       src={img}
-                      alt={`${house.title} image ${i + 1}`}
+                      alt={t("listings.listingImage", {
+                        title: house.title,
+                        index: i + 1,
+                      })}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -181,7 +229,7 @@ export default function HouseDetailPage() {
                 </span>
                 {house.houseType && (
                   <span className="capitalize text-xs bg-muted px-2 py-1 rounded-md">
-                    {house.houseType}
+                    {trHouseType(house.houseType)}
                   </span>
                 )}
               </div>
@@ -193,7 +241,10 @@ export default function HouseDetailPage() {
               <p className="text-3xl font-bold text-primary mb-6">
                 {house.price.toLocaleString()}{" "}
                 <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  Br{house.rentalPeriod ? ` / ${house.rentalPeriod}` : ""}
+                  {t("common.br")}
+                  {house.rentalPeriod
+                    ? ` / ${trRentalPeriod(house.rentalPeriod)}`
+                    : ""}
                 </span>
               </p>
 
@@ -206,7 +257,9 @@ export default function HouseDetailPage() {
                         {house.bedrooms}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Bedroom{house.bedrooms !== 1 ? "s" : ""}
+                        {house.bedrooms === 1
+                          ? t("common.bedroom")
+                          : t("common.bedroomsLabel")}
                       </span>
                     </div>
                   )}
@@ -217,7 +270,9 @@ export default function HouseDetailPage() {
                         {house.bathrooms}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Bathroom{house.bathrooms !== 1 ? "s" : ""}
+                        {house.bathrooms === 1
+                          ? t("common.bathroom")
+                          : t("common.bathroomsLabel")}
                       </span>
                     </div>
                   )}
@@ -228,7 +283,7 @@ export default function HouseDetailPage() {
                         {house.area_sqm}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        m²
+                        {t("common.areaSqm")}
                       </span>
                     </div>
                   )}
@@ -239,7 +294,7 @@ export default function HouseDetailPage() {
                         {house.parking}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Parking
+                        {t("common.parking")}
                       </span>
                     </div>
                   )}
@@ -247,10 +302,12 @@ export default function HouseDetailPage() {
                     <div className="flex flex-col items-center gap-1.5 bg-muted/50 rounded-xl px-3 py-4 border border-border">
                       <Droplets className="h-5 w-5 text-primary" />
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Tanker
+                        {t("common.tanker")}
                       </span>
                       <span className="text-thin text-sm text-muted-foreground">
-                        {house.tanker ? "included" : "not included"}
+                        {house.tanker
+                          ? t("common.included")
+                          : t("common.notIncluded")}
                       </span>
                     </div>
                   )}
@@ -261,11 +318,10 @@ export default function HouseDetailPage() {
 
               <div className="space-y-3 mb-10">
                 <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                  Description
+                  {t("common.description")}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed font-medium">
-                  {house.description ||
-                    "No description provided for this house."}
+                  {house.description || t("listings.noHouseDescription")}
                 </p>
               </div>
 

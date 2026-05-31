@@ -1,23 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -31,9 +14,11 @@ import {
 import { useState } from "react";
 import { PasswordInput } from "@/components/ui/password-input";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function SettingsPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -43,15 +28,15 @@ export default function SettingsPage() {
             href="/profile"
             className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80 transition-opacity mb-8"
           >
-            <ArrowLeft className="h-3 w-3" /> Back to profile
+            <ArrowLeft className="h-3 w-3" /> {t("pages.settingsBackProfile")}
           </Link>
 
           <div className="mb-10">
             <h1 className="text-4xl font-black text-foreground tracking-tight italic">
-              Platform Settings.
+              {t("pages.settingsTitle")}
             </h1>
             <p className="text-muted-foreground font-medium mt-2">
-              Manage your broker account preferences and security protocols.
+              {t("pages.settingsSubtitle")}
             </p>
           </div>
 
@@ -65,10 +50,10 @@ export default function SettingsPage() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-foreground">
-                  Profile Configuration
+                  {t("pages.profileConfig")}
                 </p>
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Update your professional name, email, and mobile link
+                  {t("pages.profileConfigDesc")}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
@@ -82,9 +67,11 @@ export default function SettingsPage() {
                 <Lock className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">Security Protocol</p>
+                <p className="font-bold text-foreground">
+                  {t("pages.securityProtocol")}
+                </p>
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Change your access password and session credentials
+                  {t("pages.securityProtocolDesc")}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
@@ -95,13 +82,15 @@ export default function SettingsPage() {
                 <Bell className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">Notification Matrix</p>
+                <p className="font-bold text-foreground">
+                  {t("pages.notificationMatrix")}
+                </p>
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Coming soon: Configure real-time alert preferences
+                  {t("pages.notificationMatrixDesc")}
                 </p>
               </div>
               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                Alpha
+                {t("pages.alpha")}
               </span>
             </div>
 
@@ -113,9 +102,11 @@ export default function SettingsPage() {
                 <Shield className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">Data Privacy</p>
+                <p className="font-bold text-foreground">
+                  {t("pages.dataPrivacy")}
+                </p>
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Review our commitment to your data security
+                  {t("pages.dataPrivacyDesc")}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
@@ -129,13 +120,13 @@ export default function SettingsPage() {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-card rounded-[2.5rem] max-w-md w-full p-10 border border-border/50 shadow-2xl animate-in zoom-in-95 duration-300">
             <h2 className="text-3xl font-black text-foreground tracking-tight mb-8 italic">
-              Reset Access.
+              {t("pages.resetAccess")}
             </h2>
 
             <div className="space-y-6 mb-10">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  Current Protocol
+                  {t("pages.currentProtocol")}
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
@@ -144,7 +135,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  New Protocol
+                  {t("pages.newProtocol")}
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
@@ -153,7 +144,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  Verify New Protocol
+                  {t("pages.verifyNewProtocol")}
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
@@ -168,16 +159,16 @@ export default function SettingsPage() {
                 className="flex-1 h-14 rounded-2xl font-bold border-border/60"
                 onClick={() => setShowPasswordModal(false)}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
                 onClick={() => {
-                  toast.success("Security credentials updated successfully.");
+                  toast.success(t("pages.securityUpdated"));
                   setShowPasswordModal(false);
                 }}
               >
-                Confirm Reset
+                {t("pages.confirmReset")}
               </Button>
             </div>
           </div>

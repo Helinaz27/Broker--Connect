@@ -7,6 +7,7 @@ import ListingsGrid from "@/components/ListingsGrid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -22,6 +23,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function CarListingsPage() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   const queryParams: ListingQueryParams = {
@@ -78,16 +80,18 @@ export default function CarListingsPage() {
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2 mb-4">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("common.back")}
             </Button>
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-            Cars
+            {t("header.cars")}
           </h1>
           <p className="text-lg text-muted-foreground">
             {pagination
-              ? `${pagination.total} car${pagination.total !== 1 ? "s" : ""} available`
-              : "Browse all available car listings"}
+              ? pagination.total === 1
+                ? t("listings.carAvailable", { count: pagination.total })
+                : t("listings.carsAvailable", { count: pagination.total })
+              : t("listings.browseCars")}
           </p>
         </div>
 
@@ -95,11 +99,11 @@ export default function CarListingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             <div className="space-y-1 xl:col-span-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Search
+                {t("common.search")}
               </label>
               <input
                 type="text"
-                placeholder="Search titles, descriptions…"
+                placeholder={t("common.searchPlaceholder")}
                 value={filters.search}
                 onChange={(e) => update({ search: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -108,11 +112,11 @@ export default function CarListingsPage() {
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                City
+                {t("common.city")}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Addis Ababa"
+                placeholder={t("common.cityPlaceholder")}
                 value={filters.city}
                 onChange={(e) => update({ city: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -121,56 +125,56 @@ export default function CarListingsPage() {
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Type
+                {t("common.type")}
               </label>
               <select
                 value={filters.listingMode}
                 onChange={(e) => update({ listingMode: e.target.value as any })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
               >
-                <option value="all">All</option>
-                <option value="rent">Rent</option>
-                <option value="sell">Sell</option>
+                <option value="all">{t("common.all")}</option>
+                <option value="rent">{t("common.rent")}</option>
+                <option value="sell">{t("common.sell")}</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Car Type
+                {t("common.carType")}
               </label>
               <select
                 value={filters.carType}
                 onChange={(e) => update({ carType: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
               >
-                <option value="">All Types</option>
-                <option value="electric">Electric</option>
-                <option value="fuel">Fuel</option>
+                <option value="">{t("common.allTypes")}</option>
+                <option value="electric">{t("common.electric")}</option>
+                <option value="fuel">{t("common.fuel")}</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Condition
+                {t("common.condition")}
               </label>
               <select
                 value={filters.condition}
                 onChange={(e) => update({ condition: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
               >
-                <option value="">All</option>
-                <option value="new">New</option>
-                <option value="used">Used</option>
+                <option value="">{t("common.all")}</option>
+                <option value="new">{t("common.newCondition")}</option>
+                <option value="used">{t("common.usedCondition")}</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Brand
+                {t("common.brand")}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Toyota"
+                placeholder={t("listings.brandPlaceholder")}
                 value={filters.brand}
                 onChange={(e) => update({ brand: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -181,7 +185,7 @@ export default function CarListingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 max-w-sm">
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Min Price
+                {t("common.minPrice")}
               </label>
               <input
                 type="number"
@@ -201,12 +205,12 @@ export default function CarListingsPage() {
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Max Price
+                {t("common.maxPrice")}
               </label>
               <input
                 type="number"
                 min={0}
-                placeholder="Any"
+                placeholder={t("common.any")}
                 value={filters.maxPrice ?? ""}
                 onChange={(e) =>
                   update({
@@ -222,7 +226,7 @@ export default function CarListingsPage() {
 
           <div className="flex justify-end mt-4">
             <Button variant="outline" size="sm" onClick={handleReset}>
-              Reset Filters
+              {t("common.resetFilters")}
             </Button>
           </div>
         </div>
@@ -230,13 +234,13 @@ export default function CarListingsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-24 gap-3 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Loading listings…</span>
+            <span className="text-sm">{t("listings.loadingListings")}</span>
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center gap-4 py-24 text-muted-foreground">
-            <p className="text-sm">Failed to load listings.</p>
+            <p className="text-sm">{t("listings.failedListings")}</p>
             <Button variant="outline" size="sm" onClick={refetch}>
-              Try again
+              {t("common.tryAgain")}
             </Button>
           </div>
         ) : (
@@ -244,13 +248,13 @@ export default function CarListingsPage() {
             {isFetching && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Updating…
+                {t("common.updating")}
               </div>
             )}
 
             <ListingsGrid
               listings={gridItems}
-              emptyMessage="No cars found. Try adjusting your filters."
+              emptyMessage={t("listings.noCarsFound")}
             />
 
             {pagination && pagination.pages > 1 && (
@@ -263,10 +267,13 @@ export default function CarListingsPage() {
                     setFilters((p) => ({ ...p, page: p.page - 1 }))
                   }
                 >
-                  Previous
+                  {t("common.previous")}
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {pagination.page} of {pagination.pages}
+                  {t("common.pageOf", {
+                    page: pagination.page,
+                    total: pagination.pages,
+                  })}
                 </span>
                 <Button
                   variant="outline"
@@ -276,7 +283,7 @@ export default function CarListingsPage() {
                     setFilters((p) => ({ ...p, page: p.page + 1 }))
                   }
                 >
-                  Next
+                  {t("common.next")}
                 </Button>
               </div>
             )}

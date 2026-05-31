@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Slider } from "@/components/ui/slider";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export interface FilterValues {
   search: string;
@@ -40,6 +41,7 @@ export default function FilterPanel({
   showListingMode = false,
   className,
 }: FilterPanelProps) {
+  const { t } = useLanguage();
   const [priceRange, setPriceRange] = useState<[number, number]>([
     filters.priceMin,
     filters.priceMax,
@@ -62,13 +64,17 @@ export default function FilterPanel({
     filters.priceMax < 100000 ||
     (filters.listingMode && filters.listingMode !== "all");
 
+  const priceLabel = t("filters.priceRange")
+    .replace("${min}", priceRange[0].toLocaleString())
+    .replace("${max}", priceRange[1].toLocaleString());
+
   return (
     <Card className={cn("bg-card", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg">Filters</CardTitle>
-            <CardDescription>Refine your search</CardDescription>
+            <CardTitle className="text-lg">{t("filters.filters")}</CardTitle>
+            <CardDescription>{t("filters.refineSearch")}</CardDescription>
           </div>
           {hasActiveFilters && onReset && (
             <Button
@@ -84,14 +90,13 @@ export default function FilterPanel({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Search */}
         <div className="space-y-2">
           <Label htmlFor="search" className="text-sm font-medium">
-            Search
+            {t("common.search")}
           </Label>
           <Input
             id="search"
-            placeholder="Search by title..."
+            placeholder={t("filters.searchByTitle")}
             value={filters.search}
             onChange={(e) =>
               onFiltersChange({ ...filters, search: e.target.value })
@@ -100,10 +105,9 @@ export default function FilterPanel({
           />
         </div>
 
-        {/* Category */}
         <div className="space-y-2">
           <Label htmlFor="category" className="text-sm font-medium">
-            Category
+            {t("home.category")}
           </Label>
           <Select
             value={filters.category}
@@ -118,19 +122,20 @@ export default function FilterPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="house">Houses</SelectItem>
-              <SelectItem value="car">Cars</SelectItem>
-              <SelectItem value="otherService">Other Services</SelectItem>
+              <SelectItem value="all">{t("filters.allCategories")}</SelectItem>
+              <SelectItem value="house">{t("common.houses")}</SelectItem>
+              <SelectItem value="car">{t("common.cars")}</SelectItem>
+              <SelectItem value="otherService">
+                {t("common.otherServices")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Listing Mode (for houses and cars) */}
         {showListingMode && filters.category !== "otherService" && (
           <div className="space-y-2">
             <Label htmlFor="listingMode" className="text-sm font-medium">
-              Listing Mode
+              {t("common.listingMode")}
             </Label>
             <Select
               value={filters.listingMode || "all"}
@@ -145,22 +150,21 @@ export default function FilterPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="rent">Rent</SelectItem>
-                <SelectItem value="sell">Sell</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
+                <SelectItem value="rent">{t("common.rent")}</SelectItem>
+                <SelectItem value="sell">{t("common.sell")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         )}
 
-        {/* Location */}
         <div className="space-y-2">
           <Label htmlFor="location" className="text-sm font-medium">
-            Location
+            {t("common.location")}
           </Label>
           <Input
             id="location"
-            placeholder="Enter city or area..."
+            placeholder={t("filters.enterCity")}
             value={filters.location}
             onChange={(e) =>
               onFiltersChange({ ...filters, location: e.target.value })
@@ -169,12 +173,8 @@ export default function FilterPanel({
           />
         </div>
 
-        {/* Price Range */}
         <div className="space-y-4">
-          <Label className="text-sm font-medium">
-            Price Range: ${priceRange[0].toLocaleString()} - $
-            {priceRange[1].toLocaleString()}
-          </Label>
+          <Label className="text-sm font-medium">{priceLabel}</Label>
           <Slider
             value={priceRange}
             onValueChange={handlePriceChange}

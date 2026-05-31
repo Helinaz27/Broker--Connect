@@ -25,6 +25,7 @@ import {
   useMarkOneAsReadMutation,
   AppNotification,
 } from "@/store/apis/notificationApi";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const iconMap: Record<string, React.ReactNode> = {
   kyc_submitted: <FileText className="h-4 w-4" />,
@@ -73,22 +74,23 @@ const getColor = (type: string) =>
   colorMap[type] ??
   "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
 
-const formatTime = (dateStr: string) => {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  if (diffHr < 24) return `${diffHr} hr ago`;
-  if (diffDay === 1) return "Yesterday";
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
-};
-
 export default function NotificationsPage() {
+  const { t } = useLanguage();
   const router = useRouter();
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffMin < 1) return t("pages.justNow");
+    if (diffMin < 60) return t("pages.minAgo", { n: diffMin });
+    if (diffHr < 24) return t("pages.hrAgo", { n: diffHr });
+    if (diffDay === 1) return t("pages.yesterday");
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  };
   const { currentUser, isAuthenticated } = useAppSelector((s) => s.user);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [page, setPage] = useState(1);
@@ -169,7 +171,7 @@ export default function NotificationsPage() {
           <div className="flex items-center gap-2.5">
             <Bell className="h-5 w-5 text-slate-700 dark:text-slate-300" />
             <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-              Notifications
+              {t("pages.notificationsTitle")}
             </h1>
             {unreadCount > 0 && (
               <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-medium text-white">
@@ -183,27 +185,32 @@ export default function NotificationsPage() {
               className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
             >
               <Check className="h-3.5 w-3.5" />
-              Mark all read
+              {t("pages.markAllRead")}
             </button>
           )}
         </div>
 
         <div className="mb-4 flex gap-1 rounded-lg bg-slate-100 dark:bg-slate-800/60 p-1 w-fit">
-          {(["all", "unread"] as const).map((tab) => (
+          {(
+            [
+              { id: "all" as const, label: t("pages.tabAll") },
+              { id: "unread" as const, label: t("pages.tabUnread") },
+            ] as const
+          ).map((tab) => (
             <button
-              key={tab}
+              key={tab.id}
               onClick={() => {
-                setFilter(tab);
+                setFilter(tab.id);
                 setPage(1);
               }}
               className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-all ${
-                filter === tab
+                filter === tab.id
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
             >
-              {tab}
-              {tab === "unread" && unreadCount > 0 && (
+              {tab.label}
+              {tab.id === "unread" && unreadCount > 0 && (
                 <span className="ml-1.5 text-xs text-indigo-500">
                   {unreadCount}
                 </span>
@@ -221,8 +228,8 @@ export default function NotificationsPage() {
             <Bell className="mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
             <p className="text-sm text-slate-400 dark:text-slate-500">
               {filter === "unread"
-                ? "No unread notifications"
-                : "No notifications yet"}
+                ? t("pages.noUnread")
+                : t("pages.noNotifications")}
             </p>
           </div>
         ) : (
@@ -266,7 +273,7 @@ export default function NotificationsPage() {
                   <button
                     onClick={(e) => handleRemoveLive(n.id, e)}
                     className="mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 dark:hover:text-red-400"
-                    aria-label="Dismiss"
+                    aria-label={t("pages.dismiss")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -281,17 +288,20 @@ export default function NotificationsPage() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="text-sm text-indigo-600 disabled:opacity-40 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                  Prev
+                  {t("common.previous")}
                 </button>
                 <span className="text-sm text-slate-500">
-                  {page} / {pagination.pages}
+                  {t("common.pageOf", {
+                    page,
+                    total: pagination.pages,
+                  })}
                 </span>
                 <button
                   disabled={page === pagination.pages}
                   onClick={() => setPage((p) => p + 1)}
                   className="text-sm text-indigo-600 disabled:opacity-40 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                  Next
+                  {t("common.next")}
                 </button>
               </div>
             )}

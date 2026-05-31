@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Noto_Sans_Ethiopic, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,10 +9,17 @@ import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ChatProvider } from "@/components/chat/ChatWidget";
+import { LanguageProvider } from "@/i18n/LanguageProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const notoEthiopic = Noto_Sans_Ethiopic({
+  subsets: ["ethiopic", "latin"],
+  variable: "--font-amharic",
   display: "swap",
 });
 
@@ -33,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} font-sans antialiased text-foreground bg-background`}
+        className={`${plusJakarta.variable} ${notoEthiopic.variable} font-sans antialiased text-foreground bg-background`}
       >
         <ThemeProvider
           attribute="class"
@@ -42,16 +49,18 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <StoreProvider>
-            <AuthProvider>
-              <ChatProvider>
-                <FavoritesProvider>
-                  <Header />
-                  {children}
-                  <Footer />
-                  <Toaster position="top-right" offset={72} />
-                </FavoritesProvider>
-              </ChatProvider>
-            </AuthProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <ChatProvider>
+                  <FavoritesProvider>
+                    <Header />
+                    {children}
+                    <Footer />
+                    <Toaster position="top-right" offset={72} />
+                  </FavoritesProvider>
+                </ChatProvider>
+              </AuthProvider>
+            </LanguageProvider>
           </StoreProvider>
         </ThemeProvider>
       </body>

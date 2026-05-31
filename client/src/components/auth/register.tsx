@@ -9,6 +9,7 @@ import { useAppDispatch } from "@/store/hooks";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, X, User, Mail, Phone, Lock } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface FormData {
   firstName: string;
@@ -20,7 +21,6 @@ interface FormData {
   agreeToTerms: boolean;
 }
 
-// Memoized InputField component to prevent unnecessary re-renders
 const InputField = memo(
   ({
     label,
@@ -94,6 +94,7 @@ const InputField = memo(
 InputField.displayName = "InputField";
 
 export default function Register() {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -119,7 +120,6 @@ export default function Register() {
         ...prev,
         [name]: type === "checkbox" ? checked : value,
       }));
-      // Clear error when user starts typing
       if (errors[name]) {
         setErrors((prev) => {
           const n = { ...prev };
@@ -133,29 +133,29 @@ export default function Register() {
 
   const validateForm = useCallback((): Record<string, string> => {
     const e: Record<string, string> = {};
-    if (!formData.firstName.trim()) e.firstName = "First name is required";
-    if (!formData.lastName.trim()) e.lastName = "Last name is required";
-    if (!formData.email.trim()) e.email = "Email is required";
+    if (!formData.firstName.trim())
+      e.firstName = t("auth.firstNameRequired");
+    if (!formData.lastName.trim()) e.lastName = t("auth.lastNameRequired");
+    if (!formData.email.trim()) e.email = t("auth.emailRequired");
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      e.email = "Invalid email address";
-    if (!formData.phone.trim()) e.phone = "Phone number is required";
-    if (!formData.password) e.password = "Password is required";
+      e.email = t("auth.emailInvalid");
+    if (!formData.phone.trim()) e.phone = t("auth.phoneRequired");
+    if (!formData.password) e.password = t("auth.passwordRequired");
     else if (formData.password.length < 6)
-      e.password = "Password must be at least 6 characters";
+      e.password = t("auth.passwordMinLength");
     if (!formData.confirmPassword)
-      e.confirmPassword = "Please confirm your password";
+      e.confirmPassword = t("auth.confirmPasswordRequired");
     else if (formData.password !== formData.confirmPassword)
-      e.confirmPassword = "Passwords do not match";
-    if (!formData.agreeToTerms) e.agreeToTerms = "You must agree to the terms";
+      e.confirmPassword = t("auth.passwordsMustMatch");
+    if (!formData.agreeToTerms) e.agreeToTerms = t("auth.agreeTermsRequired");
     return e;
-  }, [formData]);
+  }, [formData, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      // Show first error as toast
       const firstError = Object.values(validationErrors)[0];
       toast.error(firstError);
       return;
@@ -166,7 +166,7 @@ export default function Register() {
       const response = await register(registerData).unwrap();
 
       if (response.success && response.data) {
-        toast.success("Account created successfully!");
+        toast.success(t("auth.registerSuccess"));
         dispatch(
           setUser({ user: response.data.user, token: response.data.token }),
         );
@@ -176,7 +176,7 @@ export default function Register() {
       }
     } catch (err: any) {
       const errorMessage =
-        err?.data?.message || "Registration failed. Please try again.";
+        err?.data?.message || t("auth.registerFailed");
       toast.error(errorMessage);
       setErrors({ form: errorMessage });
     }
@@ -196,19 +196,19 @@ export default function Register() {
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 md:p-10 border border-border">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Create an account
+              {t("auth.createAnAccount")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Join Our Digital Broker Services
+              {t("auth.joinSubtitle")}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <InputField
-                label="First name"
+                label={t("auth.firstName")}
                 name="firstName"
-                placeholder="Abebe"
+                placeholder={t("auth.firstNamePlaceholder")}
                 icon={User}
                 value={formData.firstName}
                 error={errors.firstName}
@@ -219,9 +219,9 @@ export default function Register() {
                 disabled={isLoading}
               />
               <InputField
-                label="Last name"
+                label={t("auth.lastName")}
                 name="lastName"
-                placeholder="Kebede"
+                placeholder={t("auth.lastNamePlaceholder")}
                 icon={User}
                 value={formData.lastName}
                 error={errors.lastName}
@@ -234,10 +234,10 @@ export default function Register() {
             </div>
 
             <InputField
-              label="Email address"
+              label={t("auth.emailAddress")}
               name="email"
               type="email"
-              placeholder="abebe@example.com"
+              placeholder={t("auth.registerEmailPlaceholder")}
               icon={Mail}
               value={formData.email}
               error={errors.email}
@@ -249,10 +249,10 @@ export default function Register() {
             />
 
             <InputField
-              label="Phone number"
+              label={t("auth.phone")}
               name="phone"
               type="tel"
-              placeholder="+251 912 345 678"
+              placeholder={t("auth.phonePlaceholder")}
               icon={Phone}
               value={formData.phone}
               error={errors.phone}
@@ -264,10 +264,10 @@ export default function Register() {
             />
 
             <InputField
-              label="Password"
+              label={t("auth.password")}
               name="password"
               type="password"
-              placeholder="Create a password"
+              placeholder={t("auth.passwordCreatePlaceholder")}
               icon={Lock}
               value={formData.password}
               error={errors.password}
@@ -282,10 +282,10 @@ export default function Register() {
             />
 
             <InputField
-              label="Confirm password"
+              label={t("auth.confirmPassword")}
               name="confirmPassword"
               type="password"
-              placeholder="Confirm your password"
+              placeholder={t("auth.confirmPasswordPlaceholder")}
               icon={Lock}
               value={formData.confirmPassword}
               error={errors.confirmPassword}
@@ -313,19 +313,19 @@ export default function Register() {
                 htmlFor="agreeToTerms"
                 className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed"
               >
-                I agree to the{" "}
+                {t("auth.agreeTerms")}{" "}
                 <Link
                   href="/terms"
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Terms of Service
+                  {t("auth.termsOfService")}
                 </Link>{" "}
-                and{" "}
+                {t("auth.and")}{" "}
                 <Link
                   href="/privacy"
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Privacy Policy
+                  {t("auth.privacyPolicy")}
                 </Link>
               </label>
             </div>
@@ -338,22 +338,22 @@ export default function Register() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Creating account...
+                  {t("auth.creatingAccount")}
                 </>
               ) : (
-                "Create account"
+                t("auth.createAccount")
               )}
             </Button>
           </form>
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Already have an account?{" "}
+              {t("auth.alreadyHaveAccount")}{" "}
               <Link
                 href="/login"
                 className="text-blue-600 hover:text-blue-700 font-semibold"
               >
-                Sign in
+                {t("auth.signIn")}
               </Link>
             </p>
           </div>

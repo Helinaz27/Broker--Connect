@@ -1,4 +1,3 @@
-// client/src/components/ListingPageTemplate.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,6 +8,7 @@ import ListingCard from "@/components/ListingCard";
 import FilterSection from "@/components/FilterSection";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface Listing {
   id: string;
@@ -33,6 +33,7 @@ export default function ListingPage({
   listings,
   postLabel,
 }: ListingPageProps) {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState({
     priceRange: [0, 100000] as [number, number],
     location: "",
@@ -61,14 +62,16 @@ export default function ListingPage({
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
                 <div className="h-0.5 w-6 bg-primary" />
-                Marketplace
+                {t("common.marketplace")}
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
                 {title}
               </h1>
               <p className="text-muted-foreground font-medium">
-                Discover {filteredListings.length} premium {title.toLowerCase()}{" "}
-                listings
+                {t("filters.discoverPremium", {
+                  count: filteredListings.length,
+                  title: title.toLowerCase(),
+                })}
               </p>
             </div>
             <Button
@@ -107,10 +110,10 @@ export default function ListingPage({
                     <FilterSection.Icon className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-2">
-                    No listings found
+                    {t("common.noListingsFound")}
                   </h3>
                   <p className="text-muted-foreground max-w-xs">
-                    Try adjusting your filters to find what you're looking for.
+                    {t("filters.tryAdjustFilters")}
                   </p>
                 </div>
               )}

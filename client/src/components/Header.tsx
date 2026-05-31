@@ -35,6 +35,8 @@ import { toast } from "sonner";
 import { disconnectSocket, connectSocket, getSocket } from "@/lib/socket";
 import { useGetUnreadCountQuery } from "@/store/apis/notificationApi";
 import { AppNotification } from "@/store/apis/notificationApi";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type MenuItem = {
   href: string;
@@ -45,6 +47,7 @@ type MenuItem = {
 };
 
 export default function Header() {
+  const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -58,7 +61,7 @@ export default function Header() {
 
   const user = isAuthenticated ? currentUser : null;
   const userName = user
-    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User"
+    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || t("header.user")
     : "";
   const userInitials = userName
     .split(" ")
@@ -114,14 +117,14 @@ export default function Header() {
       await logout().unwrap();
       disconnectSocket();
       dispatch(clearUser());
-      toast.success("Logged out successfully");
+      toast.success(t("auth.logoutSuccess"));
       setMobileMenuOpen(false);
       setProfileOpen(false);
       router.push("/login");
     } catch (err: unknown) {
       const errorMessage =
         (err as { data?: { message?: string } })?.data?.message ||
-        "Logout failed. Please try again.";
+        t("auth.logoutFailed");
       toast.error(errorMessage);
     }
   };
@@ -134,10 +137,24 @@ export default function Header() {
 
   const desktopMenuItems: MenuItem[] = [
     ...(hasDashboardAccess
-      ? [{ href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }]
+      ? [
+          {
+            href: "/dashboard",
+            icon: LayoutDashboard,
+            label: t("header.dashboard"),
+          },
+        ]
       : []),
-    { href: "/profile", icon: User, label: "My Profile" },
-    { href: "/settings", icon: Settings, label: "Settings" },
+    { href: "/profile", icon: User, label: t("header.myProfile") },
+    { href: "/settings", icon: Settings, label: t("header.settings") },
+  ];
+
+  const navLinks = [
+    { href: "/", label: t("header.home") },
+    { href: "/house-listings", label: t("header.houses") },
+    { href: "/car-listings", label: t("header.cars") },
+    { href: "/service-listings", label: t("header.otherServices") },
+    { href: "/about-us", label: t("header.aboutUs") },
   ];
 
   return (
@@ -150,39 +167,19 @@ export default function Header() {
         <Logo size="md" />
 
         <nav className="hidden md:flex items-center gap-0.5">
-          <Link
-            href="/"
-            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="/house-listings"
-            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-          >
-            Houses
-          </Link>
-          <Link
-            href="/car-listings"
-            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-          >
-            Cars
-          </Link>
-          <Link
-            href="/service-listings"
-            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-          >
-            Other Services
-          </Link>
-          <Link
-            href="/about-us"
-            className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-          >
-            About Us
-          </Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
+          <LanguageSwitcher />
           <ModeToggle />
 
           {user && (
@@ -232,7 +229,7 @@ export default function Header() {
                       {userName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {(user.coins ?? 0).toLocaleString()} Coins
+                      {(user.coins ?? 0).toLocaleString()} {t("header.coins")}
                     </p>
                   </div>
                 </div>
@@ -261,7 +258,11 @@ export default function Header() {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-accent text-muted-foreground hover:text-destructive transition-colors text-sm font-medium w-full disabled:opacity-60"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                    <span>
+                      {isLoggingOut
+                        ? t("header.loggingOut")
+                        : t("header.logout")}
+                    </span>
                   </button>
                 </div>
               </HoverCardContent>
@@ -269,13 +270,14 @@ export default function Header() {
           ) : (
             <Link href="/login">
               <Button variant="default" size="sm" className="font-medium">
-                Sign in
+                {t("header.signIn")}
               </Button>
             </Link>
           )}
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
+          <LanguageSwitcher className="h-9 w-[110px]" />
           <ModeToggle />
           {user && (
             <Button
@@ -317,41 +319,16 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 flex flex-col gap-2">
-            <Link
-              href="/"
-              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              href="/house-listings"
-              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Houses
-            </Link>
-            <Link
-              href="/car-listings"
-              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Cars
-            </Link>
-            <Link
-              href="/service-listings"
-              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Other Services
-            </Link>
-            <Link
-              href="/about-us"
-              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              About Us
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
             <div className="h-px bg-border my-2" />
             {user ? (
               <>
@@ -362,7 +339,7 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
+                    {t("header.dashboard")}
                   </Link>
                 )}
                 <Link
@@ -371,7 +348,7 @@ export default function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="h-4 w-4" />
-                  My Profile
+                  {t("header.myProfile")}
                 </Link>
                 <Link
                   href="/settings"
@@ -379,7 +356,7 @@ export default function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Settings className="h-4 w-4" />
-                  Settings
+                  {t("header.settings")}
                 </Link>
                 <button
                   type="button"
@@ -390,7 +367,7 @@ export default function Header() {
                   className="text-sm font-medium px-3 py-2 rounded-md hover:bg-accent text-destructive transition-colors flex items-center gap-2 text-left"
                 >
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  {t("header.logout")}
                 </button>
               </>
             ) : (
@@ -400,7 +377,7 @@ export default function Header() {
                   size="sm"
                   className="w-full font-medium"
                 >
-                  Sign in
+                  {t("header.signIn")}
                 </Button>
               </Link>
             )}

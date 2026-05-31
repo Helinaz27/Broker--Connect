@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
 import { getListingPath } from "@/data/listings";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface Listing {
   id: string;
@@ -30,6 +31,7 @@ export function ActivityTable({
   filter,
   setFilter,
 }: ActivityTableProps) {
+  const { t } = useLanguage();
   const filteredListings = listings.filter(
     (l) => filter === "all" || l.type === filter,
   );
@@ -38,7 +40,7 @@ export function ActivityTable({
     <div className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden">
       <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-6">
         <h2 className="text-lg font-bold text-foreground tracking-tight">
-          Activity Stream
+          {t("dashboard.activityStream")}
         </h2>
         <div className="flex bg-muted/50 p-1 rounded-xl">
           {(["all", "rent", "sell"] as const).map((f) => (
@@ -47,7 +49,11 @@ export function ActivityTable({
               onClick={() => setFilter(f)}
               className={`px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${filter === f ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
-              {f}
+              {f === "all"
+                ? t("common.all")
+                : f === "rent"
+                  ? t("common.rent")
+                  : t("common.sell")}
             </button>
           ))}
         </div>
@@ -102,13 +108,15 @@ export function ActivityTable({
                   </div>
                 </td>
                 <td className="px-6 py-5 font-bold text-sm">
-                  {listing.price.toLocaleString()} Br
+                  {listing.price.toLocaleString()} {t("common.br")}
                 </td>
                 <td className="px-6 py-5">
                   <span
                     className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${listing.type === "rent" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}
                   >
-                    {listing.type}
+                    {listing.type === "rent"
+                      ? t("common.rent")
+                      : t("common.sell")}
                   </span>
                 </td>
                 <td className="px-6 py-5">
@@ -138,7 +146,13 @@ export function ActivityTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => toast.error(`Removing ${listing.title}`)}
+                      onClick={() =>
+                        toast.error(
+                          t("dashboard.removingListing", {
+                            title: listing.title,
+                          }),
+                        )
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

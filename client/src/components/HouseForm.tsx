@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface HouseFormData {
   title: string;
@@ -47,6 +48,7 @@ export default function HouseForm({
   isLoading = false,
   initialData,
 }: HouseFormProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<HouseFormData>({
     title: initialData?.title || "",
     description: initialData?.description || "",
@@ -88,10 +90,8 @@ export default function HouseForm({
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>List a House</CardTitle>
-        <CardDescription>
-          Provide details about your house listing
-        </CardDescription>
+        <CardTitle>{t("dashboard.listHouse")}</CardTitle>
+        <CardDescription>{t("dashboard.listHouseDesc")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -99,7 +99,7 @@ export default function HouseForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="listingMode" className="font-medium">
-                Listing Mode *
+                {t("common.listingMode")} *
               </Label>
               <Select
                 value={formData.listingMode}
@@ -114,8 +114,8 @@ export default function HouseForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rent">Rent</SelectItem>
-                  <SelectItem value="sell">Sell</SelectItem>
+                  <SelectItem value="rent">{t("common.rent")}</SelectItem>
+                  <SelectItem value="sell">{t("common.sell")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -124,7 +124,7 @@ export default function HouseForm({
             {formData.listingMode === "rent" && (
               <div className="space-y-2">
                 <Label htmlFor="rentalPeriod" className="font-medium">
-                  Rental Period *
+                  {t("common.rentalPeriod")} *
                 </Label>
                 <Select
                   value={formData.rentalPeriod || "monthly"}
@@ -143,10 +143,10 @@ export default function HouseForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
+                    <SelectItem value="daily">{t("common.daily")}</SelectItem>
+                    <SelectItem value="weekly">{t("common.weekly")}</SelectItem>
+                    <SelectItem value="monthly">{t("common.monthly")}</SelectItem>
+                    <SelectItem value="yearly">{t("common.yearly")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -157,7 +157,7 @@ export default function HouseForm({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title" className="font-medium">
-                Title *
+                {t("dashboard.titleRequired")}
               </Label>
               <Input
                 id="title"
@@ -165,14 +165,14 @@ export default function HouseForm({
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                placeholder="e.g., Beautiful 3-Bedroom House in Bole"
+                placeholder={t("common.titlePlaceholderHouse")}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description" className="font-medium">
-                Description *
+                {t("dashboard.descriptionRequired")}
               </Label>
               <Textarea
                 id="description"
@@ -180,7 +180,7 @@ export default function HouseForm({
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Describe your house in detail..."
+                placeholder={t("common.describeHouse")}
                 rows={4}
                 required
               />
@@ -190,7 +190,7 @@ export default function HouseForm({
           {/* Price */}
           <div className="space-y-2">
             <Label htmlFor="price" className="font-medium">
-              Price (ETB) *
+              {t("dashboard.priceEtb")}
             </Label>
             <Input
               id="price"
@@ -208,7 +208,7 @@ export default function HouseForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city" className="font-medium">
-                City *
+                {t("dashboard.cityRequired")}
               </Label>
               <Input
                 id="city"
@@ -216,14 +216,14 @@ export default function HouseForm({
                 onChange={(e) =>
                   setFormData({ ...formData, city: e.target.value })
                 }
-                placeholder="e.g., Addis Ababa"
+                placeholder={t("common.cityPlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="placeName" className="font-medium">
-                Place Name *
+                {t("dashboard.placeName")}
               </Label>
               <Input
                 id="placeName"
@@ -238,7 +238,7 @@ export default function HouseForm({
 
             <div className="space-y-2">
               <Label htmlFor="subCity" className="font-medium">
-                Sub City (optional)
+                {t("dashboard.subCity")}
               </Label>
               <Input
                 id="subCity"
@@ -255,7 +255,7 @@ export default function HouseForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="houseType" className="font-medium">
-                House Type *
+                {t("common.houseType")} *
               </Label>
               <Select
                 value={formData.houseType}
@@ -275,11 +275,15 @@ export default function HouseForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="condominium">Condominium</SelectItem>
-                  <SelectItem value="villa">Villa</SelectItem>
-                  <SelectItem value="business">Business</SelectItem>
-                  <SelectItem value="apartment">Apartment</SelectItem>
-                  <SelectItem value="others">Others</SelectItem>
+                  <SelectItem value="condominium">
+                    {t("common.condominium")}
+                  </SelectItem>
+                  <SelectItem value="villa">{t("common.villa")}</SelectItem>
+                  <SelectItem value="business">{t("common.business")}</SelectItem>
+                  <SelectItem value="apartment">
+                    {t("common.apartment")}
+                  </SelectItem>
+                  <SelectItem value="others">{t("common.others")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -308,7 +312,7 @@ export default function HouseForm({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="bedrooms" className="font-medium">
-                Bedrooms *
+                {t("common.bedroomsLabel")} *
               </Label>
               <Input
                 id="bedrooms"
@@ -327,7 +331,7 @@ export default function HouseForm({
 
             <div className="space-y-2">
               <Label htmlFor="bathrooms" className="font-medium">
-                Bathrooms *
+                {t("common.bathroomsLabel")} *
               </Label>
               <Input
                 id="bathrooms"
@@ -372,7 +376,7 @@ export default function HouseForm({
                 }
               />
               <Label htmlFor="parking" className="font-medium cursor-pointer">
-                Has Parking
+                {t("dashboard.hasParking")}
               </Label>
             </div>
 
@@ -386,7 +390,7 @@ export default function HouseForm({
                   }
                 />
                 <Label htmlFor="tanker" className="font-medium cursor-pointer">
-                  Has Water Tanker
+                  {t("dashboard.hasWaterTanker")}
                 </Label>
               </div>
             )}
@@ -395,7 +399,7 @@ export default function HouseForm({
           {/* Images */}
           <div className="space-y-2">
             <Label htmlFor="images" className="font-medium">
-              Images *
+              {t("dashboard.imagesRequired")}
             </Label>
             <Input
               id="images"
@@ -425,7 +429,7 @@ export default function HouseForm({
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? "Posting..." : "Post House"}
+            {isLoading ? t("dashboard.postingEllipsis") : t("dashboard.postHouse")}
           </Button>
         </form>
       </CardContent>

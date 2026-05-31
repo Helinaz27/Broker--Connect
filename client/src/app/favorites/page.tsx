@@ -6,9 +6,11 @@ import { useFavorites } from "@/lib/FavoritesContext";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Favorites() {
   const { favorites } = useFavorites();
+  const { t } = useLanguage();
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
@@ -21,14 +23,14 @@ export default function Favorites() {
               <div className="flex items-center gap-3 text-primary">
                 <Heart className="h-6 w-6 fill-current animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">
-                  Personal Vault
+                  {t("pages.favoritesVault")}
                 </span>
               </div>
               <h1 className="text-4xl font-black text-foreground tracking-tight">
-                Saved Selections.
+                {t("pages.favoritesTitle")}
               </h1>
               <p className="text-muted-foreground font-medium">
-                Curated listings and services you've bookmarked for later.
+                {t("pages.favoritesSubtitle")}
               </p>
             </div>
             <Link href="/">
@@ -36,7 +38,7 @@ export default function Favorites() {
                 variant="outline"
                 className="rounded-xl border-border/60 font-bold text-xs h-11 px-6 hover:bg-muted/50 transition-all"
               >
-                Continue Browsing
+                {t("pages.continueBrowsing")}
               </Button>
             </Link>
           </div>
@@ -59,10 +61,10 @@ export default function Favorites() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Heart className="h-16 w-16 text-muted-foreground/20 mb-4" />
               <p className="text-lg text-muted-foreground mb-4">
-                No favorites yet!
+                {t("pages.noFavorites")}
               </p>
               <Link href="/">
-                <Button>Start Exploring</Button>
+                <Button>{t("pages.startExploring")}</Button>
               </Link>
             </div>
           )}

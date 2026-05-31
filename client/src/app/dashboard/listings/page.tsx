@@ -18,10 +18,12 @@ import CarListings from "@/components/carListings/CarListings";
 import ServiceListings from "@/components/serviceListings/ServiceListings";
 import { useGetMyListingsQuery } from "@/store/apis/listingsApi";
 import type { ListingType } from "@/store/apis/listingsApi";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 type FilterType = "all" | ListingType;
 
 export default function MyListingsPage() {
+  const { t } = useLanguage();
   const [listingType, setListingType] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
 
@@ -35,16 +37,16 @@ export default function MyListingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            My Listings
+            {t("dashboard.myListings")}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage all your listings in one place
+            {t("dashboard.manageAllListings")}
           </p>
         </div>
         <Link href="/dashboard/listings/create">
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
-            Create Listing
+            {t("common.createListing")}
           </Button>
         </Link>
       </div>
@@ -55,19 +57,19 @@ export default function MyListingsPage() {
           onValueChange={(value: FilterType) => setListingType(value)}
         >
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filter by type" />
+            <SelectValue placeholder={t("common.filterByType")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Listings</SelectItem>
-            <SelectItem value="house">Houses</SelectItem>
-            <SelectItem value="car">Cars</SelectItem>
-            <SelectItem value="service">Services</SelectItem>
+            <SelectItem value="all">{t("common.allListings")}</SelectItem>
+            <SelectItem value="house">{t("common.houses")}</SelectItem>
+            <SelectItem value="car">{t("common.cars")}</SelectItem>
+            <SelectItem value="service">{t("common.services")}</SelectItem>
           </SelectContent>
         </Select>
 
         <input
           type="text"
-          placeholder="Search listings…"
+          placeholder={t("common.searchListings")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full sm:w-64 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -76,14 +78,14 @@ export default function MyListingsPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Listings ({total})</CardTitle>
+          <CardTitle>{t("common.listingsCount", { count: total })}</CardTitle>
         </CardHeader>
         <CardContent>
           {(listingType === "all" || listingType === "house") && (
             <section className="mb-8">
               {listingType === "all" && (
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                  Houses
+                  {t("common.houses")}
                 </h2>
               )}
               <HouseListings queryParams={queryParams} />
@@ -93,7 +95,7 @@ export default function MyListingsPage() {
             <section className="mb-8">
               {listingType === "all" && (
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                  Cars
+                  {t("common.cars")}
                 </h2>
               )}
               <CarListings queryParams={queryParams} />
@@ -103,7 +105,7 @@ export default function MyListingsPage() {
             <section>
               {listingType === "all" && (
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                  Services
+                  {t("common.services")}
                 </h2>
               )}
               <ServiceListings queryParams={queryParams} />

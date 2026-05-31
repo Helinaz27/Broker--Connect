@@ -4,25 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, Users, Zap, Shield } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { useMemo } from "react";
 
 export default function AboutUsPage() {
-  const features = [
-    {
-      icon: Zap,
-      title: "Lightning Fast",
-      description: "Find and list properties, vehicles, and services in seconds",
-    },
-    {
-      icon: Shield,
-      title: "Secure & Verified",
-      description: "KYC verification ensures all users are trusted",
-    },
-    {
-      icon: Users,
-      title: "Community Driven",
-      description: "Connect with thousands of verified users",
-    },
-  ];
+  const { t } = useLanguage();
+
+  const features = useMemo(
+    () => [
+      {
+        icon: Zap,
+        title: t("pages.aboutLightning"),
+        description: t("pages.aboutLightningDesc"),
+      },
+      {
+        icon: Shield,
+        title: t("pages.aboutSecure"),
+        description: t("pages.aboutSecureDesc"),
+      },
+      {
+        icon: Users,
+        title: t("pages.aboutCommunity"),
+        description: t("pages.aboutCommunityDesc"),
+      },
+    ],
+    [t],
+  );
 
   return (
     <main className="min-h-screen bg-background">
@@ -34,14 +41,15 @@ export default function AboutUsPage() {
         <div className="container relative mx-auto px-6">
           <div className="max-w-3xl">
             <h1 className="text-6xl md:text-7xl font-bold leading-[1.1] text-foreground tracking-tight mb-6">
-              About <span className="text-primary">Broker Connect</span>
+              {t("pages.aboutLabel")}{" "}
+              <span className="text-primary">{t("pages.aboutBrand")}</span>
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-2xl mb-8">
-              Ethiopia's premier marketplace connecting buyers, sellers, and service providers. We're building trust, transparency, and opportunity in the digital economy.
+              {t("pages.aboutHero")}
             </p>
             <Link href="/">
               <Button size="lg" className="gap-2">
-                Explore Marketplace
+                {t("pages.exploreMarketplace")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -54,10 +62,10 @@ export default function AboutUsPage() {
         <div className="container mx-auto px-6">
           <div className="max-w-3xl">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              Our Mission
+              {t("pages.ourMission")}
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              To create a safe, transparent, and efficient digital marketplace where individuals and businesses can confidently buy, sell, and exchange properties, vehicles, and professional services.
+              {t("pages.aboutMissionText")}
             </p>
           </div>
         </div>
@@ -67,7 +75,7 @@ export default function AboutUsPage() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12">
-            Why Choose Broker Connect?
+            {t("pages.whyChoose")}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             {features.map((feature) => {
@@ -92,14 +100,14 @@ export default function AboutUsPage() {
       <section className="py-16 md:py-24 bg-primary text-primary-foreground">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Get Started?
+            {t("pages.readyToStart")}
           </h2>
           <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
-            Join thousands of verified users trading with confidence
+            {t("pages.joinThousands")}
           </p>
           <Link href="/">
             <Button variant="secondary" size="lg" className="gap-2">
-              Start Browsing
+              {t("pages.startBrowsing")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

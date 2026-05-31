@@ -4,6 +4,7 @@
 import { LayoutDashboard, Menu, ChevronDown } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface MenuItem {
   id: string;
@@ -45,6 +46,7 @@ export function Sidebar({
   menuItems,
   adminItems,
 }: SidebarProps) {
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -109,14 +111,16 @@ export function Sidebar({
             }`}
           >
             <LayoutDashboard className="h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-105" />
-            {isExpanded && <span className="text-sm">Overview</span>}
+            {isExpanded && (
+              <span className="text-sm">{t("dashboard.overview")}</span>
+            )}
           </button>
 
           <div className="h-px bg-border/50 my-6 mx-4" />
 
           {isExpanded && (
             <p className="px-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
-              Asset Portfolios
+              {t("dashboard.assetPortfolios")}
             </p>
           )}
 
@@ -166,7 +170,7 @@ export function Sidebar({
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
-                      Post New Asset
+                      {t("dashboard.postNewAsset")}
                     </button>
                     <button
                       onClick={() => navigate(cat.view)}
@@ -176,7 +180,7 @@ export function Sidebar({
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
-                      Manage Inventory
+                      {t("dashboard.manageInventory")}
                     </button>
                   </div>
                 )}
@@ -191,7 +195,7 @@ export function Sidebar({
 
               {isExpanded && (
                 <p className="px-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
-                  Network Admin
+                  {t("dashboard.networkAdmin")}
                 </p>
               )}
 

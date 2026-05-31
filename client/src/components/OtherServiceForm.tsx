@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface OtherServiceFormData {
   title: string;
@@ -30,6 +31,7 @@ export default function OtherServiceForm({
   isLoading = false,
   initialData,
 }: OtherServiceFormProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<OtherServiceFormData>({
     title: initialData?.title || "",
     description: initialData?.description || "",
@@ -64,10 +66,8 @@ export default function OtherServiceForm({
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>List an Other Service</CardTitle>
-        <CardDescription>
-          Provide details about your service
-        </CardDescription>
+        <CardTitle>{t("dashboard.listOtherService")}</CardTitle>
+        <CardDescription>{t("dashboard.listOtherServiceDesc")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -75,7 +75,7 @@ export default function OtherServiceForm({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title" className="font-medium">
-                Service Title *
+                {t("dashboard.serviceTitle")}
               </Label>
               <Input
                 id="title"
@@ -83,14 +83,14 @@ export default function OtherServiceForm({
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                placeholder="e.g., Professional Plumber - Repairs & Installation"
+                placeholder={t("common.titlePlaceholderService")}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description" className="font-medium">
-                Description *
+                {t("dashboard.descriptionRequired")}
               </Label>
               <Textarea
                 id="description"
@@ -98,7 +98,7 @@ export default function OtherServiceForm({
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Describe your service in detail..."
+                placeholder={t("common.describeService")}
                 rows={4}
                 required
               />
@@ -108,7 +108,7 @@ export default function OtherServiceForm({
           {/* Service Type */}
           <div className="space-y-2">
             <Label htmlFor="serviceType" className="font-medium">
-              Service Type *
+              {t("common.serviceType")} *
             </Label>
             <Input
               id="serviceType"
@@ -116,7 +116,7 @@ export default function OtherServiceForm({
               onChange={(e) =>
                 setFormData({ ...formData, serviceType: e.target.value })
               }
-              placeholder="e.g., Plumbing, Electrical, Catering, etc."
+              placeholder={t("common.serviceTypePlaceholder")}
               required
             />
           </div>
@@ -142,7 +142,7 @@ export default function OtherServiceForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city" className="font-medium">
-                City *
+                {t("dashboard.cityRequired")}
               </Label>
               <Input
                 id="city"
@@ -150,14 +150,14 @@ export default function OtherServiceForm({
                 onChange={(e) =>
                   setFormData({ ...formData, city: e.target.value })
                 }
-                placeholder="e.g., Addis Ababa"
+                placeholder={t("common.cityPlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="placeName" className="font-medium">
-                Place Name *
+                {t("dashboard.placeName")}
               </Label>
               <Input
                 id="placeName"
@@ -172,7 +172,7 @@ export default function OtherServiceForm({
 
             <div className="space-y-2">
               <Label htmlFor="subCity" className="font-medium">
-                Sub City (optional)
+                {t("dashboard.subCity")}
               </Label>
               <Input
                 id="subCity"
@@ -218,7 +218,9 @@ export default function OtherServiceForm({
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? "Posting..." : "Post Service"}
+            {isLoading
+              ? t("dashboard.postingEllipsis")
+              : t("dashboard.postService")}
           </Button>
         </form>
       </CardContent>

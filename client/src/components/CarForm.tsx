@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface CarFormData {
   title: string;
@@ -41,6 +42,7 @@ export default function CarForm({
   isLoading = false,
   initialData,
 }: CarFormProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<CarFormData>({
     title: initialData?.title || "",
     description: initialData?.description || "",
@@ -79,17 +81,15 @@ export default function CarForm({
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>List a Car</CardTitle>
-        <CardDescription>
-          Provide details about your car listing
-        </CardDescription>
+        <CardTitle>{t("dashboard.listCar")}</CardTitle>
+        <CardDescription>{t("dashboard.listCarDesc")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Listing Mode */}
           <div className="space-y-2">
             <Label htmlFor="listingMode" className="font-medium">
-              Listing Mode *
+              {t("common.listingMode")} *
             </Label>
             <Select
               value={formData.listingMode}
@@ -104,8 +104,8 @@ export default function CarForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rent">Rent</SelectItem>
-                <SelectItem value="sell">Sell</SelectItem>
+                <SelectItem value="rent">{t("common.rent")}</SelectItem>
+                <SelectItem value="sell">{t("common.sell")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -129,7 +129,7 @@ export default function CarForm({
 
             <div className="space-y-2">
               <Label htmlFor="description" className="font-medium">
-                Description *
+                {t("dashboard.descriptionRequired")}
               </Label>
               <Textarea
                 id="description"
@@ -137,7 +137,7 @@ export default function CarForm({
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Describe your car in detail..."
+                placeholder={t("common.describeCar")}
                 rows={4}
                 required
               />
@@ -165,7 +165,7 @@ export default function CarForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city" className="font-medium">
-                City *
+                {t("dashboard.cityRequired")}
               </Label>
               <Input
                 id="city"
@@ -173,14 +173,14 @@ export default function CarForm({
                 onChange={(e) =>
                   setFormData({ ...formData, city: e.target.value })
                 }
-                placeholder="e.g., Addis Ababa"
+                placeholder={t("common.cityPlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="placeName" className="font-medium">
-                Place Name *
+                {t("dashboard.placeName")}
               </Label>
               <Input
                 id="placeName"
@@ -212,7 +212,7 @@ export default function CarForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="carType" className="font-medium">
-                Car Type *
+                {t("common.carType")} *
               </Label>
               <Select
                 value={formData.carType}
@@ -227,8 +227,8 @@ export default function CarForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="electric">Electric</SelectItem>
-                  <SelectItem value="fuel">Fuel</SelectItem>
+                  <SelectItem value="electric">{t("common.electric")}</SelectItem>
+                  <SelectItem value="fuel">{t("common.fuel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -250,15 +250,15 @@ export default function CarForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="used">Used</SelectItem>
+                  <SelectItem value="new">{t("common.newCondition")}</SelectItem>
+                  <SelectItem value="used">{t("common.usedCondition")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="brand" className="font-medium">
-                Brand *
+                {t("common.brand")} *
               </Label>
               <Input
                 id="brand"
@@ -273,7 +273,7 @@ export default function CarForm({
 
             <div className="space-y-2">
               <Label htmlFor="carModel" className="font-medium">
-                Model *
+                {t("dashboard.model")}
               </Label>
               <Input
                 id="carModel"
@@ -290,7 +290,7 @@ export default function CarForm({
           {/* Images */}
           <div className="space-y-2">
             <Label htmlFor="images" className="font-medium">
-              Images *
+              {t("dashboard.imagesRequired")}
             </Label>
             <Input
               id="images"
@@ -320,7 +320,7 @@ export default function CarForm({
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? "Posting..." : "Post Car"}
+            {isLoading ? t("dashboard.postingEllipsis") : t("dashboard.postCar")}
           </Button>
         </form>
       </CardContent>

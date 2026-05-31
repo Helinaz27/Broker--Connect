@@ -8,6 +8,7 @@ import ListingsGrid from "@/components/ListingsGrid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -22,6 +23,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function HouseListingsPage() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   const queryParams: ListingQueryParams = {
@@ -78,16 +80,18 @@ export default function HouseListingsPage() {
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2 mb-4">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("common.back")}
             </Button>
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-            Houses
+            {t("header.houses")}
           </h1>
           <p className="text-lg text-muted-foreground">
             {pagination
-              ? `${pagination.total} house${pagination.total !== 1 ? "s" : ""} available`
-              : "Browse all available house listings"}
+              ? pagination.total === 1
+                ? t("listings.houseAvailable", { count: pagination.total })
+                : t("listings.housesAvailable", { count: pagination.total })
+              : t("listings.browseHouses")}
           </p>
         </div>
 
@@ -97,11 +101,11 @@ export default function HouseListingsPage() {
             {/* Search */}
             <div className="space-y-1 xl:col-span-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Search
+                {t("common.search")}
               </label>
               <input
                 type="text"
-                placeholder="Search titles, descriptions…"
+                placeholder={t("common.searchPlaceholder")}
                 value={filters.search}
                 onChange={(e) => update({ search: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -111,11 +115,11 @@ export default function HouseListingsPage() {
             {/* City */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                City
+                {t("common.city")}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Addis Ababa"
+                placeholder={t("common.cityPlaceholder")}
                 value={filters.city}
                 onChange={(e) => update({ city: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -125,42 +129,42 @@ export default function HouseListingsPage() {
             {/* Listing Mode */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Type
+                {t("common.type")}
               </label>
               <select
                 value={filters.listingMode}
                 onChange={(e) => update({ listingMode: e.target.value as any })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
               >
-                <option value="all">All</option>
-                <option value="rent">Rent</option>
-                <option value="sell">Sell</option>
+                <option value="all">{t("common.all")}</option>
+                <option value="rent">{t("common.rent")}</option>
+                <option value="sell">{t("common.sell")}</option>
               </select>
             </div>
 
             {/* House Type */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                House Type
+                {t("common.houseType")}
               </label>
               <select
                 value={filters.houseType}
                 onChange={(e) => update({ houseType: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
               >
-                <option value="">All Types</option>
-                <option value="apartment">Apartment</option>
-                <option value="villa">Villa</option>
-                <option value="condominium">Condominium</option>
-                <option value="business">Business</option>
-                <option value="others">Others</option>
+                <option value="">{t("common.allTypes")}</option>
+                <option value="apartment">{t("common.apartment")}</option>
+                <option value="villa">{t("common.villa")}</option>
+                <option value="condominium">{t("common.condominium")}</option>
+                <option value="business">{t("common.business")}</option>
+                <option value="others">{t("common.others")}</option>
               </select>
             </div>
 
             {/* Min Price */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Min Price
+                {t("common.minPrice")}
               </label>
               <input
                 type="number"
@@ -181,12 +185,12 @@ export default function HouseListingsPage() {
             {/* Max Price */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Max Price
+                {t("common.maxPrice")}
               </label>
               <input
                 type="number"
                 min={0}
-                placeholder="Any"
+                placeholder={t("common.any")}
                 value={filters.maxPrice ?? ""}
                 onChange={(e) =>
                   update({
@@ -202,7 +206,7 @@ export default function HouseListingsPage() {
 
           <div className="flex justify-end mt-4">
             <Button variant="outline" size="sm" onClick={handleReset}>
-              Reset Filters
+              {t("common.resetFilters")}
             </Button>
           </div>
         </div>
@@ -211,13 +215,13 @@ export default function HouseListingsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-24 gap-3 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Loading listings…</span>
+            <span className="text-sm">{t("listings.loadingListings")}</span>
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center gap-4 py-24 text-muted-foreground">
-            <p className="text-sm">Failed to load listings.</p>
+            <p className="text-sm">{t("listings.failedListings")}</p>
             <Button variant="outline" size="sm" onClick={refetch}>
-              Try again
+              {t("common.tryAgain")}
             </Button>
           </div>
         ) : (
@@ -226,13 +230,13 @@ export default function HouseListingsPage() {
             {isFetching && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Updating…
+                {t("common.updating")}
               </div>
             )}
 
             <ListingsGrid
               listings={gridItems}
-              emptyMessage="No houses found. Try adjusting your filters."
+              emptyMessage={t("listings.noHousesFound")}
             />
 
             {/* Pagination */}
@@ -246,10 +250,13 @@ export default function HouseListingsPage() {
                     setFilters((p) => ({ ...p, page: p.page - 1 }))
                   }
                 >
-                  Previous
+                  {t("common.previous")}
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {pagination.page} of {pagination.pages}
+                  {t("common.pageOf", {
+                    page: pagination.page,
+                    total: pagination.pages,
+                  })}
                 </span>
                 <Button
                   variant="outline"
@@ -259,7 +266,7 @@ export default function HouseListingsPage() {
                     setFilters((p) => ({ ...p, page: p.page + 1 }))
                   }
                 >
-                  Next
+                  {t("common.next")}
                 </Button>
               </div>
             )}

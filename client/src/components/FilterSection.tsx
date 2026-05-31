@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Search, SlidersHorizontal } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface FilterSectionProps {
   filters: {
@@ -18,6 +19,8 @@ export default function FilterSection({
   onFilterChange,
   variant = "sidebar",
 }: FilterSectionProps) {
+  const { t } = useLanguage();
+
   const updateFilter = (updates: Partial<typeof filters>) => {
     onFilterChange({ ...filters, ...updates });
   };
@@ -43,17 +46,17 @@ export default function FilterSection({
     filters.type !== "all";
 
   const categories = [
-    { label: "all", value: "all" },
-    { label: "house", value: "house" },
-    { label: "cars", value: "car" },
-    { label: "other services", value: "service" },
+    { label: t("filters.categoryAll"), value: "all" },
+    { label: t("filters.categoryHouse"), value: "house" },
+    { label: t("filters.categoryCars"), value: "car" },
+    { label: t("filters.categoryServices"), value: "service" },
   ];
 
   const priceBrackets = [
-    { label: "Any Valuation", value: "0-100000" },
-    { label: "Below 5,000 Br", value: "0-5000" },
-    { label: "5,000 – 20,000", value: "5000-20000" },
-    { label: "Above 20,000", value: "20000-100000" },
+    { label: t("filters.anyValuation"), value: "0-100000" },
+    { label: t("filters.below5000"), value: "0-5000" },
+    { label: t("filters.range5000_20000"), value: "5000-20000" },
+    { label: t("filters.above20000"), value: "20000-100000" },
   ];
 
   const inputStyles =
@@ -65,12 +68,12 @@ export default function FilterSection({
     return (
       <div className="flex flex-col lg:flex-row items-end gap-6 bg-card p-3 rounded-2xl shadow-soft">
         <div className="w-full lg:flex-[1.5]">
-          <label className={labelStyles}>Search Query</label>
+          <label className={labelStyles}>{t("filters.searchQuery")}</label>
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Houses, cars, or services..."
+              placeholder={t("filters.searchQueryPlaceholder")}
               value={filters.search}
               onChange={(e) => updateFilter({ search: e.target.value })}
               className={`${inputStyles} pl-11`}
@@ -78,17 +81,17 @@ export default function FilterSection({
           </div>
         </div>
         <div className="w-full lg:flex-1">
-          <label className={labelStyles}>Location</label>
+          <label className={labelStyles}>{t("common.location")}</label>
           <input
             type="text"
-            placeholder="Addis Ababa, Bole..."
+            placeholder={t("filters.locationPlaceholder")}
             value={filters.location}
             onChange={(e) => updateFilter({ location: e.target.value })}
             className={inputStyles}
           />
         </div>
         <div className="w-full lg:w-56">
-          <label className={labelStyles}>Price Bracket</label>
+          <label className={labelStyles}>{t("filters.priceBracket")}</label>
           <select
             value={`${filters.priceRange[0]}-${filters.priceRange[1]}`}
             onChange={(e) => handlePriceChange(e.target.value)}
@@ -107,7 +110,7 @@ export default function FilterSection({
               onClick={clearFilters}
               className="flex items-center justify-center gap-2 h-12 px-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted transition-all"
             >
-              <X className="h-4 w-4" /> Reset
+              <X className="h-4 w-4" /> {t("home.reset")}
             </button>
           )}
           <button
@@ -119,7 +122,7 @@ export default function FilterSection({
             }}
             className="h-12 px-8 bg-primary text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20 w-full lg:w-auto"
           >
-            Apply Filters
+            {t("home.applyFilters")}
           </button>
         </div>
       </div>
@@ -130,21 +133,21 @@ export default function FilterSection({
     <div className="space-y-8 animate-in">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground tracking-tight">
-          Refine Portfolio
+          {t("filters.refinePortfolio")}
         </h3>
         {isFiltered && (
           <button
             onClick={clearFilters}
             className="text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
           >
-            Reset All
+            {t("filters.resetAll")}
           </button>
         )}
       </div>
 
       <div className="space-y-6">
         <div className="space-y-3">
-          <label className={labelStyles}>Asset Category</label>
+          <label className={labelStyles}>{t("filters.assetCategory")}</label>
           <div className="grid grid-cols-2 gap-2">
             {categories.map((cat) => (
               <button
@@ -163,12 +166,12 @@ export default function FilterSection({
         </div>
 
         <div className="space-y-3">
-          <label className={labelStyles}>District</label>
+          <label className={labelStyles}>{t("filters.district")}</label>
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Search location..."
+              placeholder={t("filters.searchLocation")}
               value={filters.location}
               onChange={(e) => updateFilter({ location: e.target.value })}
               className={`${inputStyles} pl-11`}
@@ -177,7 +180,7 @@ export default function FilterSection({
         </div>
 
         <div className="space-y-3">
-          <label className={labelStyles}>Price Bracket</label>
+          <label className={labelStyles}>{t("filters.priceBracket")}</label>
           <div className="grid grid-cols-1 gap-2">
             {priceBrackets.map((p) => (
               <button
@@ -200,5 +203,4 @@ export default function FilterSection({
   );
 }
 
-// Attach icon for use in empty states
 FilterSection.Icon = SlidersHorizontal;

@@ -15,12 +15,14 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import Chat from "@/components/Chat";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { t } = useLanguage();
   const currentUser = useSelector((state: RootState) => state.user.currentUser);
   const isAdmin = currentUser?.roles?.includes("admin") ?? false;
 
@@ -42,7 +44,7 @@ export default function DashboardLayout({
   const menuItems = [
     {
       id: "houses",
-      label: "Houses",
+      label: t("common.houses"),
       icon: Home,
       post: "/dashboard/houses/post",
       view: "/dashboard/houses/manage",
@@ -50,7 +52,7 @@ export default function DashboardLayout({
     },
     {
       id: "cars",
-      label: "Cars",
+      label: t("common.cars"),
       icon: Car,
       post: "/dashboard/cars/post",
       view: "/dashboard/cars/manage",
@@ -58,7 +60,7 @@ export default function DashboardLayout({
     },
     {
       id: "services",
-      label: "Other Services",
+      label: t("common.otherServices"),
       icon: Wrench,
       post: "/dashboard/services/post",
       view: "/dashboard/services/manage",
@@ -70,21 +72,21 @@ export default function DashboardLayout({
     ? [
         {
           id: "admin_fees",
-          label: "Platform Fees",
+          label: t("dashboard.platformFees"),
           icon: DollarSign,
           href: "/dashboard/fees",
           color: "bg-violet-500/10 text-violet-600",
         },
         {
           id: "admin_kyc",
-          label: "KYC Requests",
+          label: t("dashboard.kycRequests"),
           icon: ShieldCheck,
           href: "/dashboard/kyc",
           color: "bg-amber-500/10 text-amber-600",
         },
         {
           id: "admin_users",
-          label: "User Directory",
+          label: t("dashboard.userDirectory"),
           icon: Users,
           href: "/dashboard/users",
           color: "bg-primary/10 text-primary",
@@ -99,12 +101,12 @@ export default function DashboardLayout({
         <button
           onClick={() => setIsMobileSidebarOpen(true)}
           className="h-9 w-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
-          aria-label="Open sidebar"
+          aria-label={t("dashboard.openSidebar")}
         >
           <Menu className="h-5 w-5" />
         </button>
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Broker Console
+          {t("dashboard.brokerConsole")}
         </span>
       </div>
 

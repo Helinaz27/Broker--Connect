@@ -53,8 +53,10 @@ import {
   useDeleteUserMutation,
 } from "@/store/apis/userApi";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function UsersPage() {
+  const { t } = useLanguage();
   const currentUser = useSelector((state: RootState) => state.user.currentUser);
   const isAdmin = currentUser?.roles?.includes("admin") ?? false;
   const router = useRouter();
@@ -102,14 +104,18 @@ export default function UsersPage() {
       }).unwrap();
       if (result.success) {
         toast.success(
-          `User ${!user.isActive ? "activated" : "deactivated"} successfully`,
+          !user.isActive
+            ? t("dashboard.userActivated")
+            : t("dashboard.userDeactivated"),
         );
         refetch();
       } else {
-        toast.error(result.message || "Failed to update user status");
+        toast.error(result.message || t("dashboard.failedUpdateStatus"));
       }
     } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to update user status");
+      toast.error(
+        error?.data?.message || t("dashboard.failedUpdateStatus"),
+      );
     }
   };
 
@@ -119,23 +125,25 @@ export default function UsersPage() {
     try {
       const result = await deleteUser(userToDelete.id).unwrap();
       if (result.success) {
-        toast.success("User deleted successfully");
+        toast.success(t("dashboard.userDeleted"));
         setIsDeleteDialogOpen(false);
         setUserToDelete(null);
         refetch();
       } else {
-        toast.error(result.message || "Failed to delete user");
+        toast.error(result.message || t("dashboard.failedDeleteUser"));
       }
     } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to delete user");
+      toast.error(error?.data?.message || t("dashboard.failedDeleteUser"));
     }
   };
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
-      <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>
+      <Badge className="bg-green-500 hover:bg-green-600">
+        {t("dashboard.active")}
+      </Badge>
     ) : (
-      <Badge variant="secondary">Inactive</Badge>
+      <Badge variant="secondary">{t("dashboard.inactive")}</Badge>
     );
   };
 
@@ -162,10 +170,10 @@ export default function UsersPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <ShieldCheck className="h-12 w-12 text-muted-foreground" />
         <p className="text-muted-foreground font-medium">
-          You don't have permission to view this page.
+          {t("dashboard.noPermission")}
         </p>
         <Button variant="outline" onClick={() => router.push("/dashboard")}>
-          Go back to Dashboard
+          {t("dashboard.goBackDashboard")}
         </Button>
       </div>
     );
@@ -176,10 +184,10 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-            User Management
+            {t("dashboard.userManagement")}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
-            Manage platform users and their accounts
+            {t("dashboard.manageUserAccounts")}
           </p>
         </div>
       </div>
@@ -188,7 +196,7 @@ export default function UsersPage() {
         <CardHeader className="px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle className="text-lg sm:text-xl">
-              Users{" "}
+              {t("dashboard.users")}{" "}
               {data?.data?.pagination && `(${data.data.pagination.total})`}
             </CardTitle>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -205,17 +213,19 @@ export default function UsersPage() {
                 </div>
                 <Button onClick={handleSearch} size="sm" className="gap-2">
                   <Search className="h-4 w-4" />
-                  Search
+                  {t("common.search")}
                 </Button>
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-36">
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder={t("dashboard.filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">{t("dashboard.allUsers")}</SelectItem>
+                  <SelectItem value="active">{t("dashboard.active")}</SelectItem>
+                  <SelectItem value="inactive">
+                    {t("dashboard.inactive")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -228,18 +238,18 @@ export default function UsersPage() {
             </div>
           ) : isError ? (
             <div className="text-center py-12">
-              <p className="text-destructive">Failed to load users</p>
+              <p className="text-destructive">{t("dashboard.failedUsers")}</p>
               <Button
                 variant="outline"
                 className="mt-4"
                 onClick={() => refetch()}
               >
-                Try Again
+                {t("common.tryAgain")}
               </Button>
             </div>
           ) : data?.data?.users?.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-muted-foreground">No users found</p>
+              <p className="text-muted-foreground">{t("dashboard.noUsersFound")}</p>
             </div>
           ) : (
             <>
@@ -249,29 +259,31 @@ export default function UsersPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="whitespace-nowrap">
-                          User
+                          {t("dashboard.tableUser")}
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Email
+                          {t("dashboard.tableEmail")}
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Phone
+                          {t("dashboard.tablePhone")}
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Role
+                          {t("dashboard.role")}
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Status
-                        </TableHead>
-                        <TableHead className="whitespace-nowrap">KYC</TableHead>
-                        <TableHead className="whitespace-nowrap">
-                          Coins
+                          {t("dashboard.status")}
                         </TableHead>
                         <TableHead className="whitespace-nowrap">
-                          Joined
+                          {t("dashboard.kyc")}
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          {t("dashboard.tableCoins")}
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          {t("dashboard.joined")}
                         </TableHead>
                         <TableHead className="whitespace-nowrap text-center">
-                          Actions
+                          {t("dashboard.actions")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -313,9 +325,13 @@ export default function UsersPage() {
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {user.isKYCVerified ? (
-                              <Badge className="bg-green-500">Verified</Badge>
+                              <Badge className="bg-green-500">
+                                {t("dashboard.verified")}
+                              </Badge>
                             ) : (
-                              <Badge variant="outline">Pending</Badge>
+                              <Badge variant="outline">
+                                {t("dashboard.pending")}
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell className="whitespace-nowrap font-mono">
@@ -334,7 +350,7 @@ export default function UsersPage() {
                                   setIsDeleteDialogOpen(true);
                                 }}
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                title="Delete"
+                                title={t("common.delete")}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -351,12 +367,14 @@ export default function UsersPage() {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 px-4 sm:px-0">
                   <div className="flex items-center gap-2 order-2 sm:order-1">
                     <p className="text-sm text-muted-foreground">
-                      Showing {(data.data.pagination.page - 1) * limit + 1} to{" "}
-                      {Math.min(
-                        data.data.pagination.page * limit,
-                        data.data.pagination.total,
-                      )}{" "}
-                      of {data.data.pagination.total} entries
+                      {t("dashboard.showingEntries", {
+                        from: (data.data.pagination.page - 1) * limit + 1,
+                        to: Math.min(
+                          data.data.pagination.page * limit,
+                          data.data.pagination.total,
+                        ),
+                        total: data.data.pagination.total,
+                      })}
                     </p>
                     <Select
                       value={limit.toString()}
@@ -410,18 +428,16 @@ export default function UsersPage() {
       >
         <AlertDialogContent className="w-[95vw] max-w-lg p-4 sm:p-6">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("dashboard.areYouSure")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the user{" "}
-              <span className="font-medium">
-                {userToDelete?.firstName} {userToDelete?.lastName}
-              </span>
-              . This action cannot be undone.
+              {t("dashboard.deleteUserConfirm", {
+                name: `${userToDelete?.firstName ?? ""} ${userToDelete?.lastName ?? ""}`.trim(),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-3">
             <AlertDialogCancel className="w-full sm:w-auto">
-              Cancel
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
@@ -429,7 +445,7 @@ export default function UsersPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

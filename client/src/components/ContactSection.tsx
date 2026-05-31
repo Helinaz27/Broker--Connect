@@ -21,6 +21,7 @@ import { useAccessContactMutation } from "@/store/apis/accessApi";
 import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
 import { useChatWidget } from "@/components/chat/ChatWidget";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface Props {
   listingId: string;
@@ -34,14 +35,15 @@ interface Props {
 }
 
 function BuyCoinsModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage();
   const [coinsRequested, setCoinsRequested] = useState(100);
   const [initiateChapa, { isLoading }] = useInitiateChapaMutation();
 
   const packages = [
-    { coins: 50, label: "Starter" },
-    { coins: 100, label: "Basic" },
-    { coins: 250, label: "Popular" },
-    { coins: 500, label: "Pro" },
+    { coins: 50, label: t("contact.starter") },
+    { coins: 100, label: t("contact.basic") },
+    { coins: 250, label: t("contact.popular") },
+    { coins: 500, label: t("contact.pro") },
   ];
 
   const COIN_PRICE_IN_BIRR = 1;
@@ -49,7 +51,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
   const handleBuy = async () => {
     if (coinsRequested < 1) {
-      toast.error("Please enter a valid coin amount.");
+      toast.error(t("contact.validCoinAmount"));
       return;
     }
     try {
@@ -58,7 +60,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
         window.location.href = result.data.checkout_url;
       }
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to initiate payment.");
+      toast.error(err?.data?.message ?? t("contact.paymentInitFailed"));
     }
   };
 
@@ -75,9 +77,9 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
               <Coins className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-lg">Buy Coins</h2>
+              <h2 className="font-bold text-lg">{t("contact.buyCoins")}</h2>
               <p className="text-xs text-muted-foreground">
-                Paid via Chapa · ETB
+                {t("contact.paidViaChapa")}
               </p>
             </div>
           </div>
@@ -110,7 +112,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
-            Custom Amount
+            {t("contact.customAmount")}
           </label>
           <input
             type="number"
@@ -120,29 +122,29 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
               setCoinsRequested(Math.max(1, parseInt(e.target.value) || 1))
             }
             className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-            placeholder="Enter coin amount"
+            placeholder={t("contact.enterCoinAmount")}
           />
         </div>
 
         <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              You Pay
+              {t("contact.youPay")}
             </p>
             <p className="text-2xl font-extrabold text-foreground">
               {totalBirr.toLocaleString()}{" "}
               <span className="text-sm font-bold text-muted-foreground">
-                ETB
+                {t("common.etb")}
               </span>
             </p>
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              You Get
+              {t("contact.youGet")}
             </p>
             <p className="text-2xl font-extrabold text-primary">
               {coinsRequested.toLocaleString()}{" "}
-              <span className="text-sm font-bold">coins</span>
+              <span className="text-sm font-bold">{t("common.coins")}</span>
             </p>
           </div>
         </div>
@@ -155,18 +157,18 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Redirecting…
+              {t("contact.redirecting")}
             </>
           ) : (
             <>
               <Coins className="h-4 w-4" />
-              Proceed to Payment
+              {t("contact.proceedToPayment")}
             </>
           )}
         </Button>
 
         <p className="text-center text-[10px] text-muted-foreground">
-          Powered by Chapa · Secure payment gateway
+          {t("contact.poweredByChapa")}
         </p>
       </div>
     </div>
@@ -174,6 +176,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 }
 
 function CopyButton({ value }: { value: string }) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -181,7 +184,7 @@ function CopyButton({ value }: { value: string }) {
     e.stopPropagation();
     await navigator.clipboard.writeText(value);
     setCopied(true);
-    toast.success("Copied to clipboard");
+    toast.success(t("common.copiedToClipboard"));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -189,7 +192,7 @@ function CopyButton({ value }: { value: string }) {
     <button
       onClick={handleCopy}
       className="ml-auto p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
-      title="Copy"
+      title={t("common.copy")}
     >
       {copied ? (
         <Check className="h-4 w-4 text-emerald-500" />
@@ -210,6 +213,7 @@ export default function ContactSection({
   ownerEmail,
   isAuthenticated,
 }: Props) {
+  const { t } = useLanguage();
   const router = useRouter();
   const currentUser = useSelector((s: RootState) => s.user.currentUser);
   const [accessContact, { isLoading }] = useAccessContactMutation();
@@ -229,14 +233,14 @@ export default function ContactSection({
           <BuyCoinsModal onClose={() => setShowBuyCoins(false)} />
         )}
         <p className="text-sm text-muted-foreground">
-          Login to unlock the agent&apos;s contact details.
+          {t("contact.loginToUnlock")}
         </p>
         <Button
           onClick={() => router.push("/login")}
           className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
         >
           <LogIn className="h-4 w-4 mr-2" />
-          Login to Contact Agent
+          {t("contact.loginToContact")}
         </Button>
       </div>
     );
@@ -246,7 +250,7 @@ export default function ContactSection({
     return (
       <div className="flex flex-col gap-3">
         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-          Agent Contact
+          {t("contact.agentContact")}
         </h3>
         <div className="flex items-center gap-3 h-14 px-6 rounded-2xl border border-border bg-muted/40 font-semibold text-foreground">
           <Phone className="h-4 w-4 text-primary flex-shrink-0" />
@@ -265,7 +269,7 @@ export default function ContactSection({
             className="h-12 rounded-2xl font-bold uppercase tracking-widest text-xs gap-2 border-primary/30 text-primary hover:bg-primary/5"
           >
             <MessageCircle className="h-4 w-4" />
-            Chat with Agent
+            {t("contact.chatWithAgent")}
           </Button>
         )}
       </div>
@@ -281,7 +285,7 @@ export default function ContactSection({
       await accessContact({ listingId }).unwrap();
       window.location.reload();
     } catch (err: any) {
-      setError(err?.data?.message ?? "Something went wrong. Please try again.");
+      setError(err?.data?.message ?? t("common.somethingWentWrong"));
       setShowConfirm(false);
     }
   };
@@ -292,12 +296,14 @@ export default function ContactSection({
         <div className="flex items-center gap-3">
           <Lock className="h-5 w-5 text-primary" />
           <div>
-            <p className="font-bold text-foreground text-sm">Unlock Contact</p>
+            <p className="font-bold text-foreground text-sm">
+              {t("contact.unlockContact")}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              This will deduct{" "}
-              <span className="font-bold text-primary">{coinCost} coins</span>{" "}
-              from your balance (you have{" "}
-              <span className="font-semibold">{userCoins}</span>).
+              {t("contact.unlockDeductText", {
+                coins: coinCost,
+                balance: userCoins,
+              })}
             </p>
           </div>
         </div>
@@ -312,7 +318,7 @@ export default function ContactSection({
             disabled={isLoading}
             className="flex-1 h-11 rounded-xl bg-primary text-white font-bold text-xs uppercase tracking-widest"
           >
-            {isLoading ? "Unlocking…" : "Confirm Unlock"}
+            {isLoading ? t("contact.unlocking") : t("contact.confirmUnlock")}
           </Button>
           <Button
             variant="outline"
@@ -320,7 +326,7 @@ export default function ContactSection({
             disabled={isLoading}
             className="flex-1 h-11 rounded-xl text-xs uppercase tracking-widest"
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
         </div>
       </div>
@@ -333,8 +339,10 @@ export default function ContactSection({
       <div className="flex flex-col gap-3">
         {!canAfford && (
           <p className="text-xs text-amber-600 bg-amber-500/10 px-3 py-2 rounded-lg">
-            You need {coinCost} coins but only have {userCoins}. Please top up
-            your balance.
+            {t("contact.insufficientBalance", {
+              needed: coinCost,
+              have: userCoins,
+            })}
           </p>
         )}
         {error && (
@@ -348,7 +356,7 @@ export default function ContactSection({
           className="h-14 px-10 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <Lock className="h-4 w-4 mr-2" />
-          Unlock Contact · {coinCost} coins
+          {t("contact.unlockContactCoins", { coins: coinCost })}
         </Button>
         {!canAfford && (
           <Button
@@ -357,7 +365,7 @@ export default function ContactSection({
             className="h-11 px-6 rounded-2xl text-xs uppercase tracking-widest"
           >
             <Coins className="h-4 w-4 mr-2" />
-            Buy Coins
+            {t("contact.buyCoins")}
           </Button>
         )}
       </div>

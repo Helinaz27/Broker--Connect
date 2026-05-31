@@ -2,6 +2,7 @@
 
 import ListingCard from "@/components/ListingCard";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface Listing {
   id: string;
@@ -22,13 +23,15 @@ interface ListingsGridProps {
 
 export default function ListingsGrid({
   listings,
-  emptyMessage = "No listings found",
+  emptyMessage,
   className,
 }: ListingsGridProps) {
+  const { t } = useLanguage();
+  const message = emptyMessage ?? t("common.noListingsFound");
   if (listings.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 bg-muted/30 rounded-lg">
-        <p className="text-muted-foreground text-center">{emptyMessage}</p>
+        <p className="text-muted-foreground text-center">{message}</p>
       </div>
     );
   }

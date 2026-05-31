@@ -47,16 +47,18 @@ import {
 import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 function BuyCoinsModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage();
   const [coinsRequested, setCoinsRequested] = useState(100);
   const [initiateChapa, { isLoading }] = useInitiateChapaMutation();
 
   const packages = [
-    { coins: 50, label: "Starter" },
-    { coins: 100, label: "Basic" },
-    { coins: 250, label: "Popular" },
-    { coins: 500, label: "Pro" },
+    { coins: 50, label: t("contact.starter") },
+    { coins: 100, label: t("contact.basic") },
+    { coins: 250, label: t("contact.popular") },
+    { coins: 500, label: t("contact.pro") },
   ];
 
   const COIN_PRICE_IN_BIRR = 1;
@@ -64,7 +66,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
   const handleBuy = async () => {
     if (coinsRequested < 1) {
-      toast.error("Please enter a valid coin amount.");
+      toast.error(t("contact.validCoinAmount"));
       return;
     }
     try {
@@ -73,7 +75,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
         window.location.href = result.data.checkout_url;
       }
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to initiate payment.");
+      toast.error(err?.data?.message ?? t("contact.paymentInitFailed"));
     }
   };
 
@@ -90,9 +92,9 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
               <Coins className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-lg">Buy Coins</h2>
+              <h2 className="font-bold text-lg">{t("contact.buyCoins")}</h2>
               <p className="text-xs text-muted-foreground">
-                Paid via Chapa · ETB
+                {t("contact.paidViaChapa")}
               </p>
             </div>
           </div>
@@ -125,7 +127,7 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
-            Custom Amount
+            {t("contact.customAmount")}
           </label>
           <input
             type="number"
@@ -135,29 +137,29 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
               setCoinsRequested(Math.max(1, parseInt(e.target.value) || 1))
             }
             className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-            placeholder="Enter coin amount"
+            placeholder={t("contact.enterCoinAmount")}
           />
         </div>
 
         <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              You Pay
+              {t("contact.youPay")}
             </p>
             <p className="text-2xl font-extrabold text-foreground">
               {totalBirr.toLocaleString()}{" "}
               <span className="text-sm font-bold text-muted-foreground">
-                ETB
+                {t("common.etb")}
               </span>
             </p>
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              You Get
+              {t("contact.youGet")}
             </p>
             <p className="text-2xl font-extrabold text-primary">
               {coinsRequested.toLocaleString()}{" "}
-              <span className="text-sm font-bold">coins</span>
+              <span className="text-sm font-bold">{t("common.coins")}</span>
             </p>
           </div>
         </div>
@@ -170,18 +172,18 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Redirecting…
+              {t("contact.redirecting")}
             </>
           ) : (
             <>
               <Coins className="h-4 w-4" />
-              Proceed to Payment
+              {t("contact.proceedToPayment")}
             </>
           )}
         </Button>
 
         <p className="text-center text-[10px] text-muted-foreground">
-          Powered by Chapa · Secure payment gateway
+          {t("contact.poweredByChapa")}
         </p>
       </div>
     </div>
@@ -195,15 +197,14 @@ function KYCStatusBanner({
   status: "pending" | "approved" | "rejected" | null;
   reason?: string;
 }) {
+  const { t } = useLanguage();
   if (status === "approved") {
     return (
       <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
         <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="font-bold text-sm">Identity Verified</p>
-          <p className="text-xs mt-0.5 opacity-80">
-            Your KYC has been approved. You can post listings.
-          </p>
+          <p className="font-bold text-sm">{t("profile.identityVerified")}</p>
+          <p className="text-xs mt-0.5 opacity-80">{t("profile.kycApproved")}</p>
         </div>
       </div>
     );
@@ -213,9 +214,9 @@ function KYCStatusBanner({
       <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
         <Clock className="h-5 w-5 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="font-bold text-sm">KYC Under Review</p>
+          <p className="font-bold text-sm">{t("profile.kycUnderReview")}</p>
           <p className="text-xs mt-0.5 opacity-80">
-            Your documents have been submitted and are awaiting admin review.
+            {t("profile.kycUnderReviewDesc")}
           </p>
         </div>
       </div>
@@ -226,9 +227,9 @@ function KYCStatusBanner({
       <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400">
         <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="font-bold text-sm">KYC Rejected</p>
+          <p className="font-bold text-sm">{t("profile.kycRejected")}</p>
           <p className="text-xs mt-0.5 opacity-80">
-            Reason: {reason || "Document image was unclear. Please resubmit."}
+            {t("profile.reason")} {reason || t("profile.defaultRejection")}
           </p>
         </div>
       </div>
@@ -238,9 +239,9 @@ function KYCStatusBanner({
     <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400">
       <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
       <div>
-        <p className="font-bold text-sm">KYC Not Submitted</p>
+        <p className="font-bold text-sm">{t("profile.kycNotSubmitted")}</p>
         <p className="text-xs mt-0.5 opacity-80">
-          Submit your identity documents to unlock listing creation.
+          {t("profile.kycNotSubmittedDesc")}
         </p>
       </div>
     </div>
@@ -873,6 +874,7 @@ function ListingCard({ access }: { access: ContactAccess }) {
 type ProfileTab = "listings" | "kyc";
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const currentUser = useSelector((state: RootState) => state.user.currentUser);
   const isKYCVerified = currentUser?.isKYCVerified ?? false;
   const [activeTab, setActiveTab] = useState<ProfileTab>("listings");
@@ -901,10 +903,10 @@ export default function ProfilePage() {
           <div className="mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-1 sm:mb-2">
-                My Profile
+                {t("profile.myProfile")}
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground">
-                Manage your account and view your unlocked listings
+                {t("profile.manageAccount")}
               </p>
             </div>
             <Link href="/settings">
@@ -914,7 +916,7 @@ export default function ProfilePage() {
                 className="gap-2 w-full sm:w-auto"
               >
                 <Edit className="h-4 w-4" />
-                Edit Profile
+                {t("profile.editProfile")}
               </Button>
             </Link>
           </div>
@@ -930,7 +932,7 @@ export default function ProfilePage() {
                 <CardContent className="space-y-5 sm:space-y-6">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                      Name
+                      {t("profile.name")}
                     </p>
                     <p className="text-base sm:text-lg font-semibold text-foreground mt-1">
                       {user.name}
@@ -938,7 +940,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="border-t border-border pt-5 sm:pt-6">
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                      Email
+                      {t("profile.email")}
                     </p>
                     <p className="text-sm font-semibold text-foreground break-all mt-1">
                       {user.email}
@@ -946,7 +948,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="border-t border-border pt-5 sm:pt-6">
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                      Member Since
+                      {t("profile.memberSince")}
                     </p>
                     <p className="text-sm font-semibold text-foreground mt-1">
                       {user.joinedAt}
@@ -955,17 +957,17 @@ export default function ProfilePage() {
 
                   <div className="border-t border-border pt-5 sm:pt-6">
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                      Identity
+                      {t("profile.identity")}
                     </p>
                     {isKYCVerified ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-bold uppercase tracking-widest">
                         <ShieldCheck className="h-3.5 w-3.5" />
-                        Verified
+                        {t("profile.verified")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 text-xs font-bold uppercase tracking-widest">
                         <ShieldAlert className="h-3.5 w-3.5" />
-                        Unverified
+                        {t("profile.unverified")}
                       </span>
                     )}
                   </div>

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 function formatDate(dateStr: string) {
   return new Intl.DateTimeFormat("en-ET", {
@@ -34,6 +35,7 @@ function formatBirr(amount: number) {
 export default function PaymentResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useLanguage();
   const tx_ref = searchParams.get("tx_ref");
 
   useEffect(() => {
@@ -71,10 +73,10 @@ export default function PaymentResultPage() {
             </div>
             <div className="text-center">
               <p className="font-semibold text-foreground text-lg">
-                Verifying your payment
+                {t("pages.paymentVerifying")}
               </p>
               <p className="text-muted-foreground text-sm mt-1">
-                This only takes a moment…
+                {t("pages.paymentVerifyingDesc")}
               </p>
             </div>
           </div>
@@ -117,10 +119,10 @@ export default function PaymentResultPage() {
                 className="text-2xl font-bold text-foreground"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Payment Successful
+                {t("pages.paymentSuccess")}
               </h1>
               <p className="text-muted-foreground text-sm mt-2">
-                Your coins have been added to your balance
+                {t("pages.paymentSuccessDesc")}
               </p>
             </div>
 
@@ -128,24 +130,24 @@ export default function PaymentResultPage() {
             <div className="px-8 py-6 space-y-4">
               <DetailRow
                 icon={<Coins className="h-4 w-4" />}
-                label="Coins Received"
+                label={t("pages.coinsReceived")}
                 value={
                   <span
                     className="font-bold text-lg"
                     style={{ color: "hsl(142 72% 42%)" }}
                   >
-                    +{payment.coinsReceived} coins
+                    +{payment.coinsReceived} {t("common.coins")}
                   </span>
                 }
               />
               <DetailRow
                 icon={<Receipt className="h-4 w-4" />}
-                label="Amount Paid"
+                label={t("pages.amountPaid")}
                 value={formatBirr(payment.amountBirr)}
               />
               <DetailRow
                 icon={<Clock className="h-4 w-4" />}
-                label="Completed"
+                label={t("pages.completed")}
                 value={
                   payment.completedAt
                     ? formatDate(payment.completedAt)
@@ -160,7 +162,7 @@ export default function PaymentResultPage() {
                 }}
               >
                 <span className="uppercase tracking-wider text-[10px] block mb-1 opacity-60">
-                  Transaction ID
+                  {t("pages.transactionId")}
                 </span>
                 {payment.transactionId}
               </div>
@@ -171,7 +173,7 @@ export default function PaymentResultPage() {
                   style={{ background: "hsl(var(--primary)/0.08)" }}
                 >
                   <span className="text-sm text-muted-foreground font-medium">
-                    New Coin Balance
+                    {t("pages.newCoinBalance")}
                   </span>
                   <span className="text-xl font-bold text-foreground flex items-center gap-1.5">
                     <Coins className="h-5 w-5 text-primary" />
@@ -184,7 +186,7 @@ export default function PaymentResultPage() {
             <div className="px-8 pb-8">
               <Link href="/" className="block">
                 <Button className="w-full" size="lg">
-                  Back to Home
+                  {t("pages.returnHome")}
                 </Button>
               </Link>
             </div>
@@ -228,10 +230,10 @@ export default function PaymentResultPage() {
                 className="text-2xl font-bold text-foreground"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Payment Failed
+                {t("pages.paymentFailed")}
               </h1>
               <p className="text-muted-foreground text-sm mt-2">
-                Your transaction could not be completed
+                {t("pages.paymentFailedDesc")}
               </p>
             </div>
 
@@ -241,13 +243,13 @@ export default function PaymentResultPage() {
                 <>
                   <DetailRow
                     icon={<Receipt className="h-4 w-4" />}
-                    label="Amount"
+                    label={t("pages.amount")}
                     value={formatBirr(payment.amountBirr)}
                   />
                   <DetailRow
                     icon={<Coins className="h-4 w-4" />}
-                    label="Coins Requested"
-                    value={`${payment.coinsReceived} coins`}
+                    label={t("pages.coinsRequested")}
+                    value={`${payment.coinsReceived} ${t("common.coins")}`}
                   />
                   <div
                     className="rounded-lg px-4 py-3 text-xs font-mono break-all"
@@ -257,7 +259,7 @@ export default function PaymentResultPage() {
                     }}
                   >
                     <span className="uppercase tracking-wider text-[10px] block mb-1 opacity-60">
-                      Transaction ID
+                      {t("pages.transactionId")}
                     </span>
                     {payment.transactionId}
                   </div>
@@ -272,8 +274,8 @@ export default function PaymentResultPage() {
                 }}
               >
                 {isError
-                  ? "We could not verify this payment. If money was deducted from your account, please contact support."
-                  : "Your payment was not completed. No charges have been made to your account."}
+                  ? t("pages.paymentVerifyError")
+                  : t("pages.paymentNotCompleted")}
               </div>
             </div>
 
@@ -281,13 +283,13 @@ export default function PaymentResultPage() {
               <Link href="/buy-coins">
                 <Button className="w-full" size="lg">
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
+                  {t("pages.tryAgainPayment")}
                 </Button>
               </Link>
               <Link href="/">
                 <Button variant="outline" className="w-full" size="lg">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
+                  {t("pages.returnHome")}
                 </Button>
               </Link>
             </div>

@@ -6,9 +6,11 @@ import ListingsGrid from "@/components/ListingsGrid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { houses, cars, otherServices, getListingPath } from "@/data/listings";
+import { houses, cars, otherServices } from "@/data/listings";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function ListingsDisplayPage() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState<FilterValues>({
     search: "",
     location: "",
@@ -53,15 +55,14 @@ export default function ListingsDisplayPage() {
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2 mb-4">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("common.back")}
             </Button>
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-            Search Results
+            {t("listings.searchResults")}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Found {allListings.length} listing
-            {allListings.length !== 1 ? "s" : ""}
+            {t("listings.foundListings", { count: allListings.length })}
           </p>
         </div>
 
@@ -81,7 +82,7 @@ export default function ListingsDisplayPage() {
           <div className="lg:col-span-3">
             <ListingsGrid
               listings={allListings}
-              emptyMessage="No listings match your filters. Try adjusting your search criteria."
+              emptyMessage={t("listings.noSearchResults")}
             />
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface LogoProps {
   className?: string;
@@ -16,6 +17,7 @@ export default function Logo({
   showText = true,
   size = "md",
 }: LogoProps) {
+  const { t } = useLanguage();
   const px = sizeMap[size];
 
   return (
@@ -52,8 +54,10 @@ export default function Logo({
         <span
           className={`font-medium tracking-tight text-slate-900 dark:text-slate-100 hidden min-[327px]:inline ${textSizeMap[size]}`}
         >
-          Digital
-          <span className="text-indigo-600 dark:text-indigo-400">Broker</span>
+          {t("common.brandDigital")}
+          <span className="text-indigo-600 dark:text-indigo-400">
+            {t("common.brandBroker")}
+          </span>
         </span>
       )}
     </Link>

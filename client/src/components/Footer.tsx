@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { Twitter, Facebook, Instagram, Linkedin, Github } from "lucide-react";
+import { Twitter, Facebook, Instagram, Linkedin } from "lucide-react";
 import Logo from "@/components/Logo";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="border-t border-border bg-card py-20">
       <div className="container px-6">
@@ -10,9 +15,7 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-8">
             <Logo size="md" showText={true} />
             <p className="text-base text-muted-foreground leading-relaxed max-w-sm font-medium">
-              Ethiopia's premier digital bridge for high-end real estate,
-              premium vehicles, and vetted professional services. Built for the
-              modern success.
+              {t("footer.tagline")}
             </p>
             <div className="flex gap-3">
               {[
@@ -36,15 +39,18 @@ export default function Footer() {
 
           <div className="space-y-6">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">
-              Marketplace
+              {t("footer.marketplace")}
             </h3>
             <ul className="space-y-3">
               {[
-                { label: "Houses", href: "/house-listings" },
-                { label: "Cars", href: "/car-listings" },
-                { label: "Other Services", href: "/service-listings" },
+                { label: t("footer.houses"), href: "/house-listings" },
+                { label: t("footer.cars"), href: "/car-listings" },
+                {
+                  label: t("footer.otherServices"),
+                  href: "/service-listings",
+                },
               ].map((link) => (
-                <li key={link.label}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
@@ -58,16 +64,16 @@ export default function Footer() {
 
           <div className="space-y-6">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">
-              Platform
+              {t("footer.platform")}
             </h3>
             <ul className="space-y-3">
               {[
-                { label: "Dashboard", href: "/dashboard" },
-                { label: "My Profile", href: "/profile" },
-                { label: "Favorites", href: "/favorites" },
-                { label: "Settings", href: "/settings" },
+                { label: t("footer.dashboard"), href: "/dashboard" },
+                { label: t("footer.myProfile"), href: "/profile" },
+                { label: t("footer.favorites"), href: "/favorites" },
+                { label: t("footer.settings"), href: "/settings" },
               ].map((link) => (
-                <li key={link.label}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
@@ -81,16 +87,16 @@ export default function Footer() {
 
           <div className="space-y-6">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">
-              Support
+              {t("footer.support")}
             </h3>
             <ul className="space-y-3">
               {[
-                { label: "Help Center", href: "/help" },
-                { label: "Terms of Service", href: "/terms" },
-                { label: "Privacy Policy", href: "/privacy" },
-                { label: "Contact Us", href: "/contact" },
+                { label: t("footer.helpCenter"), href: "/help" },
+                { label: t("footer.terms"), href: "/terms" },
+                { label: t("footer.privacy"), href: "/privacy" },
+                { label: t("footer.contactUs"), href: "/contact" },
               ].map((link) => (
-                <li key={link.label}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
@@ -105,7 +111,7 @@ export default function Footer() {
 
         <div className="pt-2 border-t border-border/50 flex justify-center">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-            © 2026 Digital Broker Connect. All rights reserved.
+            {t("footer.copyright")}
           </p>
         </div>
       </div>
