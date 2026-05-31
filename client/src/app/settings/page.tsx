@@ -113,7 +113,7 @@ export default function SettingsPage() {
             </Link>
           </div>
         </div>
-      </main>
+      )}
 
       {/* Password Modal */}
       {showPasswordModal && (
@@ -130,7 +130,7 @@ export default function SettingsPage() {
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                 />
               </div>
               <div className="space-y-2">
@@ -139,7 +139,7 @@ export default function SettingsPage() {
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                 />
               </div>
               <div className="space-y-2">
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                 </label>
                 <PasswordInput
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+                  className="w-full px-5 py-4 bg-muted/30 border border-border/60 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium font-inter"
                 />
               </div>
             </div>
@@ -156,13 +156,13 @@ export default function SettingsPage() {
             <div className="flex gap-4">
               <Button
                 variant="outline"
-                className="flex-1 h-14 rounded-2xl font-bold border-border/60"
+                className="flex-1 h-14 rounded-2xl font-bold border-border/60 font-inter"
                 onClick={() => setShowPasswordModal(false)}
               >
                 {t("common.cancel")}
               </Button>
               <Button
-                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20"
+                className="flex-1 h-14 rounded-2xl font-black shadow-lg shadow-primary/20 font-poppins"
                 onClick={() => {
                   toast.success(t("pages.securityUpdated"));
                   setShowPasswordModal(false);

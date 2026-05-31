@@ -61,9 +61,9 @@ export function InventoryTable({
           <PlusCircle className="h-3.5 w-3.5" /> Add New Asset
         </Button>
       </div>
-      <div className="bg-card border border-border rounded-3xl overflow-x-auto shadow-soft custom-scrollbar">
+      <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2.5rem] overflow-x-auto shadow-soft custom-scrollbar">
         <table className="w-full text-left min-w-[800px]">
-          <thead className="bg-muted/50 border-b border-border">
+          <thead className="bg-muted/30 border-b border-border/40">
             <tr>
               {["Asset Details", "Valuation", "Status", "Actions"].map((h) => (
                 <th
@@ -75,7 +75,7 @@ export function InventoryTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/50">
+          <tbody className="divide-y divide-border/30">
             {filteredListings.map((listing) => (
               <tr
                 key={listing.id}

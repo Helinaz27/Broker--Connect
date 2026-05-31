@@ -1,6 +1,7 @@
 "use client";
 
 import { Heart, MapPin, ArrowUpRight } from "lucide-react";
+import { Heart, MapPin, ArrowUpRight } from "lucide-react";
 import { useFavorites } from "@/lib/FavoritesContext";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +18,7 @@ interface ListingCardProps {
   category: "house" | "car" | "service" | "otherService";
   listingMode?: "rent" | "sell";
   contactLimit?: number;
+  type?: "rent" | "sale";
 }
 
 export default function ListingCard({
@@ -28,6 +30,7 @@ export default function ListingCard({
   category,
   listingMode,
   contactLimit = 0,
+  type,
 }: ListingCardProps) {
   const { t } = useLanguage();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
@@ -65,6 +68,7 @@ export default function ListingCard({
           <img
             src={image}
             alt={title}
+            referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
 

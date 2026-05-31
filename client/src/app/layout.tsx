@@ -11,7 +11,7 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ChatProvider } from "@/components/chat/ChatWidget";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",

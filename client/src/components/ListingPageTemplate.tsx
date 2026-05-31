@@ -17,7 +17,7 @@ interface Listing {
   price: number;
   location: string;
   category: "house" | "car" | "service";
-  rating?: number;
+  type?: "rent" | "sale";
 }
 
 interface ListingPageProps {

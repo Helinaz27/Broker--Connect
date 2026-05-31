@@ -61,7 +61,8 @@ export default function Header() {
 
   const user = isAuthenticated ? currentUser : null;
   const userName = user
-    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || t("header.user")
+    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+      t("header.user")
     : "";
   const userInitials = userName
     .split(" ")
@@ -70,6 +71,13 @@ export default function Header() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const hasDashboardAccess =
     user?.roles?.some((role) => role === "client" || role === "admin") ?? false;

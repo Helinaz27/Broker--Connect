@@ -79,6 +79,8 @@ function BuyCoinsModal({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const badge = getLevelBadge(user.level);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -204,7 +206,9 @@ function KYCStatusBanner({
         <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
         <div>
           <p className="font-bold text-sm">{t("profile.identityVerified")}</p>
-          <p className="text-xs mt-0.5 opacity-80">{t("profile.kycApproved")}</p>
+          <p className="text-xs mt-0.5 opacity-80">
+            {t("profile.kycApproved")}
+          </p>
         </div>
       </div>
     );

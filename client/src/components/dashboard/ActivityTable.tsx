@@ -74,7 +74,7 @@ export function ActivityTable({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/50">
+          <tbody className="divide-y divide-border/30">
             {filteredListings.map((listing) => (
               <tr
                 key={listing.id}
@@ -119,7 +119,7 @@ export function ActivityTable({
                       : t("common.sell")}
                   </span>
                 </td>
-                <td className="px-6 py-5">
+                <td className="px-8 py-6">
                   <div className="flex items-center gap-2">
                     <div
                       className={`h-1.5 w-1.5 rounded-full ${listing.status === "active" ? "bg-emerald-500" : "bg-amber-500"}`}
@@ -131,8 +131,8 @@ export function ActivityTable({
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-5 text-right">
-                  <div className="flex items-center justify-end gap-1">
+                <td className="px-8 py-6 text-right">
+                  <div className="flex items-center justify-end gap-2">
                     <Link href={getListingPath(listing.category, listing.id)}>
                       <Button
                         variant="ghost"

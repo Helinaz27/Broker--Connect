@@ -73,10 +73,10 @@ export default function FilterSection({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder={t("filters.searchQueryPlaceholder")}
+              placeholder="Search listings..."
               value={filters.search}
               onChange={(e) => updateFilter({ search: e.target.value })}
-              className={`${inputStyles} pl-11`}
+              className={`${inputStyles} pl-11 font-inter`}
             />
           </div>
         </div>

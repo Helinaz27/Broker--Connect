@@ -98,6 +98,7 @@ export default function HouseDetailPage() {
       </div>
     );
   }
+  }
 
   const images =
     house.images && house.images.length > 0

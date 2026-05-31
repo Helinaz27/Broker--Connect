@@ -13,33 +13,32 @@ interface Message {
 }
 
 export default function Chat() {
-  const { t } = useLanguage();
-  const initialMessages = useMemo<Message[]>(
-    () => [
-      {
-        id: "1",
-        sender: "other",
-        text: t("chat.demoMsg1"),
-        timestamp: new Date(Date.now() - 3600000),
-      },
-      {
-        id: "2",
-        sender: "user",
-        text: t("chat.demoMsg2"),
-        timestamp: new Date(Date.now() - 1800000),
-      },
-      {
-        id: "3",
-        sender: "other",
-        text: t("chat.demoMsg3"),
-        timestamp: new Date(Date.now() - 600000),
-      },
-    ],
-    [t],
-  );
-
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [mounted, setMounted] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      sender: "other",
+      text: "Hello, is this house still available?",
+      timestamp: new Date(Date.now() - 3600000),
+    },
+    {
+      id: "2",
+      sender: "user",
+      text: "Yes, it is! Would you like to view it?",
+      timestamp: new Date(Date.now() - 1800000),
+    },
+    {
+      id: "3",
+      sender: "other",
+      text: "That would be great! Can we meet tomorrow?",
+      timestamp: new Date(Date.now() - 600000),
+    },
+  ]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -146,7 +145,7 @@ export default function Chat() {
                 </p>
               </div>
               <span className="text-[10px] text-muted-foreground mt-1 px-1 font-bold">
-                {formatTime(message.timestamp)}
+                {mounted ? formatTime(message.timestamp) : "--:--"}
               </span>
             </div>
           ))}
@@ -175,7 +174,7 @@ export default function Chat() {
             </Button>
           </form>
           <p className="text-[10px] text-center text-muted-foreground mt-3 font-bold uppercase tracking-tight">
-            {t("chat.safeEncrypted")}
+            Safe & Encrypted Chat by BrokerConnect
           </p>
         </div>
       </div>
