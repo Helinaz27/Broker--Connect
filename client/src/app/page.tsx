@@ -2,9 +2,11 @@
 "use client";
 
 import ListingCard from "@/components/ListingCard";
+import Testimonials from "@/components/Testimonials";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Building2, Car, Briefcase } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useCallback } from "react";
 import { useSearchListingsQuery } from "@/store/apis/listingsApi";
@@ -129,21 +131,81 @@ export default function Index() {
   });
 
   return (
-    <main className="min-h-screen bg-background">
-      <section className="relative py-8 md:py-12 bg-gradient-to-b from-primary/5 to-background overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3">
-              {t("home.heroTitle")}
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              {t("home.heroSubtitle")}
-            </p>
+    <main className="min-h-screen bg-background overflow-x-hidden">
+      <section className="relative py-10 md:py-16 bg-gradient-to-b from-primary/5 to-background overflow-x-hidden">
+        <div className="absolute top-0 right-0 w-[480px] h-[480px] bg-primary/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="container mx-auto px-6 max-w-full relative">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center mb-10 md:mb-12">
+            <div className="space-y-6 order-2 lg:order-1">
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+                {t("home.heroEyebrow")}
+              </span>
+              <h1 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-foreground leading-[1.1] tracking-tight">
+                {t("home.heroTitle")}{" "}
+                <span className="text-primary">
+                  {t("home.heroTitleHighlight")}
+                </span>
+              </h1>
+              <p className="text-lg text-muted-foreground leading-relaxed max-w-xl font-medium">
+                {t("home.heroSubtitle")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { icon: Building2, label: t("home.houses") },
+                  { icon: Car, label: t("home.cars") },
+                  { icon: Briefcase, label: t("home.otherServices") },
+                ].map(({ icon: Icon, label }) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm"
+                  >
+                    <Icon className="h-4 w-4 text-primary" />
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-3 pt-1">
+                <Link href="/house-listings">
+                  <Button size="lg" className="gap-2 font-semibold">
+                    {t("home.heroBrowseListings")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/about-us">
+                  <Button size="lg" variant="outline" className="font-semibold">
+                    {t("home.heroLearnMore")}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="relative order-1 lg:order-2">
+              <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 via-transparent to-primary/5 rounded-[2.5rem] blur-2xl pointer-events-none" />
+              <div className="relative rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border border-border shadow-glass aspect-[4/3] lg:aspect-[5/4]">
+                <Image
+                  src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=85"
+                  alt={t("home.heroImageAlt")}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                  <p className="text-sm font-bold uppercase tracking-widest text-primary-foreground/80 mb-1">
+                    {t("home.heroEyebrow")}
+                  </p>
+                  <p className="text-lg md:text-xl font-bold text-primary-foreground leading-snug">
+                    {t("home.heroTitleHighlight")}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-              <div className="space-y-2">
+          <div className="bg-card border border-border rounded-2xl p-6 overflow-hidden max-w-full shadow-soft">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 min-w-0">
+              <div className="space-y-2 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t("home.category")}
                 </label>
@@ -159,7 +221,7 @@ export default function Index() {
                 </select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t("home.search")}
                 </label>
@@ -173,7 +235,7 @@ export default function Index() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t("home.city")}
                 </label>
@@ -186,7 +248,7 @@ export default function Index() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t("home.minPrice")}
                 </label>
@@ -206,7 +268,7 @@ export default function Index() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t("home.maxPrice")}
                 </label>
@@ -226,7 +288,7 @@ export default function Index() {
                 />
               </div>
 
-              <div className="flex flex-col gap-2 justify-end">
+              <div className="flex flex-col gap-2 justify-end min-w-0">
                 {showApply && (
                   <Button
                     size="sm"
@@ -414,6 +476,8 @@ export default function Index() {
           </div>
         )}
       </section>
+
+      <Testimonials />
 
       <Chat />
     </main>
