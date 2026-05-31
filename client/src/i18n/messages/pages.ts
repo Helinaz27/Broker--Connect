@@ -77,15 +77,30 @@ export const pagesEn = {
   aboutSecureDesc: "KYC verification ensures all users are trusted",
   aboutCommunity: "Community Driven",
   aboutCommunityDesc: "Connect with thousands of verified users",
+  aboutMessaging: "Direct Messaging",
+  aboutMessagingDesc:
+    "Chat with sellers and brokers in real time before you commit",
+  aboutEyebrow: "About Us",
+  aboutHeroImageCaption:
+    "Building Ethiopia's trusted digital marketplace for every transaction.",
+  aboutMissionHeading:
+    "Empowering confident transactions across Ethiopia",
+  aboutMissionImageAlt: "Professional property consultation",
+  aboutMarketplaceTitle: "One Platform, Three Marketplaces",
+  aboutMarketplaceSubtitle:
+    "Whether you need a home, a vehicle, or expert services — Digital Broker brings it together.",
+  aboutValuesEyebrow: "Our Values",
+  aboutValuesSubtitle:
+    "Everything we build is designed to make listing, discovering, and connecting simple and secure.",
   aboutLabel: "About",
-  aboutBrand: "Broker Connect",
+  aboutBrand: "Digital Broker",
   aboutHero:
     "Ethiopia's premier marketplace connecting buyers, sellers, and service providers. We're building trust, transparency, and opportunity in the digital economy.",
   exploreMarketplace: "Explore Marketplace",
   ourMission: "Our Mission",
   aboutMissionText:
     "To create a safe, transparent, and efficient digital marketplace where individuals and businesses can confidently buy, sell, and exchange properties, vehicles, and professional services.",
-  whyChoose: "Why Choose Broker Connect?",
+  whyChoose: "Why Choose Digital Broker?",
   readyToStart: "Ready to Get Started?",
   joinThousands: "Join thousands of verified users trading with confidence",
   startBrowsing: "Start Browsing",
@@ -190,15 +205,29 @@ export const pagesAm = {
   aboutSecureDesc: "KYC ማረጋገጫ ሁሉንም ተጠቃሚዎች የታመኑ ያደርጋል",
   aboutCommunity: "በማህበረሰብ የሚመራ",
   aboutCommunityDesc: "ከሺዎች የሚቆጠሩ የተረጋገጡ ተጠቃሚዎች ጋር ይገናኙ",
+  aboutMessaging: "ቀጥተኛ መልዕክት",
+  aboutMessagingDesc:
+    "ከመወሰንዎ በፊት ከሻጮች እና ብሮከሮች ጋር በቅጽበት ይወያዩ",
+  aboutEyebrow: "ስለ እኛ",
+  aboutHeroImageCaption:
+    "ለእያንዳንዱ ግብይት የኢትዮጵያን የታመነ ዲጂታል ገበያ እንሰራለን።",
+  aboutMissionHeading: "በኢትዮጵያ ውስጥ በእምነት ግብይቶችን ማበረታታት",
+  aboutMissionImageAlt: "ሙያዊ የንብረት ምክር",
+  aboutMarketplaceTitle: "አንድ መድረክ፣ ሦስት ገበያዎች",
+  aboutMarketplaceSubtitle:
+    "ቤት፣ ተሽከርካሪ ወይም ባለሙያ አገልግሎት ብትፈልጉ — ዲጂታል ብሮከር ሁሉንም ያገናኛል።",
+  aboutValuesEyebrow: "የእኛ እሴቶች",
+  aboutValuesSubtitle:
+    "የምንሰራው ሁሉ ዝርዝር፣ ፍለጋ እና ግንኙነትን ቀላል እና ደህንነቱ የተጠበቀ ለማድረግ ነው።",
   aboutLabel: "ስለ",
-  aboutBrand: "ብሮከር ኮኔክት",
+  aboutBrand: "ዲጂታል ብሮከር",
   aboutHero:
     "ገዢዎችን፣ ሻጮችን እና አገልግሎት አቅራቢዎችን የሚያገናኝ የኢትዮጵያ ዋና ገበያ። በዲጂታል ኢኮኖሚ ውስጥ እምነት፣ ግልጽነት እና እድል እንሰራለን።",
   exploreMarketplace: "ገበያውን ያስሱ",
   ourMission: "ተልዕኳችን",
   aboutMissionText:
     "ግለሰቦች እና ንግዶች ንብረት፣ ተሽከርካሪዎች እና ሙያዊ አገልግሎቶችን በእምነት ለመግዛት፣ ለመሸጥ እና ለመለዋወጥ የሚችሉ ደህንነቱ የተጠበቀ ዲጂታል ገበያ ለመፍጠር።",
-  whyChoose: "ለምን ብሮከር ኮኔክት?",
+  whyChoose: "ለምን ዲጂታል ብሮከር?",
   readyToStart: "ለመጀመር ዝግጁ ነዎት?",
   joinThousands: "ከሺዎች የሚቆጠሩ የተረጋገጡ ተጠቃሚዎች ጋር በእምነት ይሰራሉ",
   startBrowsing: "ማሰስ ይጀምሩ",
