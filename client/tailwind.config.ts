@@ -70,7 +70,8 @@ export default {
         sm: "0.25rem",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+        poppins: ["var(--font-poppins)", "Poppins", "sans-serif"],
+        inter: ["var(--font-inter)", "Inter", "sans-serif"],
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',

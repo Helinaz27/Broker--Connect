@@ -21,7 +21,7 @@ export default function ListingsDisplayPage() {
   });
 
   const allListings = useMemo(() => {
-    const combined = [...houses, ...cars, ...otherServices];
+    const combined = [...houses, ...cars, ...services];
     return combined.filter((item) => {
       const priceMatch =
         item.price >= filters.priceMin && item.price <= filters.priceMax;

@@ -93,8 +93,49 @@
   }
   
   body {
-    @apply bg-background text-foreground antialiased;
-    letter-spacing: -0.01em;
+    @apply bg-background text-foreground antialiased font-inter;
+    letter-spacing: -0.015em;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-bold text-foreground font-poppins;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  p {
+    @apply text-muted-foreground font-normal font-inter;
+    line-height: 1.7;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Responsive Typography Hierarchy */
+  @layer utilities {
+    .text-display {
+      @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black italic tracking-tighter font-poppins;
+    }
+    .text-h1 {
+      @apply text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight font-poppins;
+    }
+    .text-h2 {
+      @apply text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight font-poppins;
+    }
+    .text-h3 {
+      @apply text-xl sm:text-2xl font-bold font-poppins;
+    }
+    .text-body {
+      @apply text-base sm:text-lg leading-relaxed font-inter;
+    }
+    .text-small {
+      @apply text-sm font-medium font-inter;
+    }
+    .text-label {
+      @apply text-[10px] font-black uppercase tracking-[0.2em] font-poppins;
+    }
   }
 
   .glass {

@@ -763,7 +763,9 @@ export function AssetForm({
               />
             </div>
             <div className="space-y-2">
-              <label className={labelStyle}>{t("dashboard.durationDays")}</label>
+              <label className={labelStyle}>
+                {t("dashboard.durationDays")}
+              </label>
               <input
                 type="number"
                 min={1}
@@ -806,7 +808,9 @@ export function AssetForm({
               {((isHouse && houseForm.listingMode === "rent") ||
                 (isCar && carForm.listingMode === "rent")) && (
                 <div className="space-y-2 animate-in fade-in duration-300">
-                  <label className={labelStyle}>{t("common.rentalPeriod")}</label>
+                  <label className={labelStyle}>
+                    {t("common.rentalPeriod")}
+                  </label>
                   <select
                     className={inputStyle}
                     value={
@@ -1066,7 +1070,9 @@ export function AssetForm({
                     }
                   >
                     <option value="fuel">{t("dashboard.fuelIce")}</option>
-                    <option value="electric">{t("dashboard.electricEv")}</option>
+                    <option value="electric">
+                      {t("dashboard.electricEv")}
+                    </option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -1123,7 +1129,9 @@ export function AssetForm({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className={labelStyle}>{t("common.rentalPeriod")}</label>
+                  <label className={labelStyle}>
+                    {t("common.rentalPeriod")}
+                  </label>
                   <select
                     className={inputStyle}
                     value={serviceForm.rentalPeriod}
