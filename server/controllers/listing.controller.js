@@ -6,6 +6,7 @@ import {
   getListingById,
   getPaginatedListings,
   updateListing,
+  renewListing,
 } from "../services/listing.service.js";
 
 const uploadImagesToCloudinary = async (files) => {
@@ -132,6 +133,10 @@ const parseBool = (val) => {
   if (val === "true" || val === "1") return true;
   if (val === "false" || val === "0") return false;
   return Boolean(val);
+};
+
+const isListingExpired = (listing) => {
+  return listing.paidUntil && new Date() > new Date(listing.paidUntil);
 };
 
 export const createListingCtrl = async (req, res) => {
@@ -420,12 +425,22 @@ export const updateListingStatusCtrl = async (req, res) => {
     const existingListing = await getListingById(id);
     if (!existingListing)
       return errorResponse(res, "Listing not found", null, 404);
+
     if (!isAdmin && existingListing.ownerId !== userId) {
       return errorResponse(
         res,
         "You are not authorized to update this listing status",
         null,
         403,
+      );
+    }
+
+    if (status === "active" && isListingExpired(existingListing)) {
+      return errorResponse(
+        res,
+        "This listing has expired and cannot be set to active. Please renew your listing first.",
+        null,
+        400,
       );
     }
 
@@ -484,7 +499,6 @@ export const getAllListingsCtrl = async (req, res) => {
 export const getMyListingsCtrl = async (req, res) => {
   try {
     const userId = req.user.id;
-    // ↓ add listingMode here
     const {
       page = 1,
       limit = 20,
@@ -497,7 +511,7 @@ export const getMyListingsCtrl = async (req, res) => {
       filters: {
         ownerId: userId,
         ...(listingType && { listingType }),
-        ...(listingMode && { listingMode }), // ← forward it
+        ...(listingMode && { listingMode }),
         ...(status && status !== "all" && { status }),
       },
       page,
@@ -569,12 +583,11 @@ export const getListingByIdCtrl = async (req, res) => {
     if (!listing) return errorResponse(res, "Listing not found", null, 404);
     if (listing.status !== "active")
       return errorResponse(res, "Listing not available", null, 404);
-    if (listing.paidUntil && new Date() > new Date(listing.paidUntil))
+    if (isListingExpired(listing))
       return errorResponse(res, "Listing has expired", null, 404);
 
     const viewer = req.user ?? null;
 
-    // guest
     if (!viewer) {
       return successResponse(res, "Listing retrieved successfully", {
         listing: formatListingResponse(listing, false, false, false),
@@ -586,7 +599,6 @@ export const getListingByIdCtrl = async (req, res) => {
     const isOwner = listing.ownerId === viewer.id;
     const isAdmin = viewer.roles.includes("admin");
 
-    // owner or admin always sees contact
     if (isOwner || isAdmin) {
       return successResponse(res, "Listing retrieved successfully", {
         listing: formatListingResponse(listing, isOwner, isAdmin, true),
@@ -595,7 +607,6 @@ export const getListingByIdCtrl = async (req, res) => {
       });
     }
 
-    // logged-in user — check ContactAccess table
     const access = await prisma.contactAccess.findFirst({
       where: { viewerId: viewer.id, listingId: id, isActive: true },
     });
@@ -695,6 +706,113 @@ export const searchAdminListingsCtrl = async (req, res) => {
         pages: Math.ceil(total / parseInt(limit)),
       },
     });
+  } catch (error) {
+    return errorResponse(res, "Server error", error.message);
+  }
+};
+
+export const renewListingCtrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { durationDays } = req.body;
+
+    const existingListing = await getListingById(id);
+    if (!existingListing)
+      return errorResponse(res, "Listing not found", null, 404);
+    if (existingListing.ownerId !== userId)
+      return errorResponse(
+        res,
+        "You are not authorized to renew this listing",
+        null,
+        403,
+      );
+
+    const postingFee = await prisma.platformFee.findFirst({
+      where: {
+        feeType: "posting_fee",
+        category: existingListing.listingType,
+        ...(existingListing.listingMode && {
+          listingMode: existingListing.listingMode,
+        }),
+        isActive: true,
+      },
+    });
+
+    if (!postingFee)
+      return errorResponse(
+        res,
+        `No active posting fee found for ${existingListing.listingType} listings. Please contact admin.`,
+        null,
+        400,
+      );
+
+    const totalCoinsNeeded = Math.ceil(
+      (parseInt(durationDays) * postingFee.coinAmount) /
+        postingFee.durationDays,
+    );
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true },
+    });
+
+    if (!user || user.coins < totalCoinsNeeded) {
+      return errorResponse(
+        res,
+        `Insufficient coins. You need ${totalCoinsNeeded} coins for ${durationDays} days but have ${user?.coins ?? 0}. Please buy more coins.`,
+        null,
+        400,
+      );
+    }
+
+    const now = new Date();
+    const base =
+      existingListing.paidUntil && new Date(existingListing.paidUntil) > now
+        ? new Date(existingListing.paidUntil)
+        : now;
+    const newPaidUntil = new Date(base);
+    newPaidUntil.setDate(newPaidUntil.getDate() + parseInt(durationDays));
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { coins: { decrement: totalCoinsNeeded } },
+      }),
+      prisma.coinTransaction.create({
+        data: {
+          userId,
+          type: "debit",
+          amount: totalCoinsNeeded,
+          reason: "renewal_fee",
+          description: `Paid ${totalCoinsNeeded} coins to renew listing for ${durationDays} days`,
+        },
+      }),
+    ]);
+
+    const updated = await renewListing(id, newPaidUntil);
+
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { coins: true },
+    });
+
+    return successResponse(
+      res,
+      `Listing renewed successfully for ${durationDays} days.`,
+      {
+        listing: {
+          ...formatListingResponse(updated, true, false),
+          renewalDetails: {
+            durationDays: parseInt(durationDays),
+            totalCoinsPaid: totalCoinsNeeded,
+            newPaidUntil,
+            isActive: true,
+          },
+          currentCoinsRemaining: updatedUser.coins,
+        },
+      },
+    );
   } catch (error) {
     return errorResponse(res, "Server error", error.message);
   }

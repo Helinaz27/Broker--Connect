@@ -3,6 +3,7 @@ import * as listingController from "../controllers/listing.controller.js";
 import {
   createListingValidator,
   updateListingValidator,
+  renewListingValidator,
 } from "../validators/listing.validator.js";
 import { uploadMultiple, handleUploadError } from "../middleware/upload.js";
 import { can } from "../middleware/can.js";
@@ -31,6 +32,13 @@ router.put(
   "/:id/status",
   can("listing", "updateOwn"),
   listingController.updateListingStatusCtrl,
+);
+
+router.put(
+  "/:id/renewal",
+  can("listing", "updateOwn"),
+  renewListingValidator,
+  listingController.renewListingCtrl,
 );
 
 router.get("/get-all", listingController.getAllListingsCtrl);
