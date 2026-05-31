@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
-import { X, Send, MessageCircle, ChevronDown, User } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Send, MessageCircle, ChevronDown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
@@ -13,6 +13,7 @@ interface Message {
 }
 
 export default function Chat() {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -35,16 +36,12 @@ export default function Chat() {
       timestamp: new Date(Date.now() - 600000),
     },
   ]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages]);
+    setMounted(true);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

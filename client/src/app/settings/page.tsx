@@ -113,7 +113,7 @@ export default function SettingsPage() {
             </Link>
           </div>
         </div>
-      )}
+      </main>
 
       {/* Password Modal */}
       {showPasswordModal && (

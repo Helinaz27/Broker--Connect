@@ -1,7 +1,6 @@
 "use client";
 
 import { Heart, MapPin, ArrowUpRight } from "lucide-react";
-import { Heart, MapPin, ArrowUpRight } from "lucide-react";
 import { useFavorites } from "@/lib/FavoritesContext";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -56,7 +55,8 @@ export default function ListingCard({
     }
   };
 
-  const href = getListingPath(category, id);
+  const mappedCategory = category === "otherService" ? "service" : category;
+  const href = getListingPath(mappedCategory, id);
 
   const showModeBadge =
     (category === "house" || category === "car") && listingMode;
