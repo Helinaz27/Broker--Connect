@@ -46,12 +46,18 @@ export const en = {
     terms: "Terms of Service",
     privacy: "Privacy Policy",
     contactUs: "Contact Us",
-    copyright: "© 2026 Digital Broker Connect. All rights reserved.",
+    copyright: "© 2026 Digital Broker. All rights reserved.",
   },
   home: {
-    heroTitle: "Find Your Perfect Match",
+    heroEyebrow: "Digital Broker",
+    heroTitle: "Ethiopia's Marketplace for",
+    heroTitleHighlight: "Homes, Cars & Services",
     heroSubtitle:
-      "Browse thousands of houses, cars, and other services from trusted sellers in your area.",
+      "List, discover, and connect with verified sellers and brokers across Ethiopia — one trusted platform for real estate, vehicles, and professional services.",
+    heroImageAlt:
+      "Modern homes and city skyline representing Digital Broker listings",
+    heroBrowseListings: "Browse Listings",
+    heroLearnMore: "About Us",
     category: "Category",
     search: "Search",
     city: "City",
@@ -84,6 +90,30 @@ export const en = {
     noServices: "No services match your filters.",
     noListingsTitle: "No listings found",
     noListingsBody: "Try adjusting your filters to find what you are looking for.",
+    testimonials: {
+      eyebrow: "Testimonials",
+      title: "What Our Customers Say",
+      subtitle:
+        "Real stories from buyers, sellers, and brokers who use Digital Broker every day.",
+      "1": {
+        quote:
+          "I found my apartment in Bole within a week. The filters and direct chat with the owner made everything simple and transparent.",
+        name: "Sara Bekele",
+        role: "Home buyer, Addis Ababa",
+      },
+      "2": {
+        quote:
+          "Listing my car took minutes, and I started getting serious inquiries the same day. Best marketplace experience I've had in Ethiopia.",
+        name: "Daniel Tesfaye",
+        role: "Car seller, Hawassa",
+      },
+      "3": {
+        quote:
+          "As a service provider, verified profiles and in-app messaging help me build trust with clients before we even meet.",
+        name: "Hanna Girma",
+        role: "Professional services broker",
+      },
+    },
   },
   common: commonEn,
   auth: authEn,
