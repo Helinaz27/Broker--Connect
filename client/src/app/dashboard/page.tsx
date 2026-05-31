@@ -69,7 +69,6 @@ export default function DashboardPage() {
           variant="outline"
           size="icon"
           className="h-10 w-10 rounded-xl"
-          // mobile open is handled by layout; this just shows the label
           onClick={() => {}}
         >
           <Menu className="h-5 w-5" />

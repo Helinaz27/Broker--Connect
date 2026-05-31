@@ -52,7 +52,7 @@ export default function Logo({
       </svg>
       {showText && (
         <span
-          className={`font-medium tracking-tight text-slate-900 dark:text-slate-100 hidden min-[327px]:inline ${textSizeMap[size]}`}
+          className={`font-medium tracking-tight text-slate-900 dark:text-slate-100 hidden min-[441px]:inline ${textSizeMap[size]}`}
         >
           {t("common.brandDigital")}
           <span className="text-indigo-600 dark:text-indigo-400">

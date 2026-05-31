@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import ListingCard from "@/components/ListingCard";
@@ -342,98 +343,6 @@ export default function Index() {
                   {cars.map((listing) => (
                     <div key={listing.id} className="flex-shrink-0 w-80">
                       <ListingCard {...toCard(listing, "car")} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -z-10" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Horizontal Filter Bar */}
-      <section className="container mx-auto px-6 -mt-12 relative z-20">
-        <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Post Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value as any })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all appearance-none font-inter"
-              >
-                <option value="all">All Categories</option>
-                <option value="house">Houses</option>
-                <option value="car">Cars</option>
-                <option value="service">Services</option>
-              </select>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Location</label>
-              <input
-                type="text"
-                placeholder="District in Addis..."
-                value={filters.location}
-                onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all font-inter"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Min Price (ETB)</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={filters.priceMin || ""}
-                onChange={(e) => setFilters({ ...filters, priceMin: parseInt(e.target.value) || 0 })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all font-inter"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-poppins">Max Price (ETB)</label>
-              <input
-                type="number"
-                placeholder="Any"
-                value={filters.priceMax || ""}
-                onChange={(e) => setFilters({ ...filters, priceMax: parseInt(e.target.value) || 100000000 })}
-                className="w-full h-14 px-5 bg-muted/30 border border-border/60 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all font-inter"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button onClick={handleReset} variant="outline" className="w-full h-14 rounded-2xl border-border/60 font-black uppercase tracking-widest text-[10px] hover:bg-muted/50 transition-all font-poppins">
-                Reset Filters
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Listings Sections */}
-      <section className="py-32">
-        <div className="container mx-auto px-6 space-y-32">
-          {sections.map((section) => (
-            section.data.length > 0 && (
-              <div key={section.id} className="space-y-12">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                  <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 text-primary text-[10px] font-black uppercase tracking-widest font-poppins">
-                      <div className="h-0.5 w-6 bg-primary" />
-                      {section.label}
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight italic font-poppins">{section.title}</h2>
-                  </div>
-                  <Button variant="ghost" className="text-primary font-black text-xs hover:bg-primary/5 px-6 h-12 rounded-xl group font-poppins" asChild>
-                    <Link href={section.href}>
-                      View Collection
-                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </div>
-                
-                <div className="flex overflow-x-auto gap-8 pb-10 -mx-6 px-6 custom-scrollbar scroll-smooth snap-x snap-mandatory">
-                  {section.data.slice(0, 8).map((item) => (
-                    <div key={item.id} className="min-w-[320px] md:min-w-[420px] snap-start">
-                      <ListingCard {...item} category={section.id as any} type={item.type} />
                     </div>
                   ))}
                 </div>

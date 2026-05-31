@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Ethiopic, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Noto_Sans_Ethiopic, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/lib/FavoritesContext";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,6 +14,12 @@ import { LanguageProvider } from "@/i18n/LanguageProvider";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
@@ -40,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${notoEthiopic.variable} font-sans antialiased text-foreground bg-background`}
+        className={`${inter.variable} ${plusJakarta.variable} ${notoEthiopic.variable} font-sans antialiased text-foreground bg-background`}
       >
         <ThemeProvider
           attribute="class"
