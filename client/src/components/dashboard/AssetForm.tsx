@@ -894,7 +894,7 @@ export function AssetForm({
                   placeholder="e.g. Bole"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className={labelStyle}>
                     {t("dashboard.latitudeOpt")}
@@ -919,7 +919,7 @@ export function AssetForm({
                     placeholder="38.75"
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
