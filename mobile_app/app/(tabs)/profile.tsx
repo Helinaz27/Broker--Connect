@@ -175,7 +175,9 @@ export default function ProfileScreen() {
 
   const initials =
     `${currentUser.firstName?.[0] ?? ""}${currentUser.lastName?.[0] ?? ""}`.toUpperCase();
-  const kycStatus = kyc?.status ?? null;
+  const kycStatus = currentUser.isKYCVerified
+    ? "approved"
+    : (kyc?.status ?? null);
   const kycColor =
     kycStatus === "approved"
       ? t.success

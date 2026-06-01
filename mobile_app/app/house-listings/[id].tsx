@@ -1,4 +1,3 @@
-// app/house-listings/[id].tsx
 import React, { useState } from "react";
 import {
   View,
@@ -29,7 +28,6 @@ import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
-// Normalize API response — server returns either { listing: Listing } or Listing directly
 function normalizeListing(data: any): Listing | null {
   if (!data) return null;
   if (data.listing) return data.listing as Listing;
@@ -59,9 +57,7 @@ export default function HouseDetailScreen() {
   const [accessContact] = useAccessContactMutation();
   const [initiateChat] = useInitiateChatMutation();
 
-  // ✅ Single normalized Listing object — no more union type confusion
   const listing: Listing | null = normalizeListing(data?.data);
-
   const myAccesses = accessData?.data?.accesses ?? [];
   const alreadyUnlocked = myAccesses.some((a) => a.listing?.id === id);
   const unlockedAccess = myAccesses.find((a) => a.listing?.id === id);
@@ -77,7 +73,7 @@ export default function HouseDetailScreen() {
     if (coins < coinCost) {
       Alert.alert(
         "Insufficient Coins",
-        `You need ${coinCost} coins to unlock this contact.\nYour balance: ${coins} coins.`,
+        `You need ${coinCost} coins.\nYour balance: ${coins} coins.`,
         [
           {
             text: "Buy Coins",
@@ -149,7 +145,10 @@ export default function HouseDetailScreen() {
       <View style={s.center}>
         <Ionicons name="alert-circle-outline" size={48} color={t.textMuted} />
         <Text style={s.errorText}>Listing not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtnCenter}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginTop: 8 }}
+        >
           <Text style={{ color: t.primary, fontWeight: "700" }}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -166,7 +165,6 @@ export default function HouseDetailScreen() {
       </TouchableOpacity>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Image carousel */}
         <View style={s.imageWrap}>
           <ScrollView
             horizontal
@@ -223,7 +221,6 @@ export default function HouseDetailScreen() {
         </View>
 
         <View style={s.body}>
-          {/* Title & Price */}
           <View style={s.titleRow}>
             <View style={{ flex: 1 }}>
               <Text style={s.title}>{listing.title}</Text>
@@ -242,7 +239,6 @@ export default function HouseDetailScreen() {
             </View>
           </View>
 
-          {/* Quick stats */}
           <View style={s.statsRow}>
             {listing.bedrooms != null && (
               <StatPill
@@ -267,7 +263,6 @@ export default function HouseDetailScreen() {
             )}
           </View>
 
-          {/* Coin cost chip — always visible */}
           <View
             style={[
               s.coinChip,
@@ -283,7 +278,7 @@ export default function HouseDetailScreen() {
             </Text>
             {!alreadyUnlocked && (
               <Text style={[s.coinChipBalance, { color: t.textMuted }]}>
-                · Your balance: {coins}
+                · Balance: {coins}
               </Text>
             )}
             {alreadyUnlocked && (
@@ -294,44 +289,39 @@ export default function HouseDetailScreen() {
             )}
           </View>
 
-          {/* Description */}
           {listing.description && (
             <Section title="Description" t={t}>
               <Text style={s.desc}>{listing.description}</Text>
             </Section>
           )}
 
-          {/* Property Details */}
           <Section title="Property Details" t={t}>
-            <View style={s.detailsGrid}>
-              {listing.houseType && (
-                <DetailRow label="Type" value={listing.houseType} t={t} />
-              )}
-              {listing.parking != null && (
-                <DetailRow
-                  label="Parking"
-                  value={`${listing.parking} spaces`}
-                  t={t}
-                />
-              )}
-              {loc.city && <DetailRow label="City" value={loc.city} t={t} />}
-              {loc.subCity && (
-                <DetailRow label="Sub-City" value={loc.subCity} t={t} />
-              )}
-              {loc.placeName && (
-                <DetailRow label="Place" value={loc.placeName} t={t} />
-              )}
-              {listing.rentalPeriod && (
-                <DetailRow
-                  label="Rental Period"
-                  value={listing.rentalPeriod}
-                  t={t}
-                />
-              )}
-            </View>
+            {listing.houseType && (
+              <DetailRow label="Type" value={listing.houseType} t={t} />
+            )}
+            {listing.parking != null && (
+              <DetailRow
+                label="Parking"
+                value={`${listing.parking} spaces`}
+                t={t}
+              />
+            )}
+            {loc.city && <DetailRow label="City" value={loc.city} t={t} />}
+            {loc.subCity && (
+              <DetailRow label="Sub-City" value={loc.subCity} t={t} />
+            )}
+            {loc.placeName && (
+              <DetailRow label="Place" value={loc.placeName} t={t} />
+            )}
+            {listing.rentalPeriod && (
+              <DetailRow
+                label="Rental Period"
+                value={listing.rentalPeriod}
+                t={t}
+              />
+            )}
           </Section>
 
-          {/* Contact section */}
           {!isOwner && (
             <Section title="Contact Owner" t={t}>
               {alreadyUnlocked && unlockedAccess ? (
@@ -375,7 +365,6 @@ export default function HouseDetailScreen() {
                   <Text style={s.lockSub}>
                     Unlock to see the owner's phone & email
                   </Text>
-
                   <View
                     style={[
                       s.coinCostBox,
@@ -440,7 +429,6 @@ export default function HouseDetailScreen() {
                       </View>
                     )}
                   </View>
-
                   <TouchableOpacity
                     style={[
                       s.unlockBtn,
@@ -465,7 +453,6 @@ export default function HouseDetailScreen() {
                       </>
                     )}
                   </TouchableOpacity>
-
                   {coins < coinCost && (
                     <TouchableOpacity
                       style={[s.buyCoinsBtn, { borderColor: t.primary }]}
@@ -486,8 +473,7 @@ export default function HouseDetailScreen() {
             </Section>
           )}
 
-          {/* Chat button */}
-          {!isOwner && (
+          {!isOwner && alreadyUnlocked && (
             <TouchableOpacity
               style={[s.chatBtn, chatting && { opacity: 0.6 }]}
               onPress={handleChat}
@@ -597,7 +583,6 @@ function makeStyles(t: any) {
       gap: 12,
     },
     errorText: { fontSize: 16, color: t.textMuted, fontWeight: "600" },
-    backBtnCenter: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 10 },
     backBtn: {
       position: "absolute",
       top: 52,
@@ -694,7 +679,6 @@ function makeStyles(t: any) {
     },
     unlockedBadgeText: { color: "#fff", fontSize: 9, fontWeight: "800" },
     desc: { fontSize: 14, color: t.textMuted, lineHeight: 22 },
-    detailsGrid: { gap: 0 },
     contactCard: {
       backgroundColor: t.card,
       borderRadius: 16,

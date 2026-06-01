@@ -475,7 +475,7 @@ export default function ServiceDetailScreen() {
           )}
 
           {/* Chat button */}
-          {!isOwner && (
+          {!isOwner && alreadyUnlocked && (
             <TouchableOpacity
               style={[s.chatBtn, chatting && { opacity: 0.6 }]}
               onPress={handleChat}
