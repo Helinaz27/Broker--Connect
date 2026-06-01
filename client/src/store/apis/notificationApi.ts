@@ -69,6 +69,14 @@ export const notificationApi = createApi({
       query: (id) => ({ url: `/notifications/${id}/read`, method: "PUT" }),
       invalidatesTags: ["Notifications", "UnreadCount"],
     }),
+
+    deleteNotification: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (id) => ({ url: `/notifications/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Notifications", "UnreadCount"],
+    }),
   }),
 });
 
@@ -77,4 +85,5 @@ export const {
   useGetUnreadCountQuery,
   useMarkAllAsReadMutation,
   useMarkOneAsReadMutation,
+  useDeleteNotificationMutation,
 } = notificationApi;

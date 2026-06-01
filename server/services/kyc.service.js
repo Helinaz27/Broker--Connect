@@ -106,7 +106,7 @@ export const submitKYCService = async (
       type: "kyc_submitted",
       title: "KYC Submitted",
       body: `Dear ${userFullName}, your KYC request has been submitted and is under review.`,
-      path: "/kyc/status",
+      // path: "/kyc/status",
       isRead: false,
     },
   });
