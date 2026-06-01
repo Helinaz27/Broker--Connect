@@ -1,74 +1,141 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useTheme } from '../hooks/useTheme';
-import { addFavorite, removeFavorite, isFavorite, FavoriteItem } from '../lib/favorites';
-import Toast from 'react-native-toast-message';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useTheme } from "../hooks/useTheme";
+import { addFavorite, removeFavorite, isFavorite } from "../lib/favorites";
+import Toast from "react-native-toast-message";
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.72;
+const { width } = Dimensions.get("window");
 
 interface ListingCardProps {
-  id: string; title: string; image: string; price: number;
-  location: string; category: 'house' | 'car' | 'service'; listingMode?: 'rent' | 'sell';
+  id: string;
+  title: string;
+  image: string;
+  price: number;
+  location: string;
+  category: "house" | "car" | "service";
+  listingMode?: "rent" | "sell";
+  fullWidth?: boolean;
 }
 
-export default function ListingCard({ id, title, image, price, location, category, listingMode }: ListingCardProps) {
+export default function ListingCard({
+  id,
+  title,
+  image,
+  price,
+  location,
+  category,
+  listingMode,
+  fullWidth,
+}: ListingCardProps) {
   const t = useTheme();
   const router = useRouter();
   const [liked, setLiked] = useState(false);
-  useEffect(() => { isFavorite(id).then(setLiked); }, [id]);
+  useEffect(() => {
+    isFavorite(id).then(setLiked);
+  }, [id]);
 
   const handleLike = async () => {
     if (liked) {
-      await removeFavorite(id); setLiked(false);
-      Toast.show({ type: 'info', text1: 'Removed from saved' });
+      await removeFavorite(id);
+      setLiked(false);
+      Toast.show({ type: "info", text1: "Removed from saved" });
     } else {
       await addFavorite({ id, title, image, price, location, category });
       setLiked(true);
-      Toast.show({ type: 'success', text1: 'Saved!' });
+      Toast.show({ type: "success", text1: "Saved!" });
     }
   };
 
   const handlePress = () => {
-    const path = category === 'house' ? `/house-listings/${id}` : category === 'car' ? `/car-listings/${id}` : `/service-listings/${id}`;
+    const path =
+      category === "house"
+        ? `/house-listings/${id}`
+        : category === "car"
+          ? `/car-listings/${id}`
+          : `/service-listings/${id}`;
     router.push(path as any);
   };
 
-  const catLabel = category === 'car' ? 'Car' : category === 'service' ? 'Service' : 'House';
-  const displayCity = location.split(',')[1]?.trim() || location;
+  const catLabel =
+    category === "car" ? "Car" : category === "service" ? "Service" : "House";
+  const cardWidth = fullWidth ? width - 32 : width * 0.72;
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}
-      onPress={handlePress} activeOpacity={0.9}
+      style={[
+        styles.card,
+        { backgroundColor: t.card, borderColor: t.border, width: cardWidth },
+      ]}
+      onPress={handlePress}
+      activeOpacity={0.9}
     >
       <View style={styles.imageWrap}>
-        <Image source={{ uri: image || 'https://via.placeholder.com/300x200' }} style={styles.image} resizeMode="cover" />
+        <Image
+          source={{ uri: image || "https://via.placeholder.com/300x200" }}
+          style={styles.image}
+          resizeMode="cover"
+        />
         <View style={styles.badgeRow}>
           <View style={styles.catBadge}>
             <Text style={styles.catBadgeText}>{catLabel}</Text>
           </View>
           {listingMode && (
-            <View style={[styles.modeBadge, { backgroundColor: listingMode === 'rent' ? '#3B82F6' : '#22C55E' }]}>
+            <View
+              style={[
+                styles.modeBadge,
+                {
+                  backgroundColor:
+                    listingMode === "rent" ? "#3B82F6" : "#22C55E",
+                },
+              ]}
+            >
               <Text style={styles.modeBadgeText}>{listingMode}</Text>
             </View>
           )}
         </View>
-        <TouchableOpacity style={styles.heartBtn} onPress={handleLike} activeOpacity={0.8}>
-          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={18} color={liked ? '#ef4444' : '#64748B'} />
+        <TouchableOpacity
+          style={styles.heartBtn}
+          onPress={handleLike}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={liked ? "heart" : "heart-outline"}
+            size={18}
+            color={liked ? "#ef4444" : "#64748B"}
+          />
         </TouchableOpacity>
       </View>
       <View style={styles.info}>
         <View style={styles.locRow}>
           <Ionicons name="location-outline" size={12} color={t.primary} />
-          <Text style={[styles.locText, { color: t.textMuted }]} numberOfLines={1}>{displayCity}</Text>
+          <Text
+            style={[styles.locText, { color: t.textMuted }]}
+            numberOfLines={1}
+          >
+            {location}
+          </Text>
         </View>
-        <Text style={[styles.title, { color: t.text }]} numberOfLines={1}>{title}</Text>
+        <Text style={[styles.title, { color: t.text }]} numberOfLines={2}>
+          {title}
+        </Text>
         <View style={styles.priceRow}>
-          <Text style={[styles.price, { color: t.text }]}>{price.toLocaleString()} ETB</Text>
-          <Ionicons name="arrow-forward-circle-outline" size={18} color={t.textMuted} />
+          <Text style={[styles.price, { color: t.text }]}>
+            {price.toLocaleString()} ETB
+          </Text>
+          <Ionicons
+            name="arrow-forward-circle-outline"
+            size={18}
+            color={t.textMuted}
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -76,19 +143,72 @@ export default function ListingCard({ id, title, image, price, location, categor
 }
 
 const styles = StyleSheet.create({
-  card: { width: CARD_WIDTH, borderRadius: 20, overflow: 'hidden', borderWidth: 1, marginRight: 16 },
-  imageWrap: { height: 160, position: 'relative' },
-  image: { width: '100%', height: '100%' },
-  badgeRow: { position: 'absolute', top: 10, left: 10, flexDirection: 'row', gap: 6 },
-  catBadge: { backgroundColor: 'rgba(255,255,255,0.88)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 7 },
-  catBadgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', color: '#0F1117', letterSpacing: 0.5 },
+  card: {
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  imageWrap: { height: 190, position: "relative" },
+  image: { width: "100%", height: "100%" },
+  badgeRow: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    gap: 6,
+  },
+  catBadge: {
+    backgroundColor: "rgba(255,255,255,0.88)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 7,
+  },
+  catBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    color: "#0F1117",
+    letterSpacing: 0.5,
+  },
   modeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 7 },
-  modeBadgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', color: '#fff', letterSpacing: 0.5 },
-  heartBtn: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255,255,255,0.88)', width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  modeBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  heartBtn: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(255,255,255,0.88)",
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   info: { padding: 14 },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 5 },
-  locText: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 },
-  title: { fontSize: 15, fontWeight: '700', marginBottom: 10 },
-  priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  price: { fontSize: 18, fontWeight: '800' },
+  locRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 5,
+  },
+  locText: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  title: { fontSize: 15, fontWeight: "700", marginBottom: 10, lineHeight: 20 },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  price: { fontSize: 18, fontWeight: "800" },
 });

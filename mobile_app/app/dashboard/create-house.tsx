@@ -1,4 +1,3 @@
-// app/dashboard/create-house.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -10,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -55,6 +55,9 @@ export default function CreateHouseScreen() {
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [area, setArea] = useState("");
+  const [floor, setFloor] = useState("");
+  const [furnished, setFurnished] = useState(false);
+  const [parkingSpaces, setParkingSpaces] = useState("");
   const [rentalPeriod, setRentalPeriod] = useState("monthly");
   const [duration, setDuration] = useState("");
   const [coinLimit, setCoinLimit] = useState("5");
@@ -69,9 +72,8 @@ export default function CreateHouseScreen() {
       type: "image/*",
       copyToCacheDirectory: true,
     });
-    if (!res.canceled && res.assets?.[0]) {
+    if (!res.canceled && res.assets?.[0])
       setImages((prev) => [...prev, res.assets[0].uri]);
-    }
   };
 
   const handleSubmit = async () => {
@@ -94,22 +96,24 @@ export default function CreateHouseScreen() {
       fd.append("subCity", subCity.trim());
       fd.append("placeName", placeName.trim());
       fd.append("houseType", houseType);
-      fd.append("bedrooms", bedrooms);
-      fd.append("bathrooms", bathrooms);
-      fd.append("area_sqm", area);
+      if (bedrooms) fd.append("bedrooms", bedrooms);
+      if (bathrooms) fd.append("bathrooms", bathrooms);
+      if (area) fd.append("area_sqm", area);
+      if (floor) fd.append("floor", floor);
+      fd.append("furnished", String(furnished));
+      if (parkingSpaces) fd.append("parkingSpaces", parkingSpaces);
       fd.append("contactCoinLimit", coinLimit);
       if (mode === "rent") {
         fd.append("rentalPeriod", rentalPeriod);
-        fd.append("duration", duration);
+        if (duration) fd.append("duration", duration);
       }
-      images.forEach((uri, i) => {
+      images.forEach((uri, i) =>
         fd.append("images", {
           uri,
           name: `image_${i}.jpg`,
           type: "image/jpeg",
-        } as any);
-      });
-
+        } as any),
+      );
       const res = await create(fd).unwrap();
       if (res.success) {
         Alert.alert("Posted!", "Your house listing is live.", [
@@ -132,9 +136,8 @@ export default function CreateHouseScreen() {
       contentContainerStyle={s.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Mode */}
-      <FieldLabel label="Listing Mode" />
-      <SegmentControl
+      <FL label="Listing Mode" />
+      <Segment
         options={[
           { value: "rent", label: "For Rent" },
           { value: "sell", label: "For Sale" },
@@ -144,18 +147,16 @@ export default function CreateHouseScreen() {
         t={t}
       />
 
-      {/* Title */}
-      <FieldLabel label="Title *" />
-      <InputField
+      <FL label="Title *" />
+      <TI
         value={title}
         onChange={setTitle}
         placeholder="e.g. Modern 3BR Apartment in Bole"
         t={t}
       />
 
-      {/* Description */}
-      <FieldLabel label="Description" />
-      <InputField
+      <FL label="Description" />
+      <TI
         value={description}
         onChange={setDescription}
         placeholder="Describe the property..."
@@ -163,9 +164,8 @@ export default function CreateHouseScreen() {
         multiline
       />
 
-      {/* Price */}
-      <FieldLabel label="Price (ETB) *" />
-      <InputField
+      <FL label="Price (ETB) *" />
+      <TI
         value={price}
         onChange={setPrice}
         placeholder="e.g. 15000"
@@ -173,13 +173,12 @@ export default function CreateHouseScreen() {
         numeric
       />
 
-      {/* City */}
-      <FieldLabel label="City" />
+      <FL label="City" />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ marginBottom: 16 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 0 }}
+        contentContainerStyle={{ gap: 8 }}
       >
         {CITIES.map((c) => (
           <TouchableOpacity
@@ -194,11 +193,10 @@ export default function CreateHouseScreen() {
         ))}
       </ScrollView>
 
-      {/* Sub-city / place */}
       <View style={s.row}>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Sub-City" />
-          <InputField
+          <FL label="Sub-City" />
+          <TI
             value={subCity}
             onChange={setSubCity}
             placeholder="e.g. Bole"
@@ -206,8 +204,8 @@ export default function CreateHouseScreen() {
           />
         </View>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Place Name *" />
-          <InputField
+          <FL label="Place Name *" />
+          <TI
             value={placeName}
             onChange={setPlaceName}
             placeholder="e.g. Edna Mall"
@@ -216,8 +214,7 @@ export default function CreateHouseScreen() {
         </View>
       </View>
 
-      {/* House type */}
-      <FieldLabel label="House Type" />
+      <FL label="House Type" />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -243,11 +240,10 @@ export default function CreateHouseScreen() {
         ))}
       </ScrollView>
 
-      {/* Beds / baths / area */}
       <View style={s.row}>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Bedrooms" />
-          <InputField
+          <FL label="Bedrooms" />
+          <TI
             value={bedrooms}
             onChange={setBedrooms}
             placeholder="3"
@@ -256,8 +252,8 @@ export default function CreateHouseScreen() {
           />
         </View>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Bathrooms" />
-          <InputField
+          <FL label="Bathrooms" />
+          <TI
             value={bathrooms}
             onChange={setBathrooms}
             placeholder="2"
@@ -266,22 +262,41 @@ export default function CreateHouseScreen() {
           />
         </View>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Area m²" />
-          <InputField
-            value={area}
-            onChange={setArea}
-            placeholder="120"
+          <FL label="Area m²" />
+          <TI value={area} onChange={setArea} placeholder="120" t={t} numeric />
+        </View>
+      </View>
+
+      <View style={s.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="Floor" />
+          <TI value={floor} onChange={setFloor} placeholder="2" t={t} numeric />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="Parking Spaces" />
+          <TI
+            value={parkingSpaces}
+            onChange={setParkingSpaces}
+            placeholder="1"
             t={t}
             numeric
           />
         </View>
       </View>
 
-      {/* Rental period (rent only) */}
+      <View style={s.switchRow}>
+        <FL label="Furnished" />
+        <Switch
+          value={furnished}
+          onValueChange={setFurnished}
+          trackColor={{ true: t.primary }}
+        />
+      </View>
+
       {mode === "rent" && (
         <>
-          <FieldLabel label="Rental Period" />
-          <SegmentControl
+          <FL label="Rental Period" />
+          <Segment
             options={RENTAL_PERIODS.map((r) => ({
               value: r,
               label: r.charAt(0).toUpperCase() + r.slice(1),
@@ -290,8 +305,8 @@ export default function CreateHouseScreen() {
             onChange={setRentalPeriod}
             t={t}
           />
-          <FieldLabel label="Duration (months)" />
-          <InputField
+          <FL label="Duration (months)" />
+          <TI
             value={duration}
             onChange={setDuration}
             placeholder="12"
@@ -301,9 +316,8 @@ export default function CreateHouseScreen() {
         </>
       )}
 
-      {/* Coin limit */}
-      <FieldLabel label="Coins to Unlock Contact" />
-      <InputField
+      <FL label="Coins to Unlock Contact" />
+      <TI
         value={coinLimit}
         onChange={setCoinLimit}
         placeholder="5"
@@ -311,8 +325,7 @@ export default function CreateHouseScreen() {
         numeric
       />
 
-      {/* Images */}
-      <FieldLabel label="Images *" />
+      <FL label="Images *" />
       <View style={s.imagesWrap}>
         {images.map((uri, i) => (
           <View key={i} style={s.imageThumb}>
@@ -341,7 +354,6 @@ export default function CreateHouseScreen() {
         )}
       </View>
 
-      {/* Submit */}
       <TouchableOpacity
         style={[
           s.submitBtn,
@@ -365,7 +377,7 @@ export default function CreateHouseScreen() {
   );
 }
 
-function FieldLabel({ label }: { label: string }) {
+function FL({ label }: { label: string }) {
   return (
     <Text
       style={{
@@ -381,14 +393,8 @@ function FieldLabel({ label }: { label: string }) {
     </Text>
   );
 }
-function InputField({
-  value,
-  onChange,
-  placeholder,
-  t,
-  multiline,
-  numeric,
-}: any) {
+
+function TI({ value, onChange, placeholder, t, multiline, numeric }: any) {
   return (
     <TextInput
       style={{
@@ -413,7 +419,8 @@ function InputField({
     />
   );
 }
-function SegmentControl({ options, value, onChange, t }: any) {
+
+function Segment({ options, value, onChange, t }: any) {
   return (
     <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
       {options.map((o: any) => (
@@ -450,6 +457,12 @@ function makeStyles(t: any) {
     root: { flex: 1, backgroundColor: t.background },
     content: { padding: 20 },
     row: { flexDirection: "row", gap: 10 },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
     chip: {
       paddingHorizontal: 14,
       paddingVertical: 8,

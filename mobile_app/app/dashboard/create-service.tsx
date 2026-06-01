@@ -1,4 +1,3 @@
-// app/dashboard/create-service.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -38,6 +37,7 @@ const CITIES = [
   "Gondar",
   "Adama",
 ];
+const AVAILABILITIES = ["weekdays", "weekends", "everyday", "on-demand"];
 
 export default function CreateServiceScreen() {
   const t = useTheme();
@@ -49,8 +49,12 @@ export default function CreateServiceScreen() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [city, setCity] = useState("Addis Ababa");
+  const [subCity, setSubCity] = useState("");
+  const [placeName, setPlaceName] = useState("");
   const [serviceType, setServiceType] = useState("cleaning");
   const [duration, setDuration] = useState("");
+  const [availability, setAvailability] = useState("everyday");
+  const [yearsOfExperience, setYearsOfExperience] = useState("");
   const [coinLimit, setCoinLimit] = useState("5");
   const [images, setImages] = useState<string[]>([]);
 
@@ -79,17 +83,20 @@ export default function CreateServiceScreen() {
       fd.append("description", description.trim());
       fd.append("price", price);
       fd.append("city", city);
+      if (subCity) fd.append("subCity", subCity.trim());
+      if (placeName) fd.append("placeName", placeName.trim());
       fd.append("serviceType", serviceType);
-      fd.append("duration", duration);
+      if (duration) fd.append("duration", duration);
+      fd.append("availability", availability);
+      if (yearsOfExperience) fd.append("yearsOfExperience", yearsOfExperience);
       fd.append("contactCoinLimit", coinLimit);
-      images.forEach((uri, i) => {
+      images.forEach((uri, i) =>
         fd.append("images", {
           uri,
           name: `image_${i}.jpg`,
           type: "image/jpeg",
-        } as any);
-      });
-
+        } as any),
+      );
       const res = await create(fd).unwrap();
       if (res.success) {
         Alert.alert("Posted!", "Your service listing is live.", [
@@ -112,16 +119,16 @@ export default function CreateServiceScreen() {
       contentContainerStyle={s.content}
       showsVerticalScrollIndicator={false}
     >
-      <FieldLabel label="Title *" />
-      <InputField
+      <FL label="Title *" />
+      <TI
         value={title}
         onChange={setTitle}
         placeholder="e.g. Professional House Cleaning"
         t={t}
       />
 
-      <FieldLabel label="Description" />
-      <InputField
+      <FL label="Description" />
+      <TI
         value={description}
         onChange={setDescription}
         placeholder="Describe your service..."
@@ -129,8 +136,8 @@ export default function CreateServiceScreen() {
         multiline
       />
 
-      <FieldLabel label="Price (ETB) *" />
-      <InputField
+      <FL label="Price (ETB) *" />
+      <TI
         value={price}
         onChange={setPrice}
         placeholder="e.g. 500"
@@ -138,7 +145,7 @@ export default function CreateServiceScreen() {
         numeric
       />
 
-      <FieldLabel label="City" />
+      <FL label="City" />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -158,7 +165,28 @@ export default function CreateServiceScreen() {
         ))}
       </ScrollView>
 
-      <FieldLabel label="Service Type" />
+      <View style={s.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="Sub-City" />
+          <TI
+            value={subCity}
+            onChange={setSubCity}
+            placeholder="e.g. Bole"
+            t={t}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="Place Name" />
+          <TI
+            value={placeName}
+            onChange={setPlaceName}
+            placeholder="e.g. Gerji"
+            t={t}
+          />
+        </View>
+      </View>
+
+      <FL label="Service Type" />
       <View style={s.typeGrid}>
         {SERVICE_TYPES.map((st) => (
           <TouchableOpacity
@@ -179,17 +207,59 @@ export default function CreateServiceScreen() {
         ))}
       </View>
 
-      <FieldLabel label="Duration (days)" />
-      <InputField
-        value={duration}
-        onChange={setDuration}
-        placeholder="30"
-        t={t}
-        numeric
-      />
+      <FL label="Availability" />
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 8,
+          marginBottom: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        {AVAILABILITIES.map((a) => (
+          <TouchableOpacity
+            key={a}
+            style={[s.chip, availability === a && s.chipActive]}
+            onPress={() => setAvailability(a)}
+          >
+            <Text
+              style={[
+                s.chipText,
+                availability === a && s.chipTextActive,
+                { textTransform: "capitalize" },
+              ]}
+            >
+              {a}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      <FieldLabel label="Coins to Unlock Contact" />
-      <InputField
+      <View style={s.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="Duration (days)" />
+          <TI
+            value={duration}
+            onChange={setDuration}
+            placeholder="30"
+            t={t}
+            numeric
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="Years of Experience" />
+          <TI
+            value={yearsOfExperience}
+            onChange={setYearsOfExperience}
+            placeholder="3"
+            t={t}
+            numeric
+          />
+        </View>
+      </View>
+
+      <FL label="Coins to Unlock Contact" />
+      <TI
         value={coinLimit}
         onChange={setCoinLimit}
         placeholder="5"
@@ -197,7 +267,7 @@ export default function CreateServiceScreen() {
         numeric
       />
 
-      <FieldLabel label="Images" />
+      <FL label="Images" />
       <View style={s.imagesWrap}>
         {images.map((uri, i) => (
           <View key={i} style={s.imageThumb}>
@@ -249,7 +319,7 @@ export default function CreateServiceScreen() {
   );
 }
 
-function FieldLabel({ label }: { label: string }) {
+function FL({ label }: { label: string }) {
   return (
     <Text
       style={{
@@ -265,14 +335,8 @@ function FieldLabel({ label }: { label: string }) {
     </Text>
   );
 }
-function InputField({
-  value,
-  onChange,
-  placeholder,
-  t,
-  multiline,
-  numeric,
-}: any) {
+
+function TI({ value, onChange, placeholder, t, multiline, numeric }: any) {
   return (
     <TextInput
       style={{
@@ -297,10 +361,12 @@ function InputField({
     />
   );
 }
+
 function makeStyles(t: any) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: t.background },
     content: { padding: 20 },
+    row: { flexDirection: "row", gap: 10 },
     typeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",

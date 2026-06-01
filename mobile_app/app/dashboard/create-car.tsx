@@ -1,4 +1,3 @@
-// app/dashboard/create-car.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -51,6 +50,8 @@ const CITIES = [
   "Adama",
 ];
 const RENTAL_PERIODS = ["daily", "weekly", "monthly"];
+const TRANSMISSIONS = ["automatic", "manual"];
+const FUEL_TYPES = ["petrol", "diesel", "electric", "hybrid"];
 
 export default function CreateCarScreen() {
   const t = useTheme();
@@ -62,12 +63,19 @@ export default function CreateCarScreen() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [city, setCity] = useState("Addis Ababa");
+  const [subCity, setSubCity] = useState("");
+  const [placeName, setPlaceName] = useState("");
   const [mode, setMode] = useState<"rent" | "sell">("sell");
   const [brand, setBrand] = useState("Toyota");
   const [carModel, setCarModel] = useState("");
   const [carType, setCarType] = useState("sedan");
   const [condition, setCondition] = useState("used");
   const [year, setYear] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [color, setColor] = useState("");
+  const [transmission, setTransmission] = useState("automatic");
+  const [fuelType, setFuelType] = useState("petrol");
+  const [seats, setSeats] = useState("");
   const [rentalPeriod, setRentalPeriod] = useState("daily");
   const [duration, setDuration] = useState("");
   const [coinLimit, setCoinLimit] = useState("5");
@@ -103,24 +111,30 @@ export default function CreateCarScreen() {
       fd.append("price", price);
       fd.append("listingMode", mode);
       fd.append("city", city);
+      if (subCity) fd.append("subCity", subCity.trim());
+      if (placeName) fd.append("placeName", placeName.trim());
       fd.append("brand", brand);
-      fd.append("carModel", carModel.trim());
+      if (carModel) fd.append("carModel", carModel.trim());
       fd.append("carType", carType);
       fd.append("condition", condition);
-      fd.append("year", year);
+      if (year) fd.append("year", year);
+      if (mileage) fd.append("mileage", mileage);
+      if (color) fd.append("color", color.trim());
+      fd.append("transmission", transmission);
+      fd.append("fuelType", fuelType);
+      if (seats) fd.append("seats", seats);
       fd.append("contactCoinLimit", coinLimit);
       if (mode === "rent") {
         fd.append("rentalPeriod", rentalPeriod);
-        fd.append("duration", duration);
+        if (duration) fd.append("duration", duration);
       }
-      images.forEach((uri, i) => {
+      images.forEach((uri, i) =>
         fd.append("images", {
           uri,
           name: `image_${i}.jpg`,
           type: "image/jpeg",
-        } as any);
-      });
-
+        } as any),
+      );
       const res = await create(fd).unwrap();
       if (res.success) {
         Alert.alert("Posted!", "Your car listing is live.", [
@@ -143,27 +157,27 @@ export default function CreateCarScreen() {
       contentContainerStyle={s.content}
       showsVerticalScrollIndicator={false}
     >
-      <FieldLabel label="Listing Mode" />
-      <SegmentControl
+      <FL label="Listing Mode" />
+      <Segment
         options={[
           { value: "rent", label: "For Rent" },
           { value: "sell", label: "For Sale" },
         ]}
         value={mode}
-        onChange={(v: any) => setMode(v)}
+        onChange={(v) => setMode(v as any)}
         t={t}
       />
 
-      <FieldLabel label="Title *" />
-      <InputField
+      <FL label="Title *" />
+      <TI
         value={title}
         onChange={setTitle}
         placeholder="e.g. Toyota Corolla 2020"
         t={t}
       />
 
-      <FieldLabel label="Description" />
-      <InputField
+      <FL label="Description" />
+      <TI
         value={description}
         onChange={setDescription}
         placeholder="Describe the car..."
@@ -171,8 +185,8 @@ export default function CreateCarScreen() {
         multiline
       />
 
-      <FieldLabel label="Price (ETB) *" />
-      <InputField
+      <FL label="Price (ETB) *" />
+      <TI
         value={price}
         onChange={setPrice}
         placeholder="e.g. 2500000"
@@ -180,7 +194,7 @@ export default function CreateCarScreen() {
         numeric
       />
 
-      <FieldLabel label="City" />
+      <FL label="City" />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -200,7 +214,28 @@ export default function CreateCarScreen() {
         ))}
       </ScrollView>
 
-      <FieldLabel label="Brand" />
+      <View style={s.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="Sub-City" />
+          <TI
+            value={subCity}
+            onChange={setSubCity}
+            placeholder="e.g. Bole"
+            t={t}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="Place Name" />
+          <TI
+            value={placeName}
+            onChange={setPlaceName}
+            placeholder="e.g. CMC"
+            t={t}
+          />
+        </View>
+      </View>
+
+      <FL label="Brand" />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -222,8 +257,8 @@ export default function CreateCarScreen() {
 
       <View style={s.row}>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Model" />
-          <InputField
+          <FL label="Model" />
+          <TI
             value={carModel}
             onChange={setCarModel}
             placeholder="Corolla"
@@ -231,8 +266,8 @@ export default function CreateCarScreen() {
           />
         </View>
         <View style={{ flex: 1 }}>
-          <FieldLabel label="Year" />
-          <InputField
+          <FL label="Year" />
+          <TI
             value={year}
             onChange={setYear}
             placeholder="2020"
@@ -242,7 +277,28 @@ export default function CreateCarScreen() {
         </View>
       </View>
 
-      <FieldLabel label="Car Type" />
+      <View style={s.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="Mileage (km)" />
+          <TI
+            value={mileage}
+            onChange={setMileage}
+            placeholder="50000"
+            t={t}
+            numeric
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="Color" />
+          <TI value={color} onChange={setColor} placeholder="White" t={t} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="Seats" />
+          <TI value={seats} onChange={setSeats} placeholder="5" t={t} numeric />
+        </View>
+      </View>
+
+      <FL label="Car Type" />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -268,8 +324,8 @@ export default function CreateCarScreen() {
         ))}
       </ScrollView>
 
-      <FieldLabel label="Condition" />
-      <SegmentControl
+      <FL label="Condition" />
+      <Segment
         options={CONDITIONS.map((c) => ({
           value: c,
           label: c.charAt(0).toUpperCase() + c.slice(1),
@@ -279,10 +335,47 @@ export default function CreateCarScreen() {
         t={t}
       />
 
+      <FL label="Transmission" />
+      <Segment
+        options={TRANSMISSIONS.map((tr) => ({
+          value: tr,
+          label: tr.charAt(0).toUpperCase() + tr.slice(1),
+        }))}
+        value={transmission}
+        onChange={setTransmission}
+        t={t}
+      />
+
+      <FL label="Fuel Type" />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 16 }}
+        contentContainerStyle={{ gap: 8 }}
+      >
+        {FUEL_TYPES.map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[s.chip, fuelType === f && s.chipActive]}
+            onPress={() => setFuelType(f)}
+          >
+            <Text
+              style={[
+                s.chipText,
+                fuelType === f && s.chipTextActive,
+                { textTransform: "capitalize" },
+              ]}
+            >
+              {f}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       {mode === "rent" && (
         <>
-          <FieldLabel label="Rental Period" />
-          <SegmentControl
+          <FL label="Rental Period" />
+          <Segment
             options={RENTAL_PERIODS.map((r) => ({
               value: r,
               label: r.charAt(0).toUpperCase() + r.slice(1),
@@ -291,8 +384,8 @@ export default function CreateCarScreen() {
             onChange={setRentalPeriod}
             t={t}
           />
-          <FieldLabel label="Duration (days)" />
-          <InputField
+          <FL label="Duration (days)" />
+          <TI
             value={duration}
             onChange={setDuration}
             placeholder="7"
@@ -302,8 +395,8 @@ export default function CreateCarScreen() {
         </>
       )}
 
-      <FieldLabel label="Coins to Unlock Contact" />
-      <InputField
+      <FL label="Coins to Unlock Contact" />
+      <TI
         value={coinLimit}
         onChange={setCoinLimit}
         placeholder="5"
@@ -311,7 +404,7 @@ export default function CreateCarScreen() {
         numeric
       />
 
-      <FieldLabel label="Images *" />
+      <FL label="Images *" />
       <View style={s.imagesWrap}>
         {images.map((uri, i) => (
           <View key={i} style={s.imageThumb}>
@@ -363,7 +456,7 @@ export default function CreateCarScreen() {
   );
 }
 
-function FieldLabel({ label }: { label: string }) {
+function FL({ label }: { label: string }) {
   return (
     <Text
       style={{
@@ -379,14 +472,8 @@ function FieldLabel({ label }: { label: string }) {
     </Text>
   );
 }
-function InputField({
-  value,
-  onChange,
-  placeholder,
-  t,
-  multiline,
-  numeric,
-}: any) {
+
+function TI({ value, onChange, placeholder, t, multiline, numeric }: any) {
   return (
     <TextInput
       style={{
@@ -411,7 +498,8 @@ function InputField({
     />
   );
 }
-function SegmentControl({ options, value, onChange, t }: any) {
+
+function Segment({ options, value, onChange, t }: any) {
   return (
     <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
       {options.map((o: any) => (
@@ -442,6 +530,7 @@ function SegmentControl({ options, value, onChange, t }: any) {
     </View>
   );
 }
+
 function makeStyles(t: any) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: t.background },
