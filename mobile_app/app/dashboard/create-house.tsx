@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Switch,
+  Modal,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -17,50 +18,153 @@ import * as DocumentPicker from "expo-document-picker";
 import { useCreateListingMutation } from "../../store/apis/listingsApi";
 import { useTheme } from "../../hooks/useTheme";
 
-const HOUSE_TYPES = [
-  "apartment",
-  "villa",
-  "condominium",
-  "studio",
-  "townhouse",
-  "duplex",
-  "penthouse",
-];
-const CITIES = [
-  "Addis Ababa",
-  "Dire Dawa",
-  "Hawassa",
-  "Bahir Dar",
-  "Mekelle",
-  "Gondar",
-  "Jimma",
-  "Adama",
-];
+const HOUSE_TYPES = ["apartment", "villa", "condominium", "business", "others"];
 const RENTAL_PERIODS = ["daily", "weekly", "monthly", "yearly"];
+const LISTING_MODES = ["rent", "sell"];
+
+function FL({ label }: { label: string }) {
+  return <Text style={styles.fieldLabel}>{label}</Text>;
+}
+
+function TI({ value, onChange, placeholder, t, multiline, numeric }: any) {
+  return (
+    <TextInput
+      style={[
+        styles.textInput,
+        {
+          backgroundColor: t.inputBg,
+          borderColor: t.border,
+          color: t.text,
+          height: multiline ? 90 : undefined,
+          textAlignVertical: multiline ? "top" : "auto",
+        },
+      ]}
+      value={value}
+      onChangeText={onChange}
+      placeholder={placeholder}
+      placeholderTextColor={t.textMuted}
+      multiline={multiline}
+      keyboardType={numeric ? "numeric" : "default"}
+    />
+  );
+}
+
+function DropdownSelect({
+  label,
+  value,
+  options,
+  onChange,
+  t,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+  t: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <>
+      <FL label={label} />
+      <TouchableOpacity
+        style={[
+          styles.dropdownBtn,
+          { backgroundColor: t.inputBg, borderColor: t.border },
+        ]}
+        onPress={() => setOpen(true)}
+        activeOpacity={0.8}
+      >
+        <Text
+          style={[
+            styles.dropdownBtnText,
+            { color: selected ? t.text : t.textMuted },
+          ]}
+        >
+          {selected ? selected.label : "Select..."}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={t.textMuted} />
+      </TouchableOpacity>
+
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setOpen(false)}
+        >
+          <View
+            style={[
+              styles.modalSheet,
+              { backgroundColor: t.card, borderColor: t.border },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: t.text }]}>{label}</Text>
+            <FlatList
+              data={options}
+              keyExtractor={(i) => i.value}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalOption,
+                    { borderBottomColor: t.border },
+                    item.value === value && {
+                      backgroundColor: `${t.primary}12`,
+                    },
+                  ]}
+                  onPress={() => {
+                    onChange(item.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      { color: item.value === value ? t.primary : t.text },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                  {item.value === value && (
+                    <Ionicons name="checkmark" size={16} color={t.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
 
 export default function CreateHouseScreen() {
   const t = useTheme();
-  const s = makeStyles(t);
   const router = useRouter();
   const [create, { isLoading }] = useCreateListingMutation();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [city, setCity] = useState("Addis Ababa");
-  const [subCity, setSubCity] = useState("");
-  const [placeName, setPlaceName] = useState("");
-  const [mode, setMode] = useState<"rent" | "sell">("rent");
+  const [locationCity, setLocationCity] = useState("");
+  const [locationSubCity, setLocationSubCity] = useState("");
+  const [locationPlaceName, setLocationPlaceName] = useState("");
+  const [listingMode, setListingMode] = useState("rent");
+  const [rentalPeriod, setRentalPeriod] = useState("monthly");
   const [houseType, setHouseType] = useState("apartment");
+  const [houseTypeOther, setHouseTypeOther] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
-  const [area, setArea] = useState("");
-  const [floor, setFloor] = useState("");
-  const [furnished, setFurnished] = useState(false);
-  const [parkingSpaces, setParkingSpaces] = useState("");
-  const [rentalPeriod, setRentalPeriod] = useState("monthly");
-  const [duration, setDuration] = useState("");
-  const [coinLimit, setCoinLimit] = useState("5");
+  const [areaSqm, setAreaSqm] = useState("");
+  const [parking, setParking] = useState("");
+  const [tanker, setTanker] = useState(false);
+  const [durationDays, setDurationDays] = useState("");
+  const [contactCoinLimit, setContactCoinLimit] = useState("");
   const [images, setImages] = useState<string[]>([]);
 
   const pickImages = async () => {
@@ -77,12 +181,28 @@ export default function CreateHouseScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !price.trim() || !placeName.trim()) {
-      Alert.alert("Required", "Title, price, and place name are required.");
+    if (
+      !title.trim() ||
+      !price.trim() ||
+      !locationCity.trim() ||
+      !locationPlaceName.trim()
+    ) {
+      Alert.alert(
+        "Required",
+        "Title, price, city and place name are required.",
+      );
+      return;
+    }
+    if (!durationDays.trim()) {
+      Alert.alert("Required", "Duration (days) is required.");
       return;
     }
     if (images.length === 0) {
       Alert.alert("Required", "Please upload at least one image.");
+      return;
+    }
+    if (houseType === "others" && !houseTypeOther.trim()) {
+      Alert.alert("Required", "Please specify the house type.");
       return;
     }
     try {
@@ -91,22 +211,23 @@ export default function CreateHouseScreen() {
       fd.append("title", title.trim());
       fd.append("description", description.trim());
       fd.append("price", price);
-      fd.append("listingMode", mode);
-      fd.append("city", city);
-      fd.append("subCity", subCity.trim());
-      fd.append("placeName", placeName.trim());
-      fd.append("houseType", houseType);
+      fd.append("listingMode", listingMode);
+      fd.append("location[city]", locationCity.trim());
+      fd.append("location[placeName]", locationPlaceName.trim());
+      if (locationSubCity)
+        fd.append("location[subCity]", locationSubCity.trim());
+      fd.append(
+        "houseType",
+        houseType === "others" ? houseTypeOther.trim() : houseType,
+      );
       if (bedrooms) fd.append("bedrooms", bedrooms);
       if (bathrooms) fd.append("bathrooms", bathrooms);
-      if (area) fd.append("area_sqm", area);
-      if (floor) fd.append("floor", floor);
-      fd.append("furnished", String(furnished));
-      if (parkingSpaces) fd.append("parkingSpaces", parkingSpaces);
-      fd.append("contactCoinLimit", coinLimit);
-      if (mode === "rent") {
-        fd.append("rentalPeriod", rentalPeriod);
-        if (duration) fd.append("duration", duration);
-      }
+      if (areaSqm) fd.append("area_sqm", areaSqm);
+      if (parking) fd.append("parking", parking);
+      fd.append("tanker", String(tanker));
+      fd.append("durationDays", durationDays);
+      if (contactCoinLimit) fd.append("contactCoinLimit", contactCoinLimit);
+      if (listingMode === "rent") fd.append("rentalPeriod", rentalPeriod);
       images.forEach((uri, i) =>
         fd.append("images", {
           uri,
@@ -114,6 +235,7 @@ export default function CreateHouseScreen() {
           type: "image/jpeg",
         } as any),
       );
+
       const res = await create(fd).unwrap();
       if (res.success) {
         Alert.alert("Posted!", "Your house listing is live.", [
@@ -132,22 +254,35 @@ export default function CreateHouseScreen() {
 
   return (
     <ScrollView
-      style={s.root}
-      contentContainerStyle={s.content}
+      style={[styles.root, { backgroundColor: t.background }]}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <FL label="Listing Mode" />
-      <Segment
-        options={[
-          { value: "rent", label: "For Rent" },
-          { value: "sell", label: "For Sale" },
-        ]}
-        value={mode}
-        onChange={(v) => setMode(v as any)}
+      <DropdownSelect
+        label="LISTING MODE *"
+        value={listingMode}
+        options={LISTING_MODES.map((m) => ({
+          value: m,
+          label: m === "rent" ? "For Rent" : "For Sale",
+        }))}
+        onChange={setListingMode}
         t={t}
       />
 
-      <FL label="Title *" />
+      {listingMode === "rent" && (
+        <DropdownSelect
+          label="RENTAL PERIOD *"
+          value={rentalPeriod}
+          options={RENTAL_PERIODS.map((r) => ({
+            value: r,
+            label: r.charAt(0).toUpperCase() + r.slice(1),
+          }))}
+          onChange={setRentalPeriod}
+          t={t}
+        />
+      )}
+
+      <FL label="TITLE *" />
       <TI
         value={title}
         onChange={setTitle}
@@ -155,7 +290,7 @@ export default function CreateHouseScreen() {
         t={t}
       />
 
-      <FL label="Description" />
+      <FL label="DESCRIPTION *" />
       <TI
         value={description}
         onChange={setDescription}
@@ -164,178 +299,188 @@ export default function CreateHouseScreen() {
         multiline
       />
 
-      <FL label="Price (ETB) *" />
+      <View style={styles.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="PRICE (ETB) *" />
+          <TI
+            value={price}
+            onChange={setPrice}
+            placeholder="0.00"
+            t={t}
+            numeric
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="DURATION (DAYS) *" />
+          <TI
+            value={durationDays}
+            onChange={setDurationDays}
+            placeholder="30"
+            t={t}
+            numeric
+          />
+        </View>
+      </View>
+
+      <View style={[styles.sectionDivider, { borderTopColor: t.border }]}>
+        <Text style={[styles.sectionTitle, { color: t.text }]}>Location</Text>
+      </View>
+
+      <FL label="CITY *" />
       <TI
-        value={price}
-        onChange={setPrice}
-        placeholder="e.g. 15000"
+        value={locationCity}
+        onChange={setLocationCity}
+        placeholder="e.g. Addis Ababa"
         t={t}
-        numeric
       />
 
-      <FL label="City" />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 16 }}
-        contentContainerStyle={{ gap: 8 }}
-      >
-        {CITIES.map((c) => (
-          <TouchableOpacity
-            key={c}
-            style={[s.chip, city === c && s.chipActive]}
-            onPress={() => setCity(c)}
-          >
-            <Text style={[s.chipText, city === c && s.chipTextActive]}>
-              {c}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View style={s.row}>
+      <View style={styles.row}>
         <View style={{ flex: 1 }}>
-          <FL label="Sub-City" />
+          <FL label="PLACE NAME *" />
           <TI
-            value={subCity}
-            onChange={setSubCity}
+            value={locationPlaceName}
+            onChange={setLocationPlaceName}
+            placeholder="e.g. Bole Atlas"
+            t={t}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="SUB-CITY" />
+          <TI
+            value={locationSubCity}
+            onChange={setLocationSubCity}
             placeholder="e.g. Bole"
             t={t}
           />
         </View>
-        <View style={{ flex: 1 }}>
-          <FL label="Place Name *" />
-          <TI
-            value={placeName}
-            onChange={setPlaceName}
-            placeholder="e.g. Edna Mall"
-            t={t}
-          />
-        </View>
       </View>
 
-      <FL label="House Type" />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 16 }}
-        contentContainerStyle={{ gap: 8 }}
-      >
-        {HOUSE_TYPES.map((ht) => (
-          <TouchableOpacity
-            key={ht}
-            style={[s.chip, houseType === ht && s.chipActive]}
-            onPress={() => setHouseType(ht)}
-          >
-            <Text
-              style={[
-                s.chipText,
-                houseType === ht && s.chipTextActive,
-                { textTransform: "capitalize" },
-              ]}
-            >
-              {ht}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View style={s.row}>
-        <View style={{ flex: 1 }}>
-          <FL label="Bedrooms" />
-          <TI
-            value={bedrooms}
-            onChange={setBedrooms}
-            placeholder="3"
-            t={t}
-            numeric
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FL label="Bathrooms" />
-          <TI
-            value={bathrooms}
-            onChange={setBathrooms}
-            placeholder="2"
-            t={t}
-            numeric
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FL label="Area m²" />
-          <TI value={area} onChange={setArea} placeholder="120" t={t} numeric />
-        </View>
+      <View style={[styles.sectionDivider, { borderTopColor: t.border }]}>
+        <Text style={[styles.sectionTitle, { color: t.text }]}>
+          Property Details
+        </Text>
       </View>
 
-      <View style={s.row}>
-        <View style={{ flex: 1 }}>
-          <FL label="Floor" />
-          <TI value={floor} onChange={setFloor} placeholder="2" t={t} numeric />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FL label="Parking Spaces" />
-          <TI
-            value={parkingSpaces}
-            onChange={setParkingSpaces}
-            placeholder="1"
-            t={t}
-            numeric
-          />
-        </View>
-      </View>
+      <DropdownSelect
+        label="HOUSE TYPE *"
+        value={houseType}
+        options={HOUSE_TYPES.map((h) => ({
+          value: h,
+          label:
+            h === "others" ? "Others" : h.charAt(0).toUpperCase() + h.slice(1),
+        }))}
+        onChange={setHouseType}
+        t={t}
+      />
 
-      <View style={s.switchRow}>
-        <FL label="Furnished" />
-        <Switch
-          value={furnished}
-          onValueChange={setFurnished}
-          trackColor={{ true: t.primary }}
-        />
-      </View>
-
-      {mode === "rent" && (
+      {houseType === "others" && (
         <>
-          <FL label="Rental Period" />
-          <Segment
-            options={RENTAL_PERIODS.map((r) => ({
-              value: r,
-              label: r.charAt(0).toUpperCase() + r.slice(1),
-            }))}
-            value={rentalPeriod}
-            onChange={setRentalPeriod}
-            t={t}
-          />
-          <FL label="Duration (months)" />
+          <FL label="SPECIFY TYPE *" />
           <TI
-            value={duration}
-            onChange={setDuration}
-            placeholder="12"
+            value={houseTypeOther}
+            onChange={setHouseTypeOther}
+            placeholder="e.g. Townhouse"
             t={t}
-            numeric
           />
         </>
       )}
 
-      <FL label="Coins to Unlock Contact" />
-      <TI
-        value={coinLimit}
-        onChange={setCoinLimit}
-        placeholder="5"
-        t={t}
-        numeric
-      />
+      <View style={styles.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="BEDROOMS" />
+          <TI
+            value={bedrooms}
+            onChange={setBedrooms}
+            placeholder="0"
+            t={t}
+            numeric
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="BATHROOMS" />
+          <TI
+            value={bathrooms}
+            onChange={setBathrooms}
+            placeholder="0"
+            t={t}
+            numeric
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="AREA (M²)" />
+          <TI
+            value={areaSqm}
+            onChange={setAreaSqm}
+            placeholder="0"
+            t={t}
+            numeric
+          />
+        </View>
+      </View>
 
-      <FL label="Images *" />
-      <View style={s.imagesWrap}>
+      <View style={styles.row}>
+        <View style={{ flex: 1 }}>
+          <FL label="PARKING SLOTS" />
+          <TI
+            value={parking}
+            onChange={setParking}
+            placeholder="0"
+            t={t}
+            numeric
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FL label="CONTACT COIN LIMIT" />
+          <TI
+            value={contactCoinLimit}
+            onChange={setContactCoinLimit}
+            placeholder="e.g. 20"
+            t={t}
+            numeric
+          />
+        </View>
+      </View>
+
+      {listingMode === "sell" && (
+        <TouchableOpacity
+          style={[
+            styles.checkRow,
+            { borderColor: t.border, backgroundColor: t.card },
+          ]}
+          onPress={() => setTanker((v) => !v)}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              styles.checkbox,
+              {
+                borderColor: t.primary,
+                backgroundColor: tanker ? t.primary : "transparent",
+              },
+            ]}
+          >
+            {tanker && <Ionicons name="checkmark" size={13} color="#fff" />}
+          </View>
+          <Text style={[styles.checkLabel, { color: t.text }]}>
+            Has Water Tanker
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <View style={[styles.sectionDivider, { borderTopColor: t.border }]}>
+        <Text style={[styles.sectionTitle, { color: t.text }]}>Images *</Text>
+      </View>
+
+      <View style={styles.imagesWrap}>
         {images.map((uri, i) => (
-          <View key={i} style={s.imageThumb}>
+          <View key={i} style={styles.imageThumb}>
             <Image
               source={{ uri }}
               style={StyleSheet.absoluteFill}
               resizeMode="cover"
             />
             <TouchableOpacity
-              style={s.removeImg}
+              style={styles.removeImg}
               onPress={() =>
                 setImages((prev) => prev.filter((_, j) => j !== i))
               }
@@ -346,17 +491,20 @@ export default function CreateHouseScreen() {
         ))}
         {images.length < 5 && (
           <TouchableOpacity
-            style={[s.addImageBtn, { borderColor: t.border }]}
+            style={[styles.addImageBtn, { borderColor: t.border }]}
             onPress={pickImages}
           >
             <Ionicons name="add" size={26} color={t.textMuted} />
+            <Text style={[styles.addImageText, { color: t.textMuted }]}>
+              Upload
+            </Text>
           </TouchableOpacity>
         )}
       </View>
 
       <TouchableOpacity
         style={[
-          s.submitBtn,
+          styles.submitBtn,
           { backgroundColor: t.primary },
           isLoading && { opacity: 0.6 },
         ]}
@@ -368,147 +516,144 @@ export default function CreateHouseScreen() {
         ) : (
           <>
             <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
-            <Text style={s.submitText}>Post House Listing</Text>
+            <Text style={styles.submitText}>Post House Listing</Text>
           </>
         )}
       </TouchableOpacity>
-      <View style={{ height: 40 }} />
+      <View style={{ height: 48 }} />
     </ScrollView>
   );
 }
 
-function FL({ label }: { label: string }) {
-  return (
-    <Text
-      style={{
-        fontSize: 11,
-        fontWeight: "700",
-        color: "#94A3B8",
-        textTransform: "uppercase",
-        letterSpacing: 0.8,
-        marginBottom: 6,
-      }}
-    >
-      {label}
-    </Text>
-  );
-}
-
-function TI({ value, onChange, placeholder, t, multiline, numeric }: any) {
-  return (
-    <TextInput
-      style={{
-        backgroundColor: t.inputBg,
-        borderRadius: 12,
-        borderWidth: 1.5,
-        borderColor: t.border,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        fontSize: 14,
-        color: t.text,
-        marginBottom: 16,
-        height: multiline ? 88 : undefined,
-        textAlignVertical: multiline ? "top" : "auto",
-      }}
-      value={value}
-      onChangeText={onChange}
-      placeholder={placeholder}
-      placeholderTextColor={t.textMuted}
-      multiline={multiline}
-      keyboardType={numeric ? "numeric" : "default"}
-    />
-  );
-}
-
-function Segment({ options, value, onChange, t }: any) {
-  return (
-    <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-      {options.map((o: any) => (
-        <TouchableOpacity
-          key={o.value}
-          style={{
-            flex: 1,
-            paddingVertical: 10,
-            borderRadius: 10,
-            alignItems: "center",
-            borderWidth: 1.5,
-            borderColor: value === o.value ? t.primary : t.border,
-            backgroundColor: value === o.value ? `${t.primary}12` : t.inputBg,
-          }}
-          onPress={() => onChange(o.value)}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "700",
-              color: value === o.value ? t.primary : t.textMuted,
-            }}
-          >
-            {o.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
-function makeStyles(t: any) {
-  return StyleSheet.create({
-    root: { flex: 1, backgroundColor: t.background },
-    content: { padding: 20 },
-    row: { flexDirection: "row", gap: 10 },
-    switchRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 16,
-    },
-    chip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: 1.5,
-      borderColor: t.border,
-      backgroundColor: t.inputBg,
-    },
-    chipActive: { borderColor: t.primary, backgroundColor: `${t.primary}12` },
-    chipText: { fontSize: 12, fontWeight: "600", color: t.textMuted },
-    chipTextActive: { color: t.primary, fontWeight: "700" },
-    imagesWrap: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 10,
-      marginBottom: 24,
-    },
-    imageThumb: { width: 80, height: 80, borderRadius: 12, overflow: "hidden" },
-    removeImg: {
-      position: "absolute",
-      top: 4,
-      right: 4,
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: "rgba(0,0,0,0.6)",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    addImageBtn: {
-      width: 80,
-      height: 80,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderStyle: "dashed",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    submitBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      borderRadius: 14,
-      paddingVertical: 16,
-    },
-    submitText: { color: "#fff", fontSize: 15, fontWeight: "800" },
-  });
-}
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  content: { padding: 20 },
+  row: { flexDirection: "row", gap: 10 },
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  textInput: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  dropdownBtn: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  dropdownBtnText: { fontSize: 14, fontWeight: "500", flex: 1 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalSheet: {
+    width: "100%",
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+    maxHeight: 420,
+  },
+  modalTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  modalOption: {
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  modalOptionText: { fontSize: 15, fontWeight: "500" },
+  sectionDivider: {
+    borderTopWidth: 1,
+    paddingTop: 16,
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  sectionTitle: { fontSize: 13, fontWeight: "800", fontStyle: "italic" },
+  checkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkLabel: { fontSize: 14, fontWeight: "500" },
+  imagesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 24,
+  },
+  imageThumb: { width: 80, height: 80, borderRadius: 12, overflow: "hidden" },
+  removeImg: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addImageBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  addImageText: {
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  submitBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: 14,
+    paddingVertical: 16,
+  },
+  submitText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+});

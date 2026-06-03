@@ -16,18 +16,8 @@ import { useSearchListingsQuery } from "../../store/apis/listingsApi";
 import ListingCard from "../../components/ListingCard";
 import { useTheme } from "../../hooks/useTheme";
 
-const CAR_TYPES = [
-  "all",
-  "sedan",
-  "suv",
-  "pickup",
-  "hatchback",
-  "coupe",
-  "minivan",
-  "truck",
-  "electric",
-] as const;
-const CONDITIONS = ["all", "new", "used", "refurbished"] as const;
+const CAR_TYPES = ["all", "electric", "fuel"] as const;
+const CONDITIONS = ["all", "new", "used"] as const;
 const MODES = ["all", "rent", "sell"] as const;
 
 export default function CarsScreen() {
@@ -57,8 +47,8 @@ export default function CarsScreen() {
     ...(applied.search && { search: applied.search }),
     ...(applied.city && { city: applied.city }),
     ...(applied.brand && { brand: applied.brand }),
-    ...(applied.carType !== "all" && { carType: applied.carType as any }),
-    ...(applied.condition !== "all" && { condition: applied.condition as any }),
+    ...(applied.carType !== "all" && { carType: applied.carType }),
+    ...(applied.condition !== "all" && { condition: applied.condition }),
     ...(applied.mode !== "all" && { listingMode: applied.mode as any }),
   });
 
@@ -94,154 +84,244 @@ export default function CarsScreen() {
   };
 
   const Chips = ({
+    label,
     items,
     value,
     onChange,
   }: {
+    label: string;
     items: readonly string[];
     value: string;
     onChange: (v: string) => void;
   }) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      {items.map((i) => (
-        <TouchableOpacity
-          key={i}
-          style={[s.chip, value === i && s.chipActive]}
-          onPress={() => onChange(i)}
-        >
-          <Text style={[s.chipText, value === i && s.chipTextActive]}>
-            {i === "all" ? "All" : i.charAt(0).toUpperCase() + i.slice(1)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+    <>
+      <Text style={[s.filterLabel, { color: t.textMuted }]}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {items.map((i) => (
+          <TouchableOpacity
+            key={i}
+            style={[
+              s.chip,
+              {
+                borderColor: value === i ? t.primary : t.border,
+                backgroundColor: value === i ? t.primary : t.background,
+              },
+            ]}
+            onPress={() => onChange(i)}
+          >
+            <Text
+              style={[
+                s.chipText,
+                { color: value === i ? "#fff" : t.textMuted },
+              ]}
+            >
+              {i === "all" ? "All" : i.charAt(0).toUpperCase() + i.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </>
   );
 
   return (
     <SafeAreaView style={s.safe}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Cars</Text>
-        {!isLoading && <Text style={s.headerCount}>{total} listings</Text>}
-      </View>
-
-      <View style={s.filterBox}>
-        <View style={s.inputRow}>
-          <Ionicons name="search-outline" size={17} color={t.textMuted} />
-          <TextInput
-            style={s.input}
-            placeholder="Search cars..."
-            placeholderTextColor={t.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            onSubmitEditing={applyFilters}
-            returnKeyType="search"
+      <FlatList
+        data={listings}
+        keyExtractor={(i) => i.id}
+        contentContainerStyle={s.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={t.primary}
           />
-        </View>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <View style={[s.inputRow, { flex: 1 }]}>
-            <Ionicons name="location-outline" size={17} color={t.textMuted} />
-            <TextInput
-              style={s.input}
-              placeholder="City..."
-              placeholderTextColor={t.textMuted}
-              value={city}
-              onChangeText={setCity}
-              returnKeyType="search"
-              onSubmitEditing={applyFilters}
-            />
-          </View>
-          <View style={[s.inputRow, { flex: 1 }]}>
-            <Ionicons name="car-outline" size={17} color={t.textMuted} />
-            <TextInput
-              style={s.input}
-              placeholder="Brand..."
-              placeholderTextColor={t.textMuted}
-              value={brand}
-              onChangeText={setBrand}
-              returnKeyType="search"
-              onSubmitEditing={applyFilters}
-            />
-          </View>
-        </View>
-        <Chips items={CAR_TYPES} value={carType} onChange={setCarType} />
-        <Chips items={CONDITIONS} value={condition} onChange={setCondition} />
-        <Chips items={MODES} value={mode} onChange={setMode} />
-        <View style={s.btnRow}>
-          <TouchableOpacity style={s.applyBtn} onPress={applyFilters}>
-            <Ionicons name="search" size={14} color="#fff" />
-            <Text style={s.applyBtnText}>Search</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.resetBtn} onPress={reset}>
-            <Text style={s.resetBtnText}>Reset</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {isLoading ? (
-        <ActivityIndicator color={t.primary} style={{ marginTop: 40 }} />
-      ) : (
-        <FlatList
-          data={listings}
-          keyExtractor={(i) => i.id}
-          contentContainerStyle={s.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={t.primary}
-            />
-          }
-          ListEmptyComponent={
+        }
+        ListEmptyComponent={
+          !isLoading ? (
             <View style={s.empty}>
               <Ionicons name="car-outline" size={48} color={t.border} />
-              <Text style={s.emptyText}>No cars found</Text>
+              <Text style={[s.emptyText, { color: t.textMuted }]}>
+                No cars found
+              </Text>
             </View>
-          }
-          renderItem={({ item }) => (
-            <ListingCard
-              id={item.id}
-              title={item.title}
-              price={item.price}
-              location={item.location?.city ?? ""}
-              image={item.images?.[0] ?? ""}
-              category="car"
-              listingMode={item.listingMode}
-              fullWidth
-            />
-          )}
-          ListFooterComponent={
-            totalPages > 1 ? (
-              <View style={s.pagination}>
-                <TouchableOpacity
-                  style={[s.pageBtn, page === 1 && s.pageBtnDisabled]}
-                  disabled={page === 1}
-                  onPress={() => setPage((p) => p - 1)}
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={18}
-                    color={page === 1 ? t.border : t.primary}
-                  />
-                </TouchableOpacity>
-                <Text style={s.pageText}>
-                  {page} / {totalPages}
+          ) : null
+        }
+        ListHeaderComponent={
+          <>
+            <View style={s.header}>
+              <Text style={[s.headerTitle, { color: t.text }]}>Cars</Text>
+              {!isLoading && (
+                <Text style={[s.headerCount, { color: t.textMuted }]}>
+                  {total} listings
                 </Text>
-                <TouchableOpacity
-                  style={[s.pageBtn, page === totalPages && s.pageBtnDisabled]}
-                  disabled={page === totalPages}
-                  onPress={() => setPage((p) => p + 1)}
+              )}
+            </View>
+            <View
+              style={[
+                s.filterBox,
+                { backgroundColor: t.card, borderColor: t.border },
+              ]}
+            >
+              <View
+                style={[
+                  s.inputRow,
+                  { backgroundColor: t.inputBg, borderColor: t.border },
+                ]}
+              >
+                <Ionicons name="search-outline" size={17} color={t.textMuted} />
+                <TextInput
+                  style={[s.input, { color: t.text }]}
+                  placeholder="Search cars..."
+                  placeholderTextColor={t.textMuted}
+                  value={search}
+                  onChangeText={setSearch}
+                  onSubmitEditing={applyFilters}
+                  returnKeyType="search"
+                />
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View
+                  style={[
+                    s.inputRow,
+                    {
+                      flex: 1,
+                      backgroundColor: t.inputBg,
+                      borderColor: t.border,
+                    },
+                  ]}
                 >
                   <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={page === totalPages ? t.border : t.primary}
+                    name="location-outline"
+                    size={17}
+                    color={t.textMuted}
                   />
+                  <TextInput
+                    style={[s.input, { color: t.text }]}
+                    placeholder="City..."
+                    placeholderTextColor={t.textMuted}
+                    value={city}
+                    onChangeText={setCity}
+                    returnKeyType="search"
+                    onSubmitEditing={applyFilters}
+                  />
+                </View>
+                <View
+                  style={[
+                    s.inputRow,
+                    {
+                      flex: 1,
+                      backgroundColor: t.inputBg,
+                      borderColor: t.border,
+                    },
+                  ]}
+                >
+                  <Ionicons name="car-outline" size={17} color={t.textMuted} />
+                  <TextInput
+                    style={[s.input, { color: t.text }]}
+                    placeholder="Brand..."
+                    placeholderTextColor={t.textMuted}
+                    value={brand}
+                    onChangeText={setBrand}
+                    returnKeyType="search"
+                    onSubmitEditing={applyFilters}
+                  />
+                </View>
+              </View>
+              <Chips
+                label="Car Type"
+                items={CAR_TYPES}
+                value={carType}
+                onChange={setCarType}
+              />
+              <Chips
+                label="Condition"
+                items={CONDITIONS}
+                value={condition}
+                onChange={setCondition}
+              />
+              <Chips
+                label="Mode"
+                items={MODES}
+                value={mode}
+                onChange={setMode}
+              />
+              <View style={s.btnRow}>
+                <TouchableOpacity
+                  style={[s.applyBtn, { backgroundColor: t.primary }]}
+                  onPress={applyFilters}
+                >
+                  <Ionicons name="search" size={14} color="#fff" />
+                  <Text style={s.applyBtnText}>Search</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.resetBtn, { borderColor: t.border }]}
+                  onPress={reset}
+                >
+                  <Text style={[s.resetBtnText, { color: t.textMuted }]}>
+                    Reset
+                  </Text>
                 </TouchableOpacity>
               </View>
-            ) : null
-          }
-        />
-      )}
+            </View>
+            {isLoading && (
+              <ActivityIndicator color={t.primary} style={{ marginTop: 40 }} />
+            )}
+          </>
+        }
+        renderItem={({ item }) => (
+          <ListingCard
+            id={item.id}
+            title={item.title}
+            price={item.price}
+            location={item.location?.city ?? ""}
+            image={item.images?.[0] ?? ""}
+            category="car"
+            listingMode={item.listingMode}
+            fullWidth
+          />
+        )}
+        ListFooterComponent={
+          totalPages > 1 ? (
+            <View style={s.pagination}>
+              <TouchableOpacity
+                style={[
+                  s.pageBtn,
+                  { borderColor: t.border, backgroundColor: t.card },
+                  page === 1 && s.pageBtnDisabled,
+                ]}
+                disabled={page === 1}
+                onPress={() => setPage((p) => p - 1)}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={18}
+                  color={page === 1 ? t.border : t.primary}
+                />
+              </TouchableOpacity>
+              <Text style={[s.pageText, { color: t.text }]}>
+                {page} / {totalPages}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  s.pageBtn,
+                  { borderColor: t.border, backgroundColor: t.card },
+                  page === totalPages && s.pageBtnDisabled,
+                ]}
+                disabled={page === totalPages}
+                onPress={() => setPage((p) => p + 1)}
+              >
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={page === totalPages ? t.border : t.primary}
+                />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ height: 24 }} />
+          )
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -257,41 +337,39 @@ function makeStyles(t: any) {
       paddingTop: 18,
       paddingBottom: 10,
     },
-    headerTitle: { fontSize: 26, fontWeight: "800", color: t.text },
-    headerCount: { fontSize: 13, color: t.textMuted, fontWeight: "600" },
+    headerTitle: { fontSize: 26, fontWeight: "800" },
+    headerCount: { fontSize: 13, fontWeight: "600" },
     filterBox: {
       marginHorizontal: 16,
-      backgroundColor: t.card,
       borderRadius: 16,
       padding: 14,
       borderWidth: 1,
-      borderColor: t.border,
-      marginBottom: 12,
+      marginBottom: 16,
       gap: 10,
+    },
+    filterLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
     },
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: t.inputBg,
       borderRadius: 10,
       paddingHorizontal: 12,
       borderWidth: 1,
-      borderColor: t.border,
     },
-    input: { flex: 1, paddingVertical: 11, fontSize: 14, color: t.text },
+    input: { flex: 1, paddingVertical: 11, fontSize: 14 },
     chip: {
       paddingHorizontal: 14,
       paddingVertical: 6,
       borderRadius: 20,
       borderWidth: 1.5,
-      borderColor: t.border,
       marginRight: 8,
-      backgroundColor: t.background,
     },
-    chipActive: { borderColor: t.primary, backgroundColor: t.primary },
-    chipText: { fontSize: 12, fontWeight: "600", color: t.textMuted },
-    chipTextActive: { color: "#fff" },
+    chipText: { fontSize: 12, fontWeight: "600" },
     btnRow: { flexDirection: "row", gap: 10 },
     applyBtn: {
       flex: 1,
@@ -299,7 +377,6 @@ function makeStyles(t: any) {
       alignItems: "center",
       justifyContent: "center",
       gap: 6,
-      backgroundColor: t.primary,
       paddingVertical: 11,
       borderRadius: 10,
     },
@@ -309,14 +386,13 @@ function makeStyles(t: any) {
       paddingVertical: 11,
       borderRadius: 10,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    resetBtnText: { color: t.textMuted, fontWeight: "600", fontSize: 13 },
-    list: { paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 },
+    resetBtnText: { fontWeight: "600", fontSize: 13 },
+    list: { paddingHorizontal: 16, paddingBottom: 30 },
     empty: { alignItems: "center", paddingTop: 60, gap: 12 },
-    emptyText: { fontSize: 16, color: t.textMuted },
+    emptyText: { fontSize: 16 },
     pagination: {
       flexDirection: "row",
       alignItems: "center",
@@ -329,12 +405,10 @@ function makeStyles(t: any) {
       height: 40,
       borderRadius: 10,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: t.card,
     },
     pageBtnDisabled: { opacity: 0.4 },
-    pageText: { fontSize: 14, fontWeight: "700", color: t.text },
+    pageText: { fontSize: 14, fontWeight: "700" },
   });
 }

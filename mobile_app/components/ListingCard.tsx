@@ -39,6 +39,7 @@ export default function ListingCard({
   const t = useTheme();
   const router = useRouter();
   const [liked, setLiked] = useState(false);
+
   useEffect(() => {
     isFavorite(id).then(setLiked);
   }, [id]);
@@ -65,15 +66,18 @@ export default function ListingCard({
     router.push(path as any);
   };
 
-  const catLabel =
-    category === "car" ? "Car" : category === "service" ? "Service" : "House";
-  const cardWidth = fullWidth ? width - 32 : width * 0.72;
+  const CARD_WIDTH = fullWidth ? width - 32 : width * 0.68;
 
   return (
     <TouchableOpacity
       style={[
         styles.card,
-        { backgroundColor: t.card, borderColor: t.border, width: cardWidth },
+        {
+          backgroundColor: t.card,
+          borderColor: t.border,
+          width: CARD_WIDTH,
+          marginRight: fullWidth ? 0 : 14,
+        },
       ]}
       onPress={handlePress}
       activeOpacity={0.9}
@@ -86,7 +90,13 @@ export default function ListingCard({
         />
         <View style={styles.badgeRow}>
           <View style={styles.catBadge}>
-            <Text style={styles.catBadgeText}>{catLabel}</Text>
+            <Text style={styles.catBadgeText}>
+              {category === "car"
+                ? "Car"
+                : category === "service"
+                  ? "Service"
+                  : "House"}
+            </Text>
           </View>
           {listingMode && (
             <View
@@ -144,12 +154,12 @@ export default function ListingCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
     marginBottom: 14,
   },
-  imageWrap: { height: 190, position: "relative" },
+  imageWrap: { height: 175, position: "relative" },
   image: { width: "100%", height: "100%" },
   badgeRow: {
     position: "absolute",
@@ -159,7 +169,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   catBadge: {
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: "rgba(255,255,255,0.9)",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 7,
@@ -183,7 +193,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: "rgba(255,255,255,0.9)",
     width: 34,
     height: 34,
     borderRadius: 10,
@@ -204,11 +214,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     flex: 1,
   },
-  title: { fontSize: 15, fontWeight: "700", marginBottom: 10, lineHeight: 20 },
+  title: { fontSize: 14, fontWeight: "700", marginBottom: 10, lineHeight: 20 },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  price: { fontSize: 18, fontWeight: "800" },
+  price: { fontSize: 17, fontWeight: "800" },
 });

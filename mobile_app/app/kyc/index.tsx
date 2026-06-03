@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import {
@@ -22,18 +22,17 @@ import {
 } from "../../store/apis/kycApi";
 import { useTheme } from "../../hooks/useTheme";
 import { API_BASE_URL } from "../../constants/api";
+import Toast from "react-native-toast-message";
 
-const DOC_TYPES = [
-  { value: "national_id", label: "National ID" },
-  { value: "passport", label: "Passport" },
-  { value: "driving_license", label: "Driving License" },
-];
+type DocType = "national_id" | "passport" | "driving_license";
 
 export default function KYCScreen() {
   const t = useTheme();
   const s = makeStyles(t);
   const router = useRouter();
   const token = useSelector((st: RootState) => st.user.token);
+  const currentUser = useSelector((st: RootState) => st.user.currentUser);
+  const isKYCVerified = currentUser?.isKYCVerified ?? false;
 
   const {
     data: kycData,
@@ -41,39 +40,50 @@ export default function KYCScreen() {
     refetch,
   } = useGetMyKYCStatusQuery(undefined, { skip: !token });
   const kyc = kycData?.data;
-  const status = kyc?.status ?? null;
+  const currentStatus = isKYCVerified ? "approved" : (kyc?.status ?? null);
+  const alreadySubmitted = kyc?.kycSubmitted ?? false;
 
   const [showForm, setShowForm] = useState(false);
-  const [docType, setDocType] = useState<string>("national_id");
+  const [isEditing, setIsEditing] = useState(false);
+  const [docType, setDocType] = useState<DocType>(
+    kyc?.documentType ?? "national_id",
+  );
   const [docNumber, setDocNumber] = useState("");
   const [frontUri, setFrontUri] = useState<string | null>(null);
   const [backUri, setBackUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ─── Pick image using DocumentPicker (works in Expo Go) ───────────────────
+  useEffect(() => {
+    if (kyc?.documentType) setDocType(kyc.documentType);
+  }, [kyc?.documentType]);
+
   const pickImage = async (side: "front" | "back") => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "image/*",
-        copyToCacheDirectory: true,
-      });
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        side === "front" ? setFrontUri(uri) : setBackUri(uri);
-      }
-    } catch {
-      Alert.alert("Error", "Could not open file picker. Please try again.");
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission required", "Please allow photo access.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      side === "front"
+        ? setFrontUri(result.assets[0].uri)
+        : setBackUri(result.assets[0].uri);
     }
   };
 
-  // ─── Submit KYC ──────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!docNumber.trim()) {
-      Alert.alert("Required", "Please enter your document number.");
+      Toast.show({ type: "error", text1: "Document number is required." });
       return;
     }
     if (!frontUri) {
-      Alert.alert("Required", "Please upload the front side image.");
+      Toast.show({
+        type: "error",
+        text1: "Please upload the front side image.",
+      });
       return;
     }
 
@@ -87,13 +97,12 @@ export default function KYCScreen() {
         name: "front.jpg",
         type: "image/jpeg",
       } as any);
-      if (backUri) {
+      if (backUri)
         formData.append("backSideImage", {
           uri: backUri,
           name: "back.jpg",
           type: "image/jpeg",
         } as any);
-      }
 
       const res = await fetch(`${API_BASE_URL}/kyc/submit`, {
         method: "POST",
@@ -102,70 +111,98 @@ export default function KYCScreen() {
       });
       const json = await res.json();
       if (json.success) {
-        Alert.alert(
-          "Submitted",
-          "Your KYC documents have been submitted for review.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                setShowForm(false);
-                refetch();
-              },
-            },
-          ],
-        );
+        Toast.show({
+          type: "success",
+          text1: isEditing
+            ? "KYC updated successfully!"
+            : "KYC submitted successfully!",
+        });
+        setShowForm(false);
+        setIsEditing(false);
+        setDocNumber("");
+        setFrontUri(null);
+        setBackUri(null);
+        refetch();
       } else {
-        Alert.alert(
-          "Error",
-          json.message ?? "Submission failed. Please try again.",
-        );
+        Toast.show({
+          type: "error",
+          text1: json.message ?? "Submission failed.",
+        });
       }
     } catch {
-      Alert.alert("Error", "Could not submit KYC. Check your connection.");
+      Toast.show({
+        type: "error",
+        text1: "Could not submit KYC. Check your connection.",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+    setShowForm(true);
+    setDocNumber("");
+    setFrontUri(null);
+    setBackUri(null);
+  };
+  const handleCancel = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setDocNumber("");
+    setFrontUri(null);
+    setBackUri(null);
+  };
+
   const statusInfo = {
     approved: {
       color: t.success,
-      icon: "shield-checkmark",
+      icon: "checkmark-circle",
       bg: "#d1fae5",
-      label: "Identity Verified",
-      desc: "Your KYC has been approved. You can now post listings.",
+      borderColor: "#10b981",
+      title: "Identity Verified",
+      desc: "Your KYC has been approved. You can post listings.",
     },
     pending: {
       color: t.warning,
       icon: "time",
       bg: "#fef3c7",
-      label: "Under Review",
+      borderColor: "#f59e0b",
+      title: "KYC Under Review",
       desc: "Your documents have been submitted and are awaiting admin review.",
     },
     rejected: {
       color: t.destructive,
       icon: "close-circle",
       bg: "#fee2e2",
-      label: "KYC Rejected",
+      borderColor: "#ef4444",
+      title: "KYC Rejected",
       desc: `Reason: ${kyc?.reason ?? "Document was unclear. Please resubmit."}`,
     },
-  }[status ?? ""] ?? {
-    color: t.primary,
-    icon: "shield-outline",
-    bg: `${t.primary}15`,
-    label: "Not Submitted",
-    desc: "Submit your government-issued ID to unlock listing creation.",
+  }[currentStatus ?? ""] ?? {
+    color: "#3B82F6",
+    icon: "alert-circle",
+    bg: "#dbeafe",
+    borderColor: "#3b82f6",
+    title: "KYC Not Submitted",
+    desc: "Submit your identity documents to unlock listing creation.",
   };
+
+  const DOC_TYPES: { value: DocType; label: string }[] = [
+    { value: "national_id", label: "National ID" },
+    { value: "passport", label: "Passport" },
+    { value: "driving_license", label: "Driving License" },
+  ];
 
   return (
     <SafeAreaView style={s.safe}>
-      {/* Header */}
-      <View style={s.header}>
+      <View style={[s.header, { borderBottomColor: t.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>KYC Verification</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>
+          Identity Verification
+        </Text>
       </View>
 
       <ScrollView
@@ -176,13 +213,12 @@ export default function KYCScreen() {
           <ActivityIndicator color={t.primary} style={{ marginTop: 60 }} />
         ) : (
           <>
-            {/* Status banner */}
             <View
               style={[
                 s.statusBanner,
                 {
                   backgroundColor: statusInfo.bg,
-                  borderColor: statusInfo.color,
+                  borderColor: statusInfo.borderColor,
                 },
               ]}
             >
@@ -199,121 +235,159 @@ export default function KYCScreen() {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.statusLabel, { color: statusInfo.color }]}>
-                  {statusInfo.label}
+                <Text style={[s.statusTitle, { color: statusInfo.color }]}>
+                  {statusInfo.title}
                 </Text>
-                <Text style={s.statusDesc}>{statusInfo.desc}</Text>
+                <Text
+                  style={[
+                    s.statusDesc,
+                    { color: statusInfo.color, opacity: 0.8 },
+                  ]}
+                >
+                  {statusInfo.desc}
+                </Text>
               </View>
             </View>
 
-            {/* Existing submission info */}
-            {kyc?.kycSubmitted && !showForm && (
-              <View style={s.card}>
-                <Row
-                  label="Document Type"
-                  value={(kyc.documentType ?? "").replace(/_/g, " ")}
-                  t={t}
-                />
-                <Row
-                  label="Submitted At"
-                  value={
-                    kyc.submittedAt
+            {alreadySubmitted && !showForm && (
+              <View
+                style={[
+                  s.infoGrid,
+                  { backgroundColor: t.card, borderColor: t.border },
+                ]}
+              >
+                <View style={s.infoCell}>
+                  <Text style={[s.infoCellLabel, { color: t.textMuted }]}>
+                    Document Type
+                  </Text>
+                  <Text style={[s.infoCellValue, { color: t.text }]}>
+                    {kyc?.documentType?.replace(/_/g, " ") ?? "—"}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    s.infoCell,
+                    { borderLeftWidth: 1, borderLeftColor: t.border },
+                  ]}
+                >
+                  <Text style={[s.infoCellLabel, { color: t.textMuted }]}>
+                    Submitted At
+                  </Text>
+                  <Text style={[s.infoCellValue, { color: t.text }]}>
+                    {kyc?.submittedAt
                       ? new Date(kyc.submittedAt).toLocaleDateString()
-                      : "—"
-                  }
-                  t={t}
-                  last
-                />
+                      : "—"}
+                  </Text>
+                </View>
               </View>
             )}
 
-            {/* Action buttons */}
             {!showForm && (
               <View style={s.actions}>
-                {(!kyc?.kycSubmitted || status === "rejected") && (
+                {!alreadySubmitted && (
                   <TouchableOpacity
-                    style={s.primaryBtn}
+                    style={[s.primaryBtn, { backgroundColor: t.primary }]}
                     onPress={() => setShowForm(true)}
                   >
                     <Ionicons
                       name="shield-checkmark-outline"
-                      size={18}
+                      size={16}
                       color="#fff"
                     />
-                    <Text style={s.primaryBtnText}>
-                      {status === "rejected" ? "Resubmit KYC" : "Submit KYC"}
-                    </Text>
+                    <Text style={s.primaryBtnText}>Submit KYC</Text>
                   </TouchableOpacity>
                 )}
-                {status === "pending" && (
+                {currentStatus === "rejected" && (
                   <TouchableOpacity
-                    style={s.outlineBtn}
+                    style={[s.primaryBtn, { backgroundColor: t.primary }]}
                     onPress={() => setShowForm(true)}
                   >
                     <Ionicons
-                      name="pencil-outline"
-                      size={18}
-                      color={t.primary}
+                      name="shield-checkmark-outline"
+                      size={16}
+                      color="#fff"
                     />
-                    <Text style={s.outlineBtnText}>Edit Submission</Text>
+                    <Text style={s.primaryBtnText}>Resubmit KYC</Text>
+                  </TouchableOpacity>
+                )}
+                {currentStatus === "pending" && (
+                  <TouchableOpacity
+                    style={[s.outlineBtn, { borderColor: t.border }]}
+                    onPress={handleEdit}
+                  >
+                    <Ionicons name="pencil-outline" size={16} color={t.text} />
+                    <Text style={[s.outlineBtnText, { color: t.text }]}>
+                      Edit Submission
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
             )}
 
-            {/* Submission form */}
             {showForm && (
-              <View style={s.form}>
+              <View
+                style={[
+                  s.form,
+                  { backgroundColor: t.card, borderColor: t.border },
+                ]}
+              >
                 <View style={s.formHeader}>
-                  <Text style={s.formTitle}>Identity Documents</Text>
+                  <Text style={[s.formTitle, { color: t.textMuted }]}>
+                    {isEditing ? "Edit KYC Submission" : "Identity Documents"}
+                  </Text>
                   <TouchableOpacity
-                    onPress={() => setShowForm(false)}
-                    style={s.closeBtn}
+                    onPress={handleCancel}
+                    style={[s.closeBtn, { backgroundColor: t.inputBg }]}
                   >
-                    <Ionicons name="close" size={20} color={t.textMuted} />
+                    <Ionicons name="close" size={18} color={t.textMuted} />
                   </TouchableOpacity>
                 </View>
 
-                {status === "pending" && (
+                {isEditing && currentStatus === "pending" && (
                   <View
                     style={[
                       s.warningBox,
                       {
-                        backgroundColor: `${t.warning}15`,
-                        borderColor: `${t.warning}40`,
+                        backgroundColor: `${t.warning}12`,
+                        borderColor: `${t.warning}30`,
                       },
                     ]}
                   >
-                    <Ionicons
-                      name="warning-outline"
-                      size={16}
-                      color={t.warning}
-                    />
+                    <Ionicons name="time-outline" size={14} color={t.warning} />
                     <Text style={[s.warningText, { color: t.warning }]}>
                       Editing will resubmit for review again.
                     </Text>
                   </View>
                 )}
 
-                {/* Document type */}
-                <Text style={s.fieldLabel}>Document Type</Text>
-                <View style={s.docTypeRow}>
+                <FL label="Document Type" />
+                <View
+                  style={[
+                    s.selectBox,
+                    { backgroundColor: t.inputBg, borderColor: t.border },
+                  ]}
+                >
                   {DOC_TYPES.map((dt) => (
                     <TouchableOpacity
                       key={dt.value}
                       style={[
-                        s.docTypeBtn,
-                        docType === dt.value && s.docTypeBtnActive,
+                        s.selectOption,
+                        docType === dt.value && {
+                          borderColor: t.primary,
+                          backgroundColor: `${t.primary}10`,
+                        },
+                        { borderColor: t.border },
                       ]}
                       onPress={() => setDocType(dt.value)}
                     >
                       <Text
                         style={[
-                          s.docTypeBtnText,
-                          docType === dt.value && {
-                            color: t.primary,
-                            fontWeight: "700",
+                          s.selectOptionText,
+                          {
+                            color:
+                              docType === dt.value ? t.primary : t.textMuted,
                           },
+                          docType === dt.value && { fontWeight: "700" },
                         ]}
                       >
                         {dt.label}
@@ -322,38 +396,34 @@ export default function KYCScreen() {
                   ))}
                 </View>
 
-                {/* Document number */}
-                <Text style={s.fieldLabel}>Document Number</Text>
-                <View
+                <FL label="Document Number" />
+                <TextInput
                   style={[
-                    s.textInputWrap,
-                    docNumber ? s.textInputFocused : null,
+                    s.textInput,
+                    {
+                      backgroundColor: t.inputBg,
+                      borderColor: t.border,
+                      color: t.text,
+                    },
                   ]}
-                >
-                  <Ionicons
-                    name="card-outline"
-                    size={18}
-                    color={docNumber ? t.primary : t.textMuted}
-                  />
-                  <TextInput
-                    style={[s.textInput, { color: t.text }]}
-                    placeholder="e.g. ET-1234567"
-                    placeholderTextColor={t.textMuted}
-                    value={docNumber}
-                    onChangeText={setDocNumber}
-                    autoCapitalize="characters"
-                  />
-                </View>
+                  placeholder={
+                    isEditing
+                      ? "Enter updated document number"
+                      : "e.g. ET-1234567"
+                  }
+                  placeholderTextColor={t.textMuted}
+                  value={docNumber}
+                  onChangeText={setDocNumber}
+                />
 
-                {/* Image uploads */}
+                <FL label="Document Images" />
                 <View style={s.imagesRow}>
                   <ImageUpload
-                    label="Front Side"
+                    label="Front Side *"
                     uri={frontUri}
                     onPick={() => pickImage("front")}
                     onClear={() => setFrontUri(null)}
                     t={t}
-                    required
                   />
                   <ImageUpload
                     label="Back Side"
@@ -364,16 +434,21 @@ export default function KYCScreen() {
                   />
                 </View>
 
-                {/* Form actions */}
                 <View style={s.formActions}>
                   <TouchableOpacity
-                    style={s.cancelBtn}
-                    onPress={() => setShowForm(false)}
+                    style={[s.cancelBtn, { borderColor: t.border }]}
+                    onPress={handleCancel}
                   >
-                    <Text style={s.cancelBtnText}>Cancel</Text>
+                    <Text style={[s.cancelBtnText, { color: t.textMuted }]}>
+                      Cancel
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[s.submitBtn, submitting && { opacity: 0.6 }]}
+                    style={[
+                      s.submitBtn,
+                      { backgroundColor: t.primary },
+                      submitting && { opacity: 0.6 },
+                    ]}
                     onPress={handleSubmit}
                     disabled={submitting}
                   >
@@ -383,13 +458,15 @@ export default function KYCScreen() {
                       <>
                         <Ionicons
                           name="shield-checkmark-outline"
-                          size={16}
+                          size={15}
                           color="#fff"
                         />
                         <Text style={s.submitBtnText}>
-                          {status === "pending"
-                            ? "Update & Resubmit"
-                            : "Submit for Review"}
+                          {submitting
+                            ? "Submitting..."
+                            : isEditing
+                              ? "Update & Resubmit"
+                              : "Submit for Review"}
                         </Text>
                       </>
                     )}
@@ -398,7 +475,6 @@ export default function KYCScreen() {
               </View>
             )}
 
-            {/* Info note */}
             <View
               style={[
                 s.infoBox,
@@ -410,9 +486,9 @@ export default function KYCScreen() {
                 size={18}
                 color={t.textMuted}
               />
-              <Text style={s.infoText}>
-                KYC verification is required to post listings on DigitalBroker.
-                Documents are reviewed within 24–48 hours.
+              <Text style={[s.infoText, { color: t.textMuted }]}>
+                KYC verification is required to post listings. Documents are
+                reviewed within 24–48 hours.
               </Text>
             </View>
           </>
@@ -422,44 +498,20 @@ export default function KYCScreen() {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function Row({
-  label,
-  value,
-  t,
-  last,
-}: {
-  label: string;
-  value: string;
-  t: any;
-  last?: boolean;
-}) {
+function FL({ label }: { label: string }) {
   return (
-    <View
+    <Text
       style={{
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: t.border,
-        flexDirection: "row",
-        justifyContent: "space-between",
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#94A3B8",
+        textTransform: "uppercase",
+        letterSpacing: 0.8,
+        marginBottom: 6,
       }}
     >
-      <Text style={{ fontSize: 13, color: t.textMuted, fontWeight: "600" }}>
-        {label}
-      </Text>
-      <Text
-        style={{
-          fontSize: 13,
-          fontWeight: "700",
-          color: t.text,
-          textTransform: "capitalize",
-        }}
-      >
-        {value || "—"}
-      </Text>
-    </View>
+      {label}
+    </Text>
   );
 }
 
@@ -469,31 +521,16 @@ function ImageUpload({
   onPick,
   onClear,
   t,
-  required,
 }: {
   label: string;
   uri: string | null;
   onPick: () => void;
   onClear: () => void;
   t: any;
-  required?: boolean;
 }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text
-        style={{
-          fontSize: 11,
-          fontWeight: "700",
-          color: t.textMuted,
-          textTransform: "uppercase",
-          letterSpacing: 0.8,
-          marginBottom: 8,
-        }}
-      >
-        {label}
-        {required && <Text style={{ color: t.destructive }}> *</Text>}
-      </Text>
-
+      <FL label={label} />
       {uri ? (
         <View
           style={{
@@ -514,14 +551,14 @@ function ImageUpload({
               right: 6,
               backgroundColor: t.destructive,
               borderRadius: 14,
-              width: 28,
-              height: 28,
+              width: 26,
+              height: 26,
               alignItems: "center",
               justifyContent: "center",
             }}
             onPress={onClear}
           >
-            <Ionicons name="close" size={16} color="#fff" />
+            <Ionicons name="close" size={14} color="#fff" />
           </TouchableOpacity>
         </View>
       ) : (
@@ -535,21 +572,19 @@ function ImageUpload({
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: t.inputBg,
-            gap: 6,
+            gap: 4,
           }}
           onPress={onPick}
         >
-          <Ionicons name="cloud-upload-outline" size={24} color={t.textMuted} />
-          <Text style={{ fontSize: 11, color: t.textMuted, fontWeight: "600" }}>
-            Upload {label}
+          <Ionicons name="cloud-upload-outline" size={22} color={t.textMuted} />
+          <Text style={{ fontSize: 10, color: t.textMuted, fontWeight: "600" }}>
+            Upload
           </Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 function makeStyles(t: any) {
   return StyleSheet.create({
@@ -560,10 +595,9 @@ function makeStyles(t: any) {
       paddingHorizontal: 16,
       paddingVertical: 14,
       borderBottomWidth: 1,
-      borderBottomColor: t.border,
     },
-    backBtn: { marginRight: 8, padding: 2 },
-    headerTitle: { fontSize: 22, fontWeight: "800", color: t.text },
+    backBtn: { marginRight: 10, padding: 2 },
+    headerTitle: { fontSize: 20, fontWeight: "800" },
     scroll: { padding: 16, paddingBottom: 60 },
     statusBanner: {
       flexDirection: "row",
@@ -572,7 +606,7 @@ function makeStyles(t: any) {
       padding: 16,
       borderRadius: 16,
       borderWidth: 1.5,
-      marginBottom: 20,
+      marginBottom: 18,
     },
     statusIconWrap: {
       width: 44,
@@ -582,25 +616,36 @@ function makeStyles(t: any) {
       justifyContent: "center",
       flexShrink: 0,
     },
-    statusLabel: { fontSize: 15, fontWeight: "800", marginBottom: 3 },
-    statusDesc: { fontSize: 13, color: t.textMuted, lineHeight: 18 },
-    card: {
-      backgroundColor: t.card,
-      borderRadius: 16,
+    statusTitle: { fontSize: 14, fontWeight: "800", marginBottom: 3 },
+    statusDesc: { fontSize: 12, lineHeight: 17 },
+    infoGrid: {
+      flexDirection: "row",
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: t.border,
       overflow: "hidden",
-      marginBottom: 20,
+      marginBottom: 18,
     },
-    actions: { gap: 10, marginBottom: 20 },
+    infoCell: { flex: 1, padding: 14 },
+    infoCellLabel: {
+      fontSize: 9,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 4,
+    },
+    infoCellValue: {
+      fontSize: 14,
+      fontWeight: "700",
+      textTransform: "capitalize",
+    },
+    actions: { gap: 10, marginBottom: 18 },
     primaryBtn: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      backgroundColor: t.primary,
       borderRadius: 14,
-      paddingVertical: 15,
+      paddingVertical: 14,
     },
     primaryBtnText: {
       color: "#fff",
@@ -617,29 +662,30 @@ function makeStyles(t: any) {
       borderRadius: 14,
       paddingVertical: 14,
       borderWidth: 1.5,
-      borderColor: t.primary,
     },
-    outlineBtnText: { color: t.primary, fontWeight: "700", fontSize: 14 },
+    outlineBtnText: { fontWeight: "700", fontSize: 14 },
     form: {
-      backgroundColor: t.card,
-      borderRadius: 20,
+      borderRadius: 18,
       borderWidth: 1,
-      borderColor: t.border,
-      padding: 20,
-      marginBottom: 20,
-      gap: 16,
+      padding: 18,
+      marginBottom: 18,
+      gap: 14,
     },
     formHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
-    formTitle: { fontSize: 16, fontWeight: "800", color: t.text },
+    formTitle: {
+      fontSize: 11,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
     closeBtn: {
-      width: 32,
-      height: 32,
+      width: 30,
+      height: 30,
       borderRadius: 8,
-      backgroundColor: t.inputBg,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -647,51 +693,35 @@ function makeStyles(t: any) {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      padding: 12,
+      padding: 10,
       borderRadius: 10,
       borderWidth: 1,
     },
-    warningText: { fontSize: 13, fontWeight: "600", flex: 1 },
-    fieldLabel: {
-      fontSize: 11,
-      fontWeight: "700",
-      color: t.textMuted,
-      textTransform: "uppercase",
-      letterSpacing: 0.8,
+    warningText: { fontSize: 12, fontWeight: "600", flex: 1 },
+    selectBox: {
+      flexDirection: "row",
+      borderRadius: 10,
+      overflow: "hidden",
+      marginBottom: 4,
     },
-    docTypeRow: { flexDirection: "row", gap: 8 },
-    docTypeBtn: {
+    selectOption: {
       flex: 1,
       paddingVertical: 10,
-      borderRadius: 10,
-      borderWidth: 1.5,
-      borderColor: t.border,
-      backgroundColor: t.inputBg,
       alignItems: "center",
+      borderWidth: 1.5,
     },
-    docTypeBtnActive: {
-      borderColor: t.primary,
-      backgroundColor: `${t.primary}10`,
-    },
-    docTypeBtnText: {
+    selectOptionText: {
       fontSize: 11,
       fontWeight: "600",
-      color: t.textMuted,
-      textAlign: "center",
+      textTransform: "capitalize",
     },
-    textInputWrap: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      backgroundColor: t.inputBg,
+    textInput: {
       borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 4,
       borderWidth: 1.5,
-      borderColor: t.border,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      fontSize: 14,
     },
-    textInputFocused: { borderColor: t.primary },
-    textInput: { flex: 1, fontSize: 14, paddingVertical: 10 },
     imagesRow: { flexDirection: "row", gap: 12 },
     formActions: { flexDirection: "row", gap: 10 },
     cancelBtn: {
@@ -699,18 +729,16 @@ function makeStyles(t: any) {
       borderRadius: 12,
       paddingVertical: 13,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    cancelBtnText: { fontSize: 14, fontWeight: "700", color: t.textMuted },
+    cancelBtnText: { fontSize: 14, fontWeight: "700" },
     submitBtn: {
       flex: 2,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      backgroundColor: t.primary,
       borderRadius: 12,
       paddingVertical: 13,
     },
@@ -723,6 +751,6 @@ function makeStyles(t: any) {
       borderRadius: 14,
       borderWidth: 1,
     },
-    infoText: { flex: 1, fontSize: 13, color: t.textMuted, lineHeight: 18 },
+    infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
   });
 }

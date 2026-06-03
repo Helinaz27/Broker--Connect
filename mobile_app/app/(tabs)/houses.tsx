@@ -21,10 +21,11 @@ const HOUSE_TYPES = [
   "apartment",
   "villa",
   "condominium",
+  "business",
   "studio",
   "townhouse",
   "duplex",
-  "penthouse",
+  "others",
 ];
 const MODES = ["all", "rent", "sell"] as const;
 
@@ -34,14 +35,9 @@ export default function HousesScreen() {
   const [search, setSearch] = useState("");
   const [city, setCity] = useState("");
   const [houseType, setHouseType] = useState("all");
-  const [mode, setMode] = useState<"all" | "rent" | "sell">("all");
+  const [mode, setMode] = useState<(typeof MODES)[number]>("all");
   const [page, setPage] = useState(1);
-  const [applied, setApplied] = useState<{
-    search: string;
-    city: string;
-    houseType: string;
-    mode: "all" | "rent" | "sell";
-  }>({
+  const [applied, setApplied] = useState({
     search: "",
     city: "",
     houseType: "all",
@@ -83,142 +79,217 @@ export default function HousesScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Houses</Text>
-        {!isLoading && <Text style={s.headerCount}>{total} listings</Text>}
-      </View>
-
-      <View style={s.filterBox}>
-        <View style={s.inputRow}>
-          <Ionicons name="search-outline" size={17} color={t.textMuted} />
-          <TextInput
-            style={s.input}
-            placeholder="Search houses..."
-            placeholderTextColor={t.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            returnKeyType="search"
-            onSubmitEditing={applyFilters}
+      <FlatList
+        data={listings}
+        keyExtractor={(i) => i.id}
+        contentContainerStyle={s.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={t.primary}
           />
-        </View>
-        <View style={s.inputRow}>
-          <Ionicons name="location-outline" size={17} color={t.textMuted} />
-          <TextInput
-            style={s.input}
-            placeholder="City..."
-            placeholderTextColor={t.textMuted}
-            value={city}
-            onChangeText={setCity}
-            returnKeyType="search"
-            onSubmitEditing={applyFilters}
-          />
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {HOUSE_TYPES.map((h) => (
-            <TouchableOpacity
-              key={h}
-              style={[s.chip, houseType === h && s.chipActive]}
-              onPress={() => setHouseType(h)}
-            >
-              <Text style={[s.chipText, houseType === h && s.chipTextActive]}>
-                {h === "all"
-                  ? "All Types"
-                  : h.charAt(0).toUpperCase() + h.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {MODES.map((m) => (
-            <TouchableOpacity
-              key={m}
-              style={[s.chip, mode === m && s.chipActive]}
-              onPress={() => setMode(m)}
-            >
-              <Text style={[s.chipText, mode === m && s.chipTextActive]}>
-                {m === "all"
-                  ? "All Modes"
-                  : m.charAt(0).toUpperCase() + m.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <View style={s.btnRow}>
-          <TouchableOpacity style={s.applyBtn} onPress={applyFilters}>
-            <Ionicons name="search" size={14} color="#fff" />
-            <Text style={s.applyBtnText}>Search</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.resetBtn} onPress={reset}>
-            <Text style={s.resetBtnText}>Reset</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {isLoading ? (
-        <ActivityIndicator color={t.primary} style={{ marginTop: 40 }} />
-      ) : (
-        <FlatList
-          data={listings}
-          keyExtractor={(i) => i.id}
-          contentContainerStyle={s.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={t.primary}
-            />
-          }
-          ListEmptyComponent={
+        }
+        ListEmptyComponent={
+          !isLoading ? (
             <View style={s.empty}>
               <Ionicons name="business-outline" size={48} color={t.border} />
-              <Text style={s.emptyText}>No houses found</Text>
+              <Text style={[s.emptyText, { color: t.textMuted }]}>
+                No houses found
+              </Text>
             </View>
-          }
-          renderItem={({ item }) => (
-            <ListingCard
-              id={item.id}
-              title={item.title}
-              price={item.price}
-              location={item.location?.city ?? ""}
-              image={item.images?.[0] ?? ""}
-              category="house"
-              listingMode={item.listingMode}
-              fullWidth
-            />
-          )}
-          ListFooterComponent={
-            totalPages > 1 ? (
-              <View style={s.pagination}>
-                <TouchableOpacity
-                  style={[s.pageBtn, page === 1 && s.pageBtnDisabled]}
-                  disabled={page === 1}
-                  onPress={() => setPage((p) => p - 1)}
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={18}
-                    color={page === 1 ? t.border : t.primary}
-                  />
-                </TouchableOpacity>
-                <Text style={s.pageText}>
-                  {page} / {totalPages}
+          ) : null
+        }
+        ListHeaderComponent={
+          <>
+            <View style={s.header}>
+              <Text style={[s.headerTitle, { color: t.text }]}>Houses</Text>
+              {!isLoading && (
+                <Text style={[s.headerCount, { color: t.textMuted }]}>
+                  {total} listings
                 </Text>
+              )}
+            </View>
+            <View
+              style={[
+                s.filterBox,
+                { backgroundColor: t.card, borderColor: t.border },
+              ]}
+            >
+              <View
+                style={[
+                  s.inputRow,
+                  { backgroundColor: t.inputBg, borderColor: t.border },
+                ]}
+              >
+                <Ionicons name="search-outline" size={17} color={t.textMuted} />
+                <TextInput
+                  style={[s.input, { color: t.text }]}
+                  placeholder="Search houses..."
+                  placeholderTextColor={t.textMuted}
+                  value={search}
+                  onChangeText={setSearch}
+                  returnKeyType="search"
+                  onSubmitEditing={applyFilters}
+                />
+              </View>
+              <View
+                style={[
+                  s.inputRow,
+                  { backgroundColor: t.inputBg, borderColor: t.border },
+                ]}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={17}
+                  color={t.textMuted}
+                />
+                <TextInput
+                  style={[s.input, { color: t.text }]}
+                  placeholder="City..."
+                  placeholderTextColor={t.textMuted}
+                  value={city}
+                  onChangeText={setCity}
+                  returnKeyType="search"
+                  onSubmitEditing={applyFilters}
+                />
+              </View>
+              <Text style={[s.filterLabel, { color: t.textMuted }]}>
+                House Type
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {HOUSE_TYPES.map((h) => (
+                  <TouchableOpacity
+                    key={h}
+                    style={[
+                      s.chip,
+                      {
+                        borderColor: houseType === h ? t.primary : t.border,
+                        backgroundColor:
+                          houseType === h ? t.primary : t.background,
+                      },
+                    ]}
+                    onPress={() => setHouseType(h)}
+                  >
+                    <Text
+                      style={[
+                        s.chipText,
+                        { color: houseType === h ? "#fff" : t.textMuted },
+                      ]}
+                    >
+                      {h === "all"
+                        ? "All Types"
+                        : h.charAt(0).toUpperCase() + h.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <Text style={[s.filterLabel, { color: t.textMuted }]}>
+                Listing Mode
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {MODES.map((m) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[
+                      s.chip,
+                      {
+                        borderColor: mode === m ? t.primary : t.border,
+                        backgroundColor: mode === m ? t.primary : t.background,
+                      },
+                    ]}
+                    onPress={() => setMode(m)}
+                  >
+                    <Text
+                      style={[
+                        s.chipText,
+                        { color: mode === m ? "#fff" : t.textMuted },
+                      ]}
+                    >
+                      {m === "all"
+                        ? "All Modes"
+                        : m.charAt(0).toUpperCase() + m.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <View style={s.btnRow}>
                 <TouchableOpacity
-                  style={[s.pageBtn, page === totalPages && s.pageBtnDisabled]}
-                  disabled={page === totalPages}
-                  onPress={() => setPage((p) => p + 1)}
+                  style={[s.applyBtn, { backgroundColor: t.primary }]}
+                  onPress={applyFilters}
                 >
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={page === totalPages ? t.border : t.primary}
-                  />
+                  <Ionicons name="search" size={14} color="#fff" />
+                  <Text style={s.applyBtnText}>Search</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.resetBtn, { borderColor: t.border }]}
+                  onPress={reset}
+                >
+                  <Text style={[s.resetBtnText, { color: t.textMuted }]}>
+                    Reset
+                  </Text>
                 </TouchableOpacity>
               </View>
-            ) : null
-          }
-        />
-      )}
+            </View>
+            {isLoading && (
+              <ActivityIndicator color={t.primary} style={{ marginTop: 40 }} />
+            )}
+          </>
+        }
+        renderItem={({ item }) => (
+          <ListingCard
+            id={item.id}
+            title={item.title}
+            price={item.price}
+            location={item.location?.city ?? ""}
+            image={item.images?.[0] ?? ""}
+            category="house"
+            listingMode={item.listingMode}
+            fullWidth
+          />
+        )}
+        ListFooterComponent={
+          totalPages > 1 ? (
+            <View style={s.pagination}>
+              <TouchableOpacity
+                style={[
+                  s.pageBtn,
+                  { borderColor: t.border, backgroundColor: t.card },
+                  page === 1 && s.pageBtnDisabled,
+                ]}
+                disabled={page === 1}
+                onPress={() => setPage((p) => p - 1)}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={18}
+                  color={page === 1 ? t.border : t.primary}
+                />
+              </TouchableOpacity>
+              <Text style={[s.pageText, { color: t.text }]}>
+                {page} / {totalPages}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  s.pageBtn,
+                  { borderColor: t.border, backgroundColor: t.card },
+                  page === totalPages && s.pageBtnDisabled,
+                ]}
+                disabled={page === totalPages}
+                onPress={() => setPage((p) => p + 1)}
+              >
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={page === totalPages ? t.border : t.primary}
+                />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ height: 24 }} />
+          )
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -234,41 +305,39 @@ function makeStyles(t: any) {
       paddingTop: 18,
       paddingBottom: 10,
     },
-    headerTitle: { fontSize: 26, fontWeight: "800", color: t.text },
-    headerCount: { fontSize: 13, color: t.textMuted, fontWeight: "600" },
+    headerTitle: { fontSize: 26, fontWeight: "800" },
+    headerCount: { fontSize: 13, fontWeight: "600" },
     filterBox: {
       marginHorizontal: 16,
-      backgroundColor: t.card,
       borderRadius: 16,
       padding: 14,
       borderWidth: 1,
-      borderColor: t.border,
-      marginBottom: 12,
+      marginBottom: 16,
       gap: 10,
+    },
+    filterLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
     },
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
-      backgroundColor: t.inputBg,
       borderRadius: 10,
       paddingHorizontal: 12,
       borderWidth: 1,
-      borderColor: t.border,
     },
-    input: { flex: 1, paddingVertical: 11, fontSize: 14, color: t.text },
+    input: { flex: 1, paddingVertical: 11, fontSize: 14 },
     chip: {
       paddingHorizontal: 14,
       paddingVertical: 6,
       borderRadius: 20,
       borderWidth: 1.5,
-      borderColor: t.border,
       marginRight: 8,
-      backgroundColor: t.background,
     },
-    chipActive: { borderColor: t.primary, backgroundColor: t.primary },
-    chipText: { fontSize: 12, fontWeight: "600", color: t.textMuted },
-    chipTextActive: { color: "#fff" },
+    chipText: { fontSize: 12, fontWeight: "600" },
     btnRow: { flexDirection: "row", gap: 10 },
     applyBtn: {
       flex: 1,
@@ -276,7 +345,6 @@ function makeStyles(t: any) {
       alignItems: "center",
       justifyContent: "center",
       gap: 6,
-      backgroundColor: t.primary,
       paddingVertical: 11,
       borderRadius: 10,
     },
@@ -286,19 +354,18 @@ function makeStyles(t: any) {
       paddingVertical: 11,
       borderRadius: 10,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    resetBtnText: { color: t.textMuted, fontWeight: "600", fontSize: 13 },
-    list: { paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 },
+    resetBtnText: { fontWeight: "600", fontSize: 13 },
+    list: { paddingHorizontal: 16, paddingBottom: 30 },
     empty: {
       alignItems: "center",
       justifyContent: "center",
       paddingTop: 60,
       gap: 12,
     },
-    emptyText: { fontSize: 16, color: t.textMuted },
+    emptyText: { fontSize: 16 },
     pagination: {
       flexDirection: "row",
       alignItems: "center",
@@ -311,12 +378,10 @@ function makeStyles(t: any) {
       height: 40,
       borderRadius: 10,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: t.card,
     },
     pageBtnDisabled: { opacity: 0.4 },
-    pageText: { fontSize: 14, fontWeight: "700", color: t.text },
+    pageText: { fontSize: 14, fontWeight: "700" },
   });
 }
