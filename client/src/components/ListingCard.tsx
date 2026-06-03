@@ -125,7 +125,7 @@ export default function ListingCard({
                 {t("common.price")}
               </p>
               <p className="text-xl font-bold text-foreground">
-                {price.toLocaleString()} {t("common.br")}
+                ETB {price.toLocaleString()}
               </p>
             </div>
             <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />

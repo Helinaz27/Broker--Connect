@@ -276,7 +276,7 @@ export default function ProfileScreen() {
             icon="heart-outline"
             label="Unlocked Contacts"
             t={t}
-            onPress={() => router.push("/(tabs)/favorites" as any)}
+            onPress={() => router.push("/unlocked-listings" as any)}
             last
           />
         </View>

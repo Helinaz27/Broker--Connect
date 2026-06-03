@@ -16,13 +16,13 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 import { getSocket, connectSocket } from "@/lib/socket";
 import {
   useGetMyNotificationsQuery,
   useMarkAllAsReadMutation,
   useMarkOneAsReadMutation,
+  useDeleteNotificationMutation,
   AppNotification,
 } from "@/store/apis/notificationApi";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -76,7 +76,6 @@ const getColor = (type: string) =>
 
 export default function NotificationsPage() {
   const { t } = useLanguage();
-  const router = useRouter();
 
   const formatTime = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -91,6 +90,7 @@ export default function NotificationsPage() {
     if (diffDay === 1) return t("pages.yesterday");
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
   };
+
   const { currentUser, isAuthenticated } = useAppSelector((s) => s.user);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [page, setPage] = useState(1);
@@ -106,6 +106,7 @@ export default function NotificationsPage() {
 
   const [markAllAsRead] = useMarkAllAsReadMutation();
   const [markOneAsRead] = useMarkOneAsReadMutation();
+  const [deleteNotification] = useDeleteNotificationMutation();
 
   const serverNotifications = data?.data?.notifications ?? [];
   const pagination = data?.data?.pagination;
@@ -150,7 +151,6 @@ export default function NotificationsPage() {
       await markOneAsRead(n.id);
       refetch();
     }
-    if (n.path) router.push(n.path);
   };
 
   const handleMarkAll = async () => {
@@ -159,9 +159,11 @@ export default function NotificationsPage() {
     refetch();
   };
 
-  const handleRemoveLive = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setLiveNotifications((prev) => prev.filter((n) => n.id !== id));
+    await deleteNotification(id);
+    refetch();
   };
 
   return (
@@ -271,7 +273,7 @@ export default function NotificationsPage() {
                     </p>
                   </div>
                   <button
-                    onClick={(e) => handleRemoveLive(n.id, e)}
+                    onClick={(e) => handleDelete(n.id, e)}
                     className="mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 dark:hover:text-red-400"
                     aria-label={t("pages.dismiss")}
                   >

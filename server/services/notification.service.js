@@ -240,3 +240,9 @@ export const markOneAsReadService = async (userId, notificationId) => {
     data: { isRead: true },
   });
 };
+
+export const deleteNotificationService = async (userId, notificationId) => {
+  return await prisma.notification.deleteMany({
+    where: { id: notificationId, userId },
+  });
+};

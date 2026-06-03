@@ -76,129 +76,188 @@ export default function ServicesScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Services</Text>
-        {!isLoading && <Text style={s.headerCount}>{total} listings</Text>}
-      </View>
-
-      <View style={s.filterBox}>
-        <View style={s.inputRow}>
-          <Ionicons name="search-outline" size={17} color={t.textMuted} />
-          <TextInput
-            style={s.input}
-            placeholder="Search services..."
-            placeholderTextColor={t.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            onSubmitEditing={applyFilters}
-            returnKeyType="search"
+      <FlatList
+        data={listings}
+        keyExtractor={(i) => i.id}
+        contentContainerStyle={s.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={t.primary}
           />
-        </View>
-        <View style={s.inputRow}>
-          <Ionicons name="location-outline" size={17} color={t.textMuted} />
-          <TextInput
-            style={s.input}
-            placeholder="City..."
-            placeholderTextColor={t.textMuted}
-            value={city}
-            onChangeText={setCity}
-            onSubmitEditing={applyFilters}
-            returnKeyType="search"
-          />
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {SERVICE_TYPES.map((st) => (
-            <TouchableOpacity
-              key={st}
-              style={[s.chip, serviceType === st && s.chipActive]}
-              onPress={() => setServiceType(st)}
-            >
-              <Text
-                style={[s.chipText, serviceType === st && s.chipTextActive]}
-              >
-                {st === "all"
-                  ? "All Types"
-                  : st.charAt(0).toUpperCase() + st.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <View style={s.btnRow}>
-          <TouchableOpacity style={s.applyBtn} onPress={applyFilters}>
-            <Ionicons name="search" size={14} color="#fff" />
-            <Text style={s.applyBtnText}>Search</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.resetBtn} onPress={reset}>
-            <Text style={s.resetBtnText}>Reset</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {isLoading ? (
-        <ActivityIndicator color={t.primary} style={{ marginTop: 40 }} />
-      ) : (
-        <FlatList
-          data={listings}
-          keyExtractor={(i) => i.id}
-          contentContainerStyle={s.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={t.primary}
-            />
-          }
-          ListEmptyComponent={
+        }
+        ListEmptyComponent={
+          !isLoading ? (
             <View style={s.empty}>
               <Ionicons name="grid-outline" size={48} color={t.border} />
-              <Text style={s.emptyText}>No services found</Text>
+              <Text style={[s.emptyText, { color: t.textMuted }]}>
+                No services found
+              </Text>
             </View>
-          }
-          renderItem={({ item }) => (
-            <ListingCard
-              id={item.id}
-              title={item.title}
-              price={item.price}
-              location={item.location?.city ?? ""}
-              image={item.images?.[0] ?? ""}
-              category="service"
-              listingMode={item.listingMode}
-              fullWidth
-            />
-          )}
-          ListFooterComponent={
-            totalPages > 1 ? (
-              <View style={s.pagination}>
-                <TouchableOpacity
-                  style={[s.pageBtn, page === 1 && s.pageBtnDisabled]}
-                  disabled={page === 1}
-                  onPress={() => setPage((p) => p - 1)}
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={18}
-                    color={page === 1 ? t.border : t.primary}
-                  />
-                </TouchableOpacity>
-                <Text style={s.pageText}>
-                  {page} / {totalPages}
+          ) : null
+        }
+        ListHeaderComponent={
+          <>
+            <View style={s.header}>
+              <Text style={[s.headerTitle, { color: t.text }]}>Services</Text>
+              {!isLoading && (
+                <Text style={[s.headerCount, { color: t.textMuted }]}>
+                  {total} listings
                 </Text>
+              )}
+            </View>
+            <View
+              style={[
+                s.filterBox,
+                { backgroundColor: t.card, borderColor: t.border },
+              ]}
+            >
+              <View
+                style={[
+                  s.inputRow,
+                  { backgroundColor: t.inputBg, borderColor: t.border },
+                ]}
+              >
+                <Ionicons name="search-outline" size={17} color={t.textMuted} />
+                <TextInput
+                  style={[s.input, { color: t.text }]}
+                  placeholder="Search services..."
+                  placeholderTextColor={t.textMuted}
+                  value={search}
+                  onChangeText={setSearch}
+                  onSubmitEditing={applyFilters}
+                  returnKeyType="search"
+                />
+              </View>
+              <View
+                style={[
+                  s.inputRow,
+                  { backgroundColor: t.inputBg, borderColor: t.border },
+                ]}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={17}
+                  color={t.textMuted}
+                />
+                <TextInput
+                  style={[s.input, { color: t.text }]}
+                  placeholder="City..."
+                  placeholderTextColor={t.textMuted}
+                  value={city}
+                  onChangeText={setCity}
+                  onSubmitEditing={applyFilters}
+                  returnKeyType="search"
+                />
+              </View>
+              <Text style={[s.filterLabel, { color: t.textMuted }]}>
+                Service Type
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {SERVICE_TYPES.map((st) => (
+                  <TouchableOpacity
+                    key={st}
+                    style={[
+                      s.chip,
+                      {
+                        borderColor: serviceType === st ? t.primary : t.border,
+                        backgroundColor:
+                          serviceType === st ? t.primary : t.background,
+                      },
+                    ]}
+                    onPress={() => setServiceType(st)}
+                  >
+                    <Text
+                      style={[
+                        s.chipText,
+                        { color: serviceType === st ? "#fff" : t.textMuted },
+                      ]}
+                    >
+                      {st === "all"
+                        ? "All Types"
+                        : st.charAt(0).toUpperCase() + st.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <View style={s.btnRow}>
                 <TouchableOpacity
-                  style={[s.pageBtn, page === totalPages && s.pageBtnDisabled]}
-                  disabled={page === totalPages}
-                  onPress={() => setPage((p) => p + 1)}
+                  style={[s.applyBtn, { backgroundColor: t.primary }]}
+                  onPress={applyFilters}
                 >
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={page === totalPages ? t.border : t.primary}
-                  />
+                  <Ionicons name="search" size={14} color="#fff" />
+                  <Text style={s.applyBtnText}>Search</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.resetBtn, { borderColor: t.border }]}
+                  onPress={reset}
+                >
+                  <Text style={[s.resetBtnText, { color: t.textMuted }]}>
+                    Reset
+                  </Text>
                 </TouchableOpacity>
               </View>
-            ) : null
-          }
-        />
-      )}
+            </View>
+            {isLoading && (
+              <ActivityIndicator color={t.primary} style={{ marginTop: 40 }} />
+            )}
+          </>
+        }
+        renderItem={({ item }) => (
+          <ListingCard
+            id={item.id}
+            title={item.title}
+            price={item.price}
+            location={item.location?.city ?? ""}
+            image={item.images?.[0] ?? ""}
+            category="service"
+            listingMode={item.listingMode}
+            fullWidth
+          />
+        )}
+        ListFooterComponent={
+          totalPages > 1 ? (
+            <View style={s.pagination}>
+              <TouchableOpacity
+                style={[
+                  s.pageBtn,
+                  { borderColor: t.border, backgroundColor: t.card },
+                  page === 1 && s.pageBtnDisabled,
+                ]}
+                disabled={page === 1}
+                onPress={() => setPage((p) => p - 1)}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={18}
+                  color={page === 1 ? t.border : t.primary}
+                />
+              </TouchableOpacity>
+              <Text style={[s.pageText, { color: t.text }]}>
+                {page} / {totalPages}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  s.pageBtn,
+                  { borderColor: t.border, backgroundColor: t.card },
+                  page === totalPages && s.pageBtnDisabled,
+                ]}
+                disabled={page === totalPages}
+                onPress={() => setPage((p) => p + 1)}
+              >
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={page === totalPages ? t.border : t.primary}
+                />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ height: 24 }} />
+          )
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -214,41 +273,39 @@ function makeStyles(t: any) {
       paddingTop: 18,
       paddingBottom: 10,
     },
-    headerTitle: { fontSize: 26, fontWeight: "800", color: t.text },
-    headerCount: { fontSize: 13, color: t.textMuted, fontWeight: "600" },
+    headerTitle: { fontSize: 26, fontWeight: "800" },
+    headerCount: { fontSize: 13, fontWeight: "600" },
     filterBox: {
       marginHorizontal: 16,
-      backgroundColor: t.card,
       borderRadius: 16,
       padding: 14,
       borderWidth: 1,
-      borderColor: t.border,
-      marginBottom: 12,
+      marginBottom: 16,
       gap: 10,
+    },
+    filterLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
     },
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: t.inputBg,
       borderRadius: 10,
       paddingHorizontal: 12,
       borderWidth: 1,
-      borderColor: t.border,
     },
-    input: { flex: 1, paddingVertical: 11, fontSize: 14, color: t.text },
+    input: { flex: 1, paddingVertical: 11, fontSize: 14 },
     chip: {
       paddingHorizontal: 14,
       paddingVertical: 6,
       borderRadius: 20,
       borderWidth: 1.5,
-      borderColor: t.border,
       marginRight: 8,
-      backgroundColor: t.background,
     },
-    chipActive: { borderColor: t.primary, backgroundColor: t.primary },
-    chipText: { fontSize: 12, fontWeight: "600", color: t.textMuted },
-    chipTextActive: { color: "#fff" },
+    chipText: { fontSize: 12, fontWeight: "600" },
     btnRow: { flexDirection: "row", gap: 10 },
     applyBtn: {
       flex: 1,
@@ -256,7 +313,6 @@ function makeStyles(t: any) {
       alignItems: "center",
       justifyContent: "center",
       gap: 6,
-      backgroundColor: t.primary,
       paddingVertical: 11,
       borderRadius: 10,
     },
@@ -266,14 +322,13 @@ function makeStyles(t: any) {
       paddingVertical: 11,
       borderRadius: 10,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
     },
-    resetBtnText: { color: t.textMuted, fontWeight: "600", fontSize: 13 },
-    list: { paddingHorizontal: 16, paddingBottom: 30, paddingTop: 4 },
+    resetBtnText: { fontWeight: "600", fontSize: 13 },
+    list: { paddingHorizontal: 16, paddingBottom: 30 },
     empty: { alignItems: "center", paddingTop: 60, gap: 12 },
-    emptyText: { fontSize: 16, color: t.textMuted },
+    emptyText: { fontSize: 16 },
     pagination: {
       flexDirection: "row",
       alignItems: "center",
@@ -286,12 +341,10 @@ function makeStyles(t: any) {
       height: 40,
       borderRadius: 10,
       borderWidth: 1.5,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: t.card,
     },
     pageBtnDisabled: { opacity: 0.4 },
-    pageText: { fontSize: 14, fontWeight: "700", color: t.text },
+    pageText: { fontSize: 14, fontWeight: "700" },
   });
 }

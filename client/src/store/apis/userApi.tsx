@@ -43,6 +43,7 @@ export interface LoginRequest {
 export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
+  email?: string;
   phone?: string;
   profileImage?: string;
 }
@@ -154,7 +155,6 @@ export const userApi = createApi({
       }),
       invalidatesTags: ["User"],
     }),
-
     deleteUser: builder.mutation<ApiResponse, string>({
       query: (userId) => ({ url: `/users/admin/${userId}`, method: "DELETE" }),
       invalidatesTags: ["User"],
