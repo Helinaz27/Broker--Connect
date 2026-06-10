@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +27,120 @@ import { connectSocket, getSocket } from "../../lib/socket";
 import { useTheme } from "../../hooks/useTheme";
 import { API_BASE_URL } from "../../constants/api";
 
+const LISTING_TYPE_LABELS: Record<string, string> = {
+  house: "House",
+  car: "Car",
+  service: "Service",
+};
+
+const LISTING_TYPE_ROUTES: Record<string, string> = {
+  house: "/house-listings/",
+  car: "/car-listings/",
+  service: "/service-listings/",
+};
+
+interface ListingInfo {
+  id: string;
+  title: string;
+  price: number;
+  listingType: string;
+  images?: string[];
+  location?: any;
+}
+
+function ListingCard({ listing, t }: { listing: ListingInfo; t: any }) {
+  const router = useRouter();
+  const coverImage = listing.images?.[0];
+  const typeLabel =
+    LISTING_TYPE_LABELS[listing.listingType?.toLowerCase()] ?? "Listing";
+  const route =
+    (LISTING_TYPE_ROUTES[listing.listingType?.toLowerCase()] ?? "/listings/") +
+    listing.id;
+
+  const locationText =
+    typeof listing.location === "string"
+      ? listing.location.split(",")[0]
+      : (listing.location?.placeName ??
+        listing.location?.subCity ??
+        listing.location?.city ??
+        null);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.listingCard,
+        { backgroundColor: t.card, borderColor: t.border },
+      ]}
+      onPress={() => router.push(route as any)}
+      activeOpacity={0.8}
+    >
+      {coverImage ? (
+        <Image
+          source={{ uri: coverImage }}
+          style={styles.listingCardImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            styles.listingCardImagePlaceholder,
+            { backgroundColor: `${t.primary}15` },
+          ]}
+        >
+          <Ionicons name="home-outline" size={24} color={t.primary} />
+        </View>
+      )}
+      <View style={styles.listingCardBody}>
+        <View style={styles.listingCardTop}>
+          <View
+            style={[
+              styles.listingTypeBadge,
+              { backgroundColor: `${t.primary}15` },
+            ]}
+          >
+            <Text style={[styles.listingTypeBadgeText, { color: t.primary }]}>
+              {typeLabel}
+            </Text>
+          </View>
+          <Ionicons
+            name="open-outline"
+            size={13}
+            color={t.textMuted}
+            style={{ marginLeft: "auto" }}
+          />
+        </View>
+        <Text
+          style={[styles.listingCardTitle, { color: t.text }]}
+          numberOfLines={1}
+        >
+          {listing.title}
+        </Text>
+        <View style={styles.listingCardMeta}>
+          {locationText && (
+            <View style={styles.listingCardMetaRow}>
+              <Ionicons name="location-outline" size={11} color={t.textMuted} />
+              <Text
+                style={[styles.listingCardMetaText, { color: t.textMuted }]}
+                numberOfLines={1}
+              >
+                {locationText}
+              </Text>
+            </View>
+          )}
+          <Text style={[styles.listingCardPrice, { color: t.primary }]}>
+            {listing.price?.toLocaleString()} ETB
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Types for the enriched flat list items ───────────────────────────────────
+type MessageItem =
+  | { type: "listing"; listing: ListingInfo; id: string }
+  | { type: "message"; message: ChatMessage; id: string };
+
 export default function ChatScreen() {
   const t = useTheme();
   const s = makeStyles(t);
@@ -39,6 +154,7 @@ export default function ChatScreen() {
 
   const [view, setView] = useState<"rooms" | "messages">("rooms");
   const [activeRoom, setActiveRoom] = useState<ChatRoom | null>(null);
+  const [activeListing, setActiveListing] = useState<ListingInfo | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -60,6 +176,33 @@ export default function ChatScreen() {
 
   const rooms = roomsData?.data?.rooms ?? [];
 
+  // ─── Build flat list data: inject listing card just above the first message
+  //     that references that listing, exactly like the web app does ────────────
+  const listItems: MessageItem[] = React.useMemo(() => {
+    if (!messages.length) return [];
+
+    const seenListingIds = new Set<string>();
+    // messages array is newest-first (inverted list), so we reverse to process
+    // chronologically, inject cards, then reverse back.
+    const chronological = [...messages].reverse();
+    const result: MessageItem[] = [];
+
+    for (const msg of chronological) {
+      const listing: ListingInfo | undefined =
+        (msg as any).listing ?? undefined;
+
+      if (listing && !seenListingIds.has(listing.id)) {
+        seenListingIds.add(listing.id);
+        result.push({ type: "listing", listing, id: `listing-${listing.id}` });
+      }
+
+      result.push({ type: "message", message: msg, id: msg.id });
+    }
+
+    // Reverse so newest is first again (FlatList inverted)
+    return result.reverse();
+  }, [messages]);
+
   const fetchMessagesViaRest = useCallback(
     async (roomId: string) => {
       if (!token) return;
@@ -72,6 +215,11 @@ export default function ChatScreen() {
         const json = await res.json();
         const fetched: ChatMessage[] = json?.data?.messages ?? [];
         setMessages(fetched.slice().reverse());
+
+        const firstWithListing = fetched.find((m: any) => m.listing);
+        if (firstWithListing && (firstWithListing as any).listing) {
+          setActiveListing((firstWithListing as any).listing);
+        }
       } catch {
         setMessages([]);
         Alert.alert("Error", "Could not load messages.");
@@ -113,9 +261,11 @@ export default function ChatScreen() {
       const currentRoom = activeRoomRef.current;
       if (currentRoom && msg.roomId === currentRoom.id) {
         setMessages((prev) =>
-          prev.find((m) => m.id === msg.id) ? prev : [...prev, msg],
+          prev.find((m) => m.id === msg.id) ? prev : [msg, ...prev],
         );
-        setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+        if (!activeListing && (msg as any).listing) {
+          setActiveListing((msg as any).listing);
+        }
         try {
           getSocket().emit("messages_read", { roomId: msg.roomId });
         } catch {}
@@ -143,6 +293,7 @@ export default function ChatScreen() {
     async (room: ChatRoom) => {
       activeRoomRef.current = room;
       setActiveRoom(room);
+      setActiveListing(null);
       setMessages([]);
       setView("messages");
       try {
@@ -151,7 +302,6 @@ export default function ChatScreen() {
         socket.emit("messages_read", { roomId: room.id });
       } catch {}
       await fetchMessagesViaRest(room.id);
-      setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 200);
     },
     [fetchMessagesViaRest],
   );
@@ -164,10 +314,18 @@ export default function ChatScreen() {
       }).unwrap();
       const room: ChatRoom = res.data.room;
       const initialMessages: ChatMessage[] = res.data.messages ?? [];
+
       activeRoomRef.current = room;
       setActiveRoom(room);
+      setActiveListing(null);
       setMessages(initialMessages.slice().reverse());
       setView("messages");
+
+      const firstWithListing = initialMessages.find((m: any) => m.listing);
+      if (firstWithListing && (firstWithListing as any).listing) {
+        setActiveListing((firstWithListing as any).listing);
+      }
+
       try {
         const socket = getSocket();
         socket.emit("join_room", { roomId: room.id });
@@ -189,7 +347,7 @@ export default function ChatScreen() {
     try {
       getSocket().emit("send_message", {
         roomId: activeRoom.id,
-        listingId: null,
+        listingId: activeListing?.id ?? null,
         content,
         messageType: "text",
       });
@@ -221,6 +379,7 @@ export default function ChatScreen() {
   const goBackToRooms = () => {
     activeRoomRef.current = null;
     setActiveRoom(null);
+    setActiveListing(null);
     setMessages([]);
     setView("rooms");
     refetchRooms();
@@ -234,6 +393,7 @@ export default function ChatScreen() {
       : date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
+  // ─── Messages view ──────────────────────────────────────────────────────────
   if (view === "messages" && activeRoom) {
     const other = activeRoom.otherUser;
     const isOnline = onlineUsers.has(other.id);
@@ -288,13 +448,10 @@ export default function ChatScreen() {
           ) : (
             <FlatList
               ref={flatRef}
-              data={messages}
-              keyExtractor={(m) => m.id}
+              data={listItems}
+              inverted
+              keyExtractor={(item) => item.id}
               contentContainerStyle={s.msgList}
-              onContentSizeChange={() => {
-                if (messages.length > 0)
-                  flatRef.current?.scrollToEnd({ animated: false });
-              }}
               ListEmptyComponent={
                 <View style={s.emptyMsg}>
                   <Ionicons
@@ -307,7 +464,18 @@ export default function ChatScreen() {
                   </Text>
                 </View>
               }
-              renderItem={({ item: msg }) => {
+              renderItem={({ item }) => {
+                // ── Listing card injected inline ──────────────────────────────
+                if (item.type === "listing") {
+                  return (
+                    <View style={s.inlineListingWrapper}>
+                      <ListingCard listing={item.listing} t={t} />
+                    </View>
+                  );
+                }
+
+                // ── Normal message bubble ─────────────────────────────────────
+                const msg = item.message;
                 const mine = msg.senderId === currentUser?.id;
                 return (
                   <View
@@ -433,6 +601,7 @@ export default function ChatScreen() {
     );
   }
 
+  // ─── Rooms list view ────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={s.safe}>
       <View style={[s.header, { borderBottomColor: t.border }]}>
@@ -566,6 +735,68 @@ export default function ChatScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  listingCard: {
+    flexDirection: "row",
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: 12,
+    marginHorizontal: 4,
+  },
+  listingCardImage: {
+    width: 80,
+    height: 80,
+  },
+  listingCardImagePlaceholder: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listingCardBody: {
+    flex: 1,
+    padding: 10,
+    gap: 4,
+  },
+  listingCardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  listingTypeBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  listingTypeBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  listingCardTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
+  listingCardMeta: {
+    gap: 2,
+  },
+  listingCardMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  listingCardMetaText: {
+    fontSize: 11,
+    flex: 1,
+  },
+  listingCardPrice: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+});
+
 function makeStyles(t: any) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.background },
@@ -616,6 +847,9 @@ function makeStyles(t: any) {
       flexDirection: "row",
       justifyContent: "flex-start",
       marginBottom: 4,
+    },
+    inlineListingWrapper: {
+      marginVertical: 8,
     },
     bubble: {
       maxWidth: "78%",

@@ -48,6 +48,7 @@ import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { useChatWidget } from "@/components/chat/ChatWidget";
 
 function BuyCoinsModal({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage();
@@ -713,6 +714,7 @@ function MyListingsTab() {
 
 function ListingRow({ access }: { access: ContactAccess }) {
   const { listing } = access;
+  const { openChat } = useChatWidget();
   const coverImage = listing.images?.[0];
   const detailPath = getListingDetailPath(listing.listingType, listing.id);
 
@@ -782,16 +784,16 @@ function ListingRow({ access }: { access: ContactAccess }) {
         {new Date(access.createdAt).toLocaleDateString()}
       </td>
       <td className="py-4 px-4">
-        <Link href={`/chat?listingId=${listing.id}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            Chat
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap"
+          onClick={() =>
+            openChat({ listingId: listing.id, otherUserId: listing.owner.id })
+          }
+        >
+          <MessageCircle className="h-3.5 w-3.5" /> Chat
+        </Button>
       </td>
     </tr>
   );
@@ -799,6 +801,8 @@ function ListingRow({ access }: { access: ContactAccess }) {
 
 function ListingCard({ access }: { access: ContactAccess }) {
   const { listing } = access;
+  const { openChat } = useChatWidget();
+
   const coverImage = listing.images?.[0];
   const detailPath = getListingDetailPath(listing.listingType, listing.id);
 
@@ -858,16 +862,16 @@ function ListingCard({ access }: { access: ContactAccess }) {
           {access.coinsPaid} coins paid
         </span>
         <span>{new Date(access.createdAt).toLocaleDateString()}</span>
-        <Link href={`/chat?listingId=${listing.id}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1 rounded-lg text-xs font-bold uppercase tracking-widest"
-          >
-            <MessageCircle className="h-3 w-3" />
-            Chat
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 rounded-lg text-xs font-bold uppercase tracking-widest"
+          onClick={() =>
+            openChat({ listingId: listing.id, otherUserId: listing.owner.id })
+          }
+        >
+          <MessageCircle className="h-3 w-3" /> Chat
+        </Button>
       </div>
     </div>
   );
