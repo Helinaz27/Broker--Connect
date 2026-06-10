@@ -19,12 +19,12 @@ import { RootState } from "../../store/store";
 import {
   useGetChatRoomsQuery,
   useInitiateChatMutation,
-  useGetMessagesQuery,
   ChatRoom,
   ChatMessage,
 } from "../../store/apis/chatApi";
 import { connectSocket, getSocket } from "../../lib/socket";
 import { useTheme } from "../../hooks/useTheme";
+import { API_BASE_URL } from "../../constants/api";
 
 export default function ChatScreen() {
   const t = useTheme();
@@ -45,106 +45,103 @@ export default function ChatScreen() {
   const [typingRooms, setTypingRooms] = useState<Record<string, boolean>>({});
   const [isTyping, setIsTyping] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
+
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flatRef = useRef<FlatList>(null);
+  const activeRoomRef = useRef<ChatRoom | null>(null);
+  const socketListenersAttached = useRef(false);
 
   const [initiateChat] = useInitiateChatMutation();
   const {
     data: roomsData,
     isLoading: roomsLoading,
-    refetch,
+    refetch: refetchRooms,
   } = useGetChatRoomsQuery({ page: 1, limit: 30 }, { skip: !token });
+
   const rooms = roomsData?.data?.rooms ?? [];
 
-  useEffect(() => {
-    if (!token) return;
-    try {
-      const socket = connectSocket(token);
-      socket.on("online_contacts", ({ userIds }: any) =>
-        setOnlineUsers(new Set(userIds)),
-      );
-      socket.on("user_online", ({ userId }: any) =>
-        setOnlineUsers((p) => new Set(p).add(userId)),
-      );
-      socket.on("user_offline", ({ userId }: any) =>
-        setOnlineUsers((p) => {
-          const n = new Set(p);
-          n.delete(userId);
-          return n;
-        }),
-      );
-      socket.on("typing_update", ({ roomId, isTyping: ty }: any) =>
-        setTypingRooms((p) => ({ ...p, [roomId]: ty })),
-      );
-      socket.on("new_message", (msg: ChatMessage) => {
-        if (msg.roomId === activeRoom?.id) {
-          setMessages((p) =>
-            p.find((m) => m.id === msg.id) ? p : [...p, msg],
-          );
-          setTimeout(
-            () => flatRef.current?.scrollToEnd({ animated: true }),
-            100,
-          );
-          try {
-            getSocket().emit("messages_read", { roomId: msg.roomId });
-          } catch {}
-        }
-        refetch();
-      });
-      return () => {
-        socket.off("online_contacts");
-        socket.off("user_online");
-        socket.off("user_offline");
-        socket.off("typing_update");
-        socket.off("new_message");
-      };
-    } catch {}
-  }, [token, activeRoom?.id]);
-
-  useEffect(() => {
-    if (listingId && otherUserId) handleStartChat(listingId, otherUserId);
-  }, [listingId, otherUserId]);
-
-  const fetchRoomMessages = useCallback(async (roomId: string) => {
-    setMessagesLoading(true);
-    try {
-      const socket = getSocket();
-      socket.emit("get_messages", { roomId, limit: 50 });
-      const msgs = await new Promise<ChatMessage[]>((resolve) => {
-        socket.once("messages_history", (data: any) =>
-          resolve(data.messages ?? []),
-        );
-        setTimeout(() => resolve([]), 5000);
-      });
-      setMessages(msgs.reverse());
-    } catch {
-      setMessages([]);
-    } finally {
-      setMessagesLoading(false);
-    }
-  }, []);
-
-  const handleStartChat = async (lId: string, oId: string) => {
-    try {
-      const res = await initiateChat({
-        listingId: lId,
-        otherUserId: oId,
-      }).unwrap();
-      setActiveRoom(res.data.room);
-      setMessages(res.data.messages ?? []);
-      setView("messages");
+  const fetchMessagesViaRest = useCallback(
+    async (roomId: string) => {
+      if (!token) return;
+      setMessagesLoading(true);
       try {
-        const socket = getSocket();
-        socket.emit("join_room", { roomId: res.data.room.id });
-        socket.emit("messages_read", { roomId: res.data.room.id });
-      } catch {}
-    } catch (e: any) {
-      Alert.alert("Error", e?.data?.message ?? "Failed to open chat");
+        const res = await fetch(
+          `${API_BASE_URL}/chat/rooms/${roomId}/messages?limit=50`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        const json = await res.json();
+        const fetched: ChatMessage[] = json?.data?.messages ?? [];
+        setMessages(fetched.slice().reverse());
+      } catch {
+        setMessages([]);
+        Alert.alert("Error", "Could not load messages.");
+      } finally {
+        setMessagesLoading(false);
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    if (!token || socketListenersAttached.current) return;
+    socketListenersAttached.current = true;
+
+    let socket: ReturnType<typeof connectSocket>;
+    try {
+      socket = connectSocket(token);
+    } catch {
+      return;
     }
-  };
+
+    socket.on("online_contacts", ({ userIds }: any) =>
+      setOnlineUsers(new Set(userIds)),
+    );
+    socket.on("user_online", ({ userId }: any) =>
+      setOnlineUsers((prev) => new Set(prev).add(userId)),
+    );
+    socket.on("user_offline", ({ userId }: any) =>
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      }),
+    );
+    socket.on("typing_update", ({ roomId, isTyping: ty }: any) =>
+      setTypingRooms((prev) => ({ ...prev, [roomId]: ty })),
+    );
+    socket.on("new_message", (msg: ChatMessage) => {
+      const currentRoom = activeRoomRef.current;
+      if (currentRoom && msg.roomId === currentRoom.id) {
+        setMessages((prev) =>
+          prev.find((m) => m.id === msg.id) ? prev : [...prev, msg],
+        );
+        setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+        try {
+          getSocket().emit("messages_read", { roomId: msg.roomId });
+        } catch {}
+      }
+      refetchRooms();
+    });
+
+    return () => {
+      socketListenersAttached.current = false;
+      socket.off("online_contacts");
+      socket.off("user_online");
+      socket.off("user_offline");
+      socket.off("typing_update");
+      socket.off("new_message");
+    };
+  }, [token]);
+
+  useEffect(() => {
+    if (listingId && otherUserId) {
+      handleStartChat(listingId, otherUserId);
+    }
+  }, [listingId, otherUserId]);
 
   const openRoom = useCallback(
     async (room: ChatRoom) => {
+      activeRoomRef.current = room;
       setActiveRoom(room);
       setMessages([]);
       setView("messages");
@@ -153,10 +150,36 @@ export default function ChatScreen() {
         socket.emit("join_room", { roomId: room.id });
         socket.emit("messages_read", { roomId: room.id });
       } catch {}
-      await fetchRoomMessages(room.id);
+      await fetchMessagesViaRest(room.id);
+      setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 200);
     },
-    [fetchRoomMessages],
+    [fetchMessagesViaRest],
   );
+
+  const handleStartChat = async (lId: string, oId: string) => {
+    try {
+      const res = await initiateChat({
+        listingId: lId,
+        otherUserId: oId,
+      }).unwrap();
+      const room: ChatRoom = res.data.room;
+      const initialMessages: ChatMessage[] = res.data.messages ?? [];
+      activeRoomRef.current = room;
+      setActiveRoom(room);
+      setMessages(initialMessages.slice().reverse());
+      setView("messages");
+      try {
+        const socket = getSocket();
+        socket.emit("join_room", { roomId: room.id });
+        socket.emit("messages_read", { roomId: room.id });
+      } catch {}
+      if (initialMessages.length === 0) {
+        await fetchMessagesViaRest(room.id);
+      }
+    } catch (e: any) {
+      Alert.alert("Error", e?.data?.message ?? "Failed to open chat");
+    }
+  };
 
   const sendMessage = () => {
     if (!input.trim() || !activeRoom) return;
@@ -187,12 +210,20 @@ export default function ChatScreen() {
   };
 
   const stopTyping = () => {
-    if (isTyping && activeRoom) {
+    if (activeRoomRef.current) {
       setIsTyping(false);
       try {
-        getSocket().emit("typing_stop", { roomId: activeRoom.id });
+        getSocket().emit("typing_stop", { roomId: activeRoomRef.current.id });
       } catch {}
     }
+  };
+
+  const goBackToRooms = () => {
+    activeRoomRef.current = null;
+    setActiveRoom(null);
+    setMessages([]);
+    setView("rooms");
+    refetchRooms();
   };
 
   const fmtTime = (d: string) => {
@@ -211,14 +242,7 @@ export default function ChatScreen() {
     return (
       <SafeAreaView style={s.safe}>
         <View style={[s.chatHeader, { backgroundColor: t.primary }]}>
-          <TouchableOpacity
-            onPress={() => {
-              setView("rooms");
-              setActiveRoom(null);
-              refetch();
-            }}
-            style={s.headerBack}
-          >
+          <TouchableOpacity onPress={goBackToRooms} style={s.headerBack}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={s.chatAvatar}>
@@ -246,6 +270,7 @@ export default function ChatScreen() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
         >
           {messagesLoading ? (
             <View
@@ -338,7 +363,7 @@ export default function ChatScreen() {
             />
           )}
 
-          {otherTyping && (
+          {otherTyping && !messagesLoading && (
             <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
               <View
                 style={[
@@ -418,10 +443,23 @@ export default function ChatScreen() {
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: t.text }]}>Messages</Text>
+        <TouchableOpacity
+          onPress={() => refetchRooms()}
+          style={{ marginLeft: "auto" }}
+        >
+          <Ionicons name="refresh-outline" size={22} color={t.textMuted} />
+        </TouchableOpacity>
       </View>
 
       {roomsLoading ? (
-        <ActivityIndicator color={t.primary} style={{ marginTop: 48 }} />
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <ActivityIndicator color={t.primary} />
+          <Text style={{ color: t.textMuted, marginTop: 8, fontSize: 13 }}>
+            Loading conversations...
+          </Text>
+        </View>
       ) : rooms.length === 0 ? (
         <View style={s.emptyCenter}>
           <Ionicons name="chatbubbles-outline" size={56} color={t.textMuted} />
