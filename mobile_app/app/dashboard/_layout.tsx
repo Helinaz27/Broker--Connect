@@ -62,13 +62,13 @@ const NAV: NavItem[] = [
   {
     label: "Edit Profile",
     icon: "person-outline",
-    route: "/dashboard/edit-profile",
+    route: "/profile",
     section: "account",
   },
   {
     label: "Change Password",
     icon: "lock-closed-outline",
-    route: "/dashboard/change-password",
+    route: "/profile",
     section: "account",
   },
   {
