@@ -1,11 +1,17 @@
 // src/app/page.tsx
 "use client";
 
-import ListingCard from "@/components/ListingCard";
+import ListingCarousel from "@/components/ListingCarousel";
 import Testimonials from "@/components/Testimonials";
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2, Building2, Car, Briefcase } from "lucide-react";
+import {
+  ArrowRight,
+  Loader2,
+  Building2,
+  Car,
+  Briefcase,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useCallback } from "react";
@@ -351,15 +357,9 @@ export default function Index() {
                 {t("home.noHouses")}
               </p>
             ) : (
-              <div className="overflow-x-auto pb-4 -mx-6 px-6">
-                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
-                  {houses.map((listing) => (
-                    <div key={listing.id} className="flex-shrink-0 w-80">
-                      <ListingCard {...toCard(listing, "house")} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ListingCarousel
+                listings={houses.map((listing) => toCard(listing, "house"))}
+              />
             )}
           </div>
         )}
@@ -400,15 +400,9 @@ export default function Index() {
                 {t("home.noCars")}
               </p>
             ) : (
-              <div className="overflow-x-auto pb-4 -mx-6 px-6">
-                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
-                  {cars.map((listing) => (
-                    <div key={listing.id} className="flex-shrink-0 w-80">
-                      <ListingCard {...toCard(listing, "car")} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ListingCarousel
+                listings={cars.map((listing) => toCard(listing, "car"))}
+              />
             )}
           </div>
         )}
@@ -449,15 +443,9 @@ export default function Index() {
                 {t("home.noServices")}
               </p>
             ) : (
-              <div className="overflow-x-auto pb-4 -mx-6 px-6">
-                <div className="flex gap-6" style={{ minWidth: "min-content" }}>
-                  {services.map((listing) => (
-                    <div key={listing.id} className="flex-shrink-0 w-80">
-                      <ListingCard {...toCard(listing, "service")} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ListingCarousel
+                listings={services.map((listing) => toCard(listing, "service"))}
+              />
             )}
           </div>
         )}
