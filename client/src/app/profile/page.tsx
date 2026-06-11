@@ -31,6 +31,9 @@ import {
   Copy,
   Check,
   MessageCircle,
+  Receipt,
+  CreditCard,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
@@ -45,6 +48,7 @@ import {
   type ContactAccess,
 } from "@/store/apis/accessApi";
 import { useInitiateChapaMutation } from "@/store/apis/paymentApi";
+import { useGetMyPaymentsQuery, type Payment } from "@/store/apis/paymentApi";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -877,7 +881,255 @@ function ListingCard({ access }: { access: ContactAccess }) {
   );
 }
 
-type ProfileTab = "listings" | "kyc";
+function PaymentStatusBadge({ status }: { status: string }) {
+  if (status === "success") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-widest">
+        <CheckCircle2 className="h-3 w-3" />
+        Success
+      </span>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-widest">
+        <Clock className="h-3 w-3" />
+        Pending
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-widest">
+        <XCircle className="h-3 w-3" />
+        Failed
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest">
+      {status}
+    </span>
+  );
+}
+
+function PaymentRow({ payment }: { payment: Payment }) {
+  return (
+    <tr className="border-b border-border hover:bg-muted/50 transition-colors">
+      <td className="py-4 px-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <CreditCard className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground text-sm font-mono">
+              {payment.transactionId}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+              {payment.paymentMethod}
+            </p>
+          </div>
+        </div>
+      </td>
+      <td className="py-4 px-4 text-foreground font-semibold text-sm whitespace-nowrap">
+        {payment.amountBirr.toLocaleString()} ETB
+      </td>
+      <td className="py-4 px-4">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+          <Coins className="h-3 w-3" />
+          {payment.coinsReceived}
+        </span>
+      </td>
+      <td className="py-4 px-4">
+        <PaymentStatusBadge status={payment.status} />
+      </td>
+      <td className="py-4 px-4 text-muted-foreground text-sm whitespace-nowrap">
+        {new Date(payment.createdAt).toLocaleDateString()}
+      </td>
+      <td className="py-4 px-4 text-muted-foreground text-sm whitespace-nowrap">
+        {payment.completedAt
+          ? new Date(payment.completedAt).toLocaleDateString()
+          : "—"}
+      </td>
+    </tr>
+  );
+}
+
+function PaymentCard({ payment }: { payment: Payment }) {
+  return (
+    <div className="p-4 rounded-2xl border border-border bg-card space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+            <CreditCard className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-foreground text-sm font-mono truncate">
+              {payment.transactionId}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+              {payment.paymentMethod}
+            </p>
+          </div>
+        </div>
+        <PaymentStatusBadge status={payment.status} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-0.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Amount
+          </p>
+          <p className="font-bold text-foreground text-sm">
+            {payment.amountBirr.toLocaleString()} ETB
+          </p>
+        </div>
+        <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 space-y-0.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Coins
+          </p>
+          <p className="font-bold text-primary text-sm flex items-center gap-1">
+            <Coins className="h-3 w-3" />
+            {payment.coinsReceived}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Initiated: {new Date(payment.createdAt).toLocaleDateString()}
+        </span>
+        {payment.completedAt && (
+          <span>
+            Completed: {new Date(payment.completedAt).toLocaleDateString()}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PaymentsTab() {
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const { data, isLoading, isFetching, isError } = useGetMyPaymentsQuery({
+    page,
+    limit,
+  });
+
+  const payments = data?.data?.payments ?? [];
+  const pagination = data?.data?.pagination;
+  const totalPages = pagination?.pages ?? 1;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading your payments…</span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="py-12 text-center">
+        <XCircle className="h-10 w-10 text-destructive mx-auto mb-3 opacity-60" />
+        <p className="text-muted-foreground text-sm">
+          Failed to load your payments. Please try again.
+        </p>
+      </div>
+    );
+  }
+
+  if (payments.length === 0) {
+    return (
+      <div className="py-12 text-center px-4">
+        <Receipt className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+        <p className="text-muted-foreground font-medium">No payments yet</p>
+        <p className="text-sm text-muted-foreground mt-1 opacity-70">
+          Purchase coins to start unlocking listing contacts.
+        </p>
+      </div>
+    );
+  }
+
+  const successPayments = payments.filter((p) => p.status === "success");
+  const totalCoins = successPayments.reduce(
+    (sum, p) => sum + p.coinsReceived,
+    0,
+  );
+  const totalSpent = successPayments.reduce((sum, p) => sum + p.amountBirr, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full min-w-[640px]">
+          <thead>
+            <tr className="border-b border-border">
+              {[
+                "Transaction",
+                "Amount",
+                "Coins",
+                "Status",
+                "Initiated",
+                "Completed",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="text-left py-3 px-4 font-semibold text-foreground whitespace-nowrap text-sm"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((payment) => (
+              <PaymentRow key={payment.id} payment={payment} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="sm:hidden space-y-3">
+        {payments.map((payment) => (
+          <PaymentCard key={payment.id} payment={payment} />
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            Page {page} of {totalPages} · {pagination?.total ?? 0} total
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || isFetching}
+              className="h-8 w-8 p-0 rounded-lg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || isFetching}
+              className="h-8 w-8 p-0 rounded-lg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type ProfileTab = "listings" | "kyc" | "payments";
 
 export default function ProfilePage() {
   const { t } = useLanguage();
@@ -1011,6 +1263,17 @@ export default function ProfilePage() {
                 >
                   My Listings
                 </button>
+                <button
+                  onClick={() => setActiveTab("payments")}
+                  className={`px-4 sm:px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                    activeTab === "payments"
+                      ? "bg-card text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Receipt className="h-3.5 w-3.5" />
+                  Payments
+                </button>
                 {!isKYCVerified && (
                   <button
                     onClick={() => setActiveTab("kyc")}
@@ -1038,6 +1301,22 @@ export default function ProfilePage() {
                   </CardHeader>
                   <CardContent className="p-0 sm:p-6">
                     <MyListingsTab />
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "payments" && (
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-xl sm:text-2xl">
+                      Payment History
+                    </CardTitle>
+                    <CardDescription>
+                      All your coin purchases and payment transactions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 sm:p-6">
+                    <PaymentsTab />
                   </CardContent>
                 </Card>
               )}
