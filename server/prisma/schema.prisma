@@ -141,15 +141,17 @@ model ChatRoom {
 }
 
 model Message {
-  id          String        @id @default(auto()) @map("_id") @db.ObjectId
-  roomId      String        @db.ObjectId
-  senderId    String        @db.ObjectId
-  listingId   String?        @db.ObjectId
-  messageType MessageType   @default(text)
-  content     String
-  isRead      Boolean
-  createdAt   DateTime      @default(now())
-  listing     Listing?       @relation(fields: [listingId], references: [id])
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  roomId       String      @db.ObjectId
+  senderId     String      @db.ObjectId
+  listingId    String?     @db.ObjectId
+  messageType  MessageType @default(text)
+  content      String
+  isRead       Boolean
+  callStatus   CallStatus?
+  callDuration Int?
+  createdAt    DateTime    @default(now())
+  listing      Listing?    @relation(fields: [listingId], references: [id])
 
   @@map("messages")
 }
@@ -212,7 +214,6 @@ enum ListingMode {
   sell
 }
 
-
 enum Period {
   daily
   weekly
@@ -230,14 +231,12 @@ enum CarConditionType {
   new
 }
 
-
 enum ListingStatus {
   active
   inactive
   occupied
   sold
 }
-
 
 enum PaymentMethod {
   telebirr
@@ -257,13 +256,19 @@ enum TransactionType {
   debit
 }
 
-
 enum MessageType {
   text
   image
   file
+  call_audio
+  call_video
 }
 
+enum CallStatus {
+  missed
+  declined
+  ended
+}
 
 enum FeeType {
   posting_fee

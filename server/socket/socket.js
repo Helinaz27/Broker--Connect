@@ -6,6 +6,8 @@ import env from "../utils/env.js";
 
 const onlineUsers = new Map();
 const typingUsers = new Map();
+const activeCalls = new Map(); // callId -> { roomId, callerId, calleeId, type, startedAt }
+const userInCall = new Map(); // userId -> callId
 
 let _io = null;
 
@@ -35,24 +37,18 @@ export const initSocket = (httpServer) => {
   io.use(async (socket, next) => {
     try {
       let token = null;
-
       const rawCookie = socket.handshake.headers.cookie;
       if (rawCookie) {
         const parsed = cookie.parse(rawCookie);
         token = parsed.token;
       }
-
       if (!token && socket.handshake.auth?.token) {
         token = socket.handshake.auth.token;
       }
-
       if (!token) return next(new Error("No token provided"));
-
       const decoded = jwt.verify(token, env.jwtSecret);
       const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-
       if (!user || !user.isActive) return next(new Error("Unauthorized"));
-
       socket.user = user;
       next();
     } catch (err) {
@@ -95,14 +91,12 @@ export const initSocket = (httpServer) => {
       });
       if (room) {
         socket.join(roomId);
-        console.log(`User ${userId} joined room ${roomId}`);
       }
     });
 
     socket.on("send_message", async (data, ack) => {
       try {
         const { roomId, listingId, content, messageType = "text" } = data;
-
         const room = await prisma.chatRoom.findFirst({
           where: { id: roomId, participants: { has: userId } },
         });
@@ -181,6 +175,161 @@ export const initSocket = (httpServer) => {
       }
     });
 
+    socket.on("call_offer", async ({ roomId, calleeId, offer, callType }) => {
+      // callType: "audio" | "video"
+      try {
+        const room = await prisma.chatRoom.findFirst({
+          where: { id: roomId, participants: { has: userId } },
+        });
+        if (!room) return;
+
+        const staleCallId = userInCall.get(userId);
+        if (staleCallId) {
+          const staleCall = activeCalls.get(staleCallId);
+          if (staleCall) {
+            // notify the other party if they're still waiting
+            const otherUserId =
+              staleCall.callerId === userId
+                ? staleCall.calleeId
+                : staleCall.callerId;
+            emitToUser(otherUserId, "call_ended", {
+              callId: staleCallId,
+              duration: 0,
+            });
+            userInCall.delete(staleCall.callerId);
+            userInCall.delete(staleCall.calleeId);
+            activeCalls.delete(staleCallId);
+          } else {
+            // orphaned entry with no matching call — just remove it
+            userInCall.delete(userId);
+          }
+        }
+
+        // Check if callee is busy
+        if (userInCall.has(calleeId)) {
+          emitToUser(userId, "call_busy", { roomId, calleeId });
+          return;
+        }
+
+        const callId = `${roomId}_${Date.now()}`;
+        activeCalls.set(callId, {
+          roomId,
+          callerId: userId,
+          calleeId,
+          callType,
+          startedAt: null, // set when answered
+          callId,
+        });
+
+        // Store pending call on both sides temporarily (caller tracks by callId)
+        userInCall.set(userId, callId);
+
+        emitToUser(calleeId, "call_incoming", {
+          roomId,
+          callerId: userId,
+          callerName: `${socket.user.firstName} ${socket.user.lastName}`,
+          callerImage: socket.user.profileImage || null,
+          offer,
+          callType,
+          callId,
+        });
+      } catch (err) {
+        console.error("call_offer error:", err);
+      }
+    });
+
+    socket.on("call_answer", async ({ callId, answer }) => {
+      try {
+        const call = activeCalls.get(callId);
+        if (!call) return;
+
+        call.startedAt = new Date();
+        userInCall.set(userId, callId); // callee now also in call
+
+        emitToUser(call.callerId, "call_answered", { callId, answer });
+      } catch (err) {
+        console.error("call_answer error:", err);
+      }
+    });
+
+    socket.on("call_ice_candidate", ({ callId, candidate, toUserId }) => {
+      emitToUser(toUserId, "call_ice_candidate", { callId, candidate });
+    });
+
+    socket.on("call_decline", async ({ callId }) => {
+      try {
+        const call = activeCalls.get(callId);
+        if (!call) return;
+
+        userInCall.delete(call.callerId);
+        userInCall.delete(call.calleeId);
+        activeCalls.delete(callId);
+
+        emitToUser(call.callerId, "call_declined", { callId });
+
+        // Save missed call message
+        await prisma.message.create({
+          data: {
+            roomId: call.roomId,
+            senderId: call.callerId,
+            messageType:
+              call.callType === "video" ? "call_video" : "call_audio",
+            content: "missed_call",
+            callStatus: "missed",
+            callDuration: 0,
+            isRead: false,
+          },
+        });
+
+        await prisma.chatRoom.update({
+          where: { id: call.roomId },
+          data: { updatedAt: new Date() },
+        });
+      } catch (err) {
+        console.error("call_decline error:", err);
+      }
+    });
+
+    socket.on("call_end", async ({ callId }) => {
+      try {
+        const call = activeCalls.get(callId);
+        if (!call) return;
+
+        const duration = call.startedAt
+          ? Math.floor((Date.now() - call.startedAt.getTime()) / 1000)
+          : 0;
+
+        const otherUserId =
+          call.callerId === userId ? call.calleeId : call.callerId;
+        emitToUser(otherUserId, "call_ended", { callId, duration });
+
+        userInCall.delete(call.callerId);
+        userInCall.delete(call.calleeId);
+        activeCalls.delete(callId);
+
+        // Save call history message
+        await prisma.message.create({
+          data: {
+            roomId: call.roomId,
+            senderId: call.callerId,
+            messageType:
+              call.callType === "video" ? "call_video" : "call_audio",
+            content: duration > 0 ? "call_ended" : "missed_call",
+            callStatus: duration > 0 ? "ended" : "missed",
+            callDuration: duration,
+            isRead: false,
+          },
+        });
+
+        await prisma.chatRoom.update({
+          where: { id: call.roomId },
+          data: { updatedAt: new Date() },
+        });
+      } catch (err) {
+        console.error("call_end error:", err);
+      }
+    });
+
     socket.on("disconnect", () => {
       const sockets = onlineUsers.get(userId);
       if (sockets) {
@@ -200,6 +349,20 @@ export const initSocket = (httpServer) => {
                 .emit("typing_update", { roomId, userId, isTyping: false });
             }
           });
+
+          // End any active call if user disconnects
+          const callId = userInCall.get(userId);
+          if (callId) {
+            const call = activeCalls.get(callId);
+            if (call) {
+              const otherUserId =
+                call.callerId === userId ? call.calleeId : call.callerId;
+              emitToUser(otherUserId, "call_ended", { callId, duration: 0 });
+              userInCall.delete(call.callerId);
+              userInCall.delete(call.calleeId);
+              activeCalls.delete(callId);
+            }
+          }
         }
       }
     });
