@@ -21,9 +21,11 @@ export interface ChatMessage {
   roomId: string;
   senderId: string;
   listingId: string | null;
-  messageType: "text" | "image" | "file";
+  messageType: "text" | "image" | "file" | "call_audio" | "call_video";
   content: string;
   isRead: boolean;
+  callStatus?: "missed" | "declined" | "ended";
+  callDuration?: number;
   createdAt: string;
   listing: ListingInfo | null;
 }

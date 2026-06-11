@@ -20,6 +20,8 @@ import {
   Search,
   ExternalLink,
   Loader2,
+  Phone,
+  Video,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -36,6 +38,8 @@ import {
   OtherUser,
   ListingInfo,
 } from "@/store/apis/chatApi";
+import { CallModal, IncomingCallBanner } from "./CallModal";
+import { useWebRTC } from "./useWebRTC";
 
 type ChatView = "contacts" | "messages";
 
@@ -112,6 +116,28 @@ function ChatWidget({
 
   const currentUser = useSelector((s: RootState) => s.user.currentUser);
 
+  const {
+    callState,
+    setCallState,
+    startCall,
+    acceptCall,
+    declineCall,
+    hangUp,
+    handleAnswer,
+    handleRemoteIceCandidate,
+    cleanup: cleanupCall,
+  } = useWebRTC();
+
+  // Pending incoming call (before user accepts/declines)
+  const [incomingCall, setIncomingCall] = useState<{
+    callId: string;
+    callType: "audio" | "video";
+    callerName: string;
+    callerImage: string | null;
+    callerId: string;
+    offer: RTCSessionDescriptionInit;
+  } | null>(null);
+
   useEffect(() => {
     if (activeRoom) setView("messages");
   }, [activeRoom]);
@@ -125,11 +151,9 @@ function ChatWidget({
     socket.on("online_contacts", ({ userIds }: { userIds: string[] }) => {
       setOnlineUsers(new Set(userIds));
     });
-
     socket.on("user_online", ({ userId }: { userId: string }) => {
       setOnlineUsers((prev) => new Set(prev).add(userId));
     });
-
     socket.on("user_offline", ({ userId }: { userId: string }) => {
       setOnlineUsers((prev) => {
         const next = new Set(prev);
@@ -137,7 +161,6 @@ function ChatWidget({
         return next;
       });
     });
-
     socket.on(
       "typing_update",
       ({
@@ -161,8 +184,42 @@ function ChatWidget({
     const handleWidgetNewMessage = (msg: ChatMessage) => {
       setLiveLastMessages((prev) => ({ ...prev, [msg.roomId]: msg }));
     };
-
     socket.on("new_message", handleWidgetNewMessage);
+
+    socket.on(
+      "call_incoming",
+      ({ callId, callType, callerId, callerName, callerImage, offer }: any) => {
+        setIncomingCall({
+          callId,
+          callType,
+          callerId,
+          callerName,
+          callerImage: callerImage ?? null,
+          offer,
+        });
+      },
+    );
+
+    socket.on("call_answered", async ({ callId, answer }: any) => {
+      await handleAnswer(answer);
+    });
+
+    socket.on("call_ice_candidate", async ({ candidate }: any) => {
+      await handleRemoteIceCandidate(candidate);
+    });
+
+    socket.on("call_declined", () => {
+      cleanupCall();
+    });
+
+    socket.on("call_ended", () => {
+      cleanupCall();
+    });
+
+    socket.on("call_busy", () => {
+      cleanupCall();
+      alert("User is currently in another call.");
+    });
 
     return () => {
       socket.off("online_contacts");
@@ -170,6 +227,12 @@ function ChatWidget({
       socket.off("user_offline");
       socket.off("typing_update");
       socket.off("new_message", handleWidgetNewMessage);
+      socket.off("call_incoming");
+      socket.off("call_answered");
+      socket.off("call_ice_candidate");
+      socket.off("call_declined");
+      socket.off("call_ended");
+      socket.off("call_busy");
     };
   }, [currentUser]);
 
@@ -191,8 +254,70 @@ function ChatWidget({
 
   const isOtherUserOnline = (userId: string) => onlineUsers.has(userId);
 
+  const handleAcceptCall = async () => {
+    if (!incomingCall) return;
+    setIncomingCall(null);
+    await acceptCall({
+      callId: incomingCall.callId,
+      callerId: incomingCall.callerId,
+      callerName: incomingCall.callerName,
+      callerImage: incomingCall.callerImage,
+      callType: incomingCall.callType,
+      offer: incomingCall.offer,
+    });
+  };
+
+  const handleDeclineCall = () => {
+    if (!incomingCall) return;
+    declineCall(incomingCall.callId);
+    setIncomingCall(null);
+  };
+
   return (
     <>
+      {/* Incoming call banner (shown regardless of widget open state) */}
+      {incomingCall && callState.status === "idle" && (
+        <IncomingCallBanner
+          callerName={incomingCall.callerName}
+          callerImage={incomingCall.callerImage}
+          callType={incomingCall.callType}
+          onAccept={handleAcceptCall}
+          onDecline={handleDeclineCall}
+        />
+      )}
+
+      {/* Active or outgoing call modal */}
+      {(callState.status === "outgoing" || callState.status === "active") && (
+        <CallModal
+          outgoing={
+            callState.status === "outgoing"
+              ? {
+                  callId: callState.callId,
+                  callType: callState.callType,
+                  calleeName: callState.calleeName,
+                  calleeImage: callState.calleeImage,
+                  localStream: callState.localStream,
+                  peerConnection: callState.pc,
+                  onCancel: hangUp,
+                }
+              : undefined
+          }
+          active={
+            callState.status === "active"
+              ? {
+                  callId: callState.callId,
+                  callType: callState.callType,
+                  remoteName: callState.remoteName,
+                  remoteImage: callState.remoteImage,
+                  localStream: callState.localStream,
+                  remoteStream: callState.remoteStream,
+                  onHangUp: hangUp,
+                }
+              : undefined
+          }
+        />
+      )}
+
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -233,6 +358,15 @@ function ChatWidget({
             isOnline={isOtherUserOnline(activeRoom.otherUser.id)}
             currentUserId={currentUser?.id ?? ""}
             typingRooms={typingRooms}
+            onStartCall={(callType) =>
+              startCall({
+                roomId: activeRoom.room.id,
+                calleeId: activeRoom.otherUser.id,
+                calleeName: `${activeRoom.otherUser.firstName} ${activeRoom.otherUser.lastName}`,
+                calleeImage: activeRoom.otherUser.profileImage ?? null,
+                callType,
+              })
+            }
           />
         ) : null}
       </div>
@@ -428,7 +562,11 @@ function ContactsList({
                           ? room.lastMessage.content
                           : room.lastMessage.messageType === "image"
                             ? "📷 Image"
-                            : "📎 File"}
+                            : room.lastMessage.messageType === "call_audio"
+                              ? "📞 Audio call"
+                              : room.lastMessage.messageType === "call_video"
+                                ? "🎥 Video call"
+                                : "📎 File"}
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">
@@ -552,6 +690,7 @@ interface MessagePanelProps {
   isOnline: boolean;
   currentUserId: string;
   typingRooms: Record<string, string>;
+  onStartCall: (callType: "audio" | "video") => void;
 }
 
 function MessagePanel({
@@ -560,6 +699,7 @@ function MessagePanel({
   isOnline,
   currentUserId,
   typingRooms,
+  onStartCall,
 }: MessagePanelProps) {
   const { room, otherUser, initialMessages } = activeRoom;
   const [listingId, setListingId] = useState<string>(
@@ -578,11 +718,8 @@ function MessagePanel({
   const containerRef = useRef<HTMLDivElement>(null);
   const socketMessageBuffer = useRef<ChatMessage[]>([]);
   const messagesLoadedRef = useRef(false);
-
   const [uploadFile] = useUploadMessageFileMutation();
-
   const shouldFetch = initialMessages.length === 0;
-
   const { data: fetchedData } = useGetMessagesQuery(
     { roomId: room.id, limit: 30 },
     { skip: !shouldFetch, refetchOnMountOrArgChange: true },
@@ -632,7 +769,6 @@ function MessagePanel({
 
   useEffect(() => {
     const socket = getSocket();
-
     socket.emit("join_room", { roomId: room.id });
     socket.emit("messages_read", { roomId: room.id });
 
@@ -651,9 +787,8 @@ function MessagePanel({
     };
 
     const handleReadAck = ({ roomId }: { roomId: string }) => {
-      if (roomId === room.id) {
+      if (roomId === room.id)
         setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
-      }
     };
 
     socket.on("new_message", handleNewMessage);
@@ -678,9 +813,8 @@ function MessagePanel({
       setMessages((prev) => [...json.data.messages, ...prev]);
       setCursor(json.data.nextCursor);
       setHasMore(!!json.data.nextCursor);
-      if (!listingId && json.data.messages[0]?.listingId) {
+      if (!listingId && json.data.messages[0]?.listingId)
         setListingId(json.data.messages[0].listingId);
-      }
     }
   }, [hasMore, cursor, room.id, listingId]);
 
@@ -763,21 +897,25 @@ function MessagePanel({
   const isPdf = (url: string) =>
     url.toLowerCase().includes(".pdf") ||
     url.toLowerCase().includes("/raw/upload/");
-
   const otherIsTyping = typingRooms[room.id] === otherUser.id;
-
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-
   const seenListingIds = useRef<Set<string>>(new Set());
+
+  const formatDuration = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  };
 
   return (
     <div className="relative flex flex-col h-full">
       {pdfUrl && <PdfViewer url={pdfUrl} onClose={() => setPdfUrl(null)} />}
 
+      {/* Header with call buttons */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground md:rounded-t-2xl">
         <button
           onClick={onBack}
@@ -794,6 +932,21 @@ function MessagePanel({
             {otherIsTyping ? "typing..." : isOnline ? "Online" : "Offline"}
           </p>
         </div>
+        {/* Call buttons */}
+        <button
+          onClick={() => onStartCall("audio")}
+          className="p-2 hover:bg-white/10 rounded-full transition-colors"
+          title="Audio call"
+        >
+          <Phone className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => onStartCall("video")}
+          className="p-2 hover:bg-white/10 rounded-full transition-colors"
+          title="Video call"
+        >
+          <Video className="h-4 w-4" />
+        </button>
       </div>
 
       {isUploading && (
@@ -827,7 +980,6 @@ function MessagePanel({
               new Date(msg.createdAt).getTime() -
                 new Date(messages[idx - 1].createdAt).getTime() >
                 5 * 60 * 1000;
-
             const showListingCard =
               !!msg.listing &&
               !seenListingIds.current.has(msg.listing.id) &&
@@ -836,6 +988,11 @@ function MessagePanel({
                 return true;
               })();
 
+            // Call history bubble
+            const isCallMsg =
+              msg.messageType === "call_audio" ||
+              msg.messageType === "call_video";
+
             return (
               <div key={msg.id}>
                 {showTime && (
@@ -843,7 +1000,6 @@ function MessagePanel({
                     {formatTime(msg.createdAt)}
                   </p>
                 )}
-
                 {showListingCard && (
                   <div
                     className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1`}
@@ -854,53 +1010,67 @@ function MessagePanel({
                   </div>
                 )}
 
-                <div
-                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                      isMine
-                        ? "bg-primary text-primary-foreground rounded-br-none"
-                        : "bg-card border border-border text-foreground rounded-bl-none"
-                    }`}
-                  >
-                    {msg.messageType === "text" && (
-                      <p className="text-sm leading-relaxed break-words">
-                        {msg.content}
-                      </p>
-                    )}
-                    {msg.messageType === "image" && (
-                      <a
-                        href={msg.content}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <img
-                          src={msg.content}
-                          alt="sent image"
-                          className="rounded-lg max-w-full max-h-48 object-cover"
-                        />
-                      </a>
-                    )}
-                    {msg.messageType === "file" && (
-                      <button
-                        onClick={() =>
-                          isPdf(msg.content)
-                            ? setPdfUrl(msg.content)
-                            : window.open(msg.content, "_blank")
-                        }
-                        className="flex items-center gap-2 text-sm underline text-left"
-                      >
-                        <File className="h-4 w-4 shrink-0" />
-                        <span className="truncate">
-                          {isPdf(msg.content) ? "View PDF" : "Download file"}
-                        </span>
-                      </button>
-                    )}
+                {isCallMsg ? (
+                  <div className="flex justify-center my-1">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-xs text-muted-foreground">
+                      {msg.messageType === "call_video" ? (
+                        <Video className="h-3 w-3" />
+                      ) : (
+                        <Phone className="h-3 w-3" />
+                      )}
+                      <span>
+                        {msg.callStatus === "missed" ||
+                        msg.content === "missed_call"
+                          ? `Missed ${msg.messageType === "call_video" ? "video" : "audio"} call`
+                          : `${msg.messageType === "call_video" ? "Video" : "Audio"} call${msg.callDuration ? ` · ${formatDuration(msg.callDuration)}` : ""}`}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div
+                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 shadow-sm ${isMine ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border text-foreground rounded-bl-none"}`}
+                    >
+                      {msg.messageType === "text" && (
+                        <p className="text-sm leading-relaxed break-words">
+                          {msg.content}
+                        </p>
+                      )}
+                      {msg.messageType === "image" && (
+                        <a
+                          href={msg.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={msg.content}
+                            alt="sent image"
+                            className="rounded-lg max-w-full max-h-48 object-cover"
+                          />
+                        </a>
+                      )}
+                      {msg.messageType === "file" && (
+                        <button
+                          onClick={() =>
+                            isPdf(msg.content)
+                              ? setPdfUrl(msg.content)
+                              : window.open(msg.content, "_blank")
+                          }
+                          className="flex items-center gap-2 text-sm underline text-left"
+                        >
+                          <File className="h-4 w-4 shrink-0" />
+                          <span className="truncate">
+                            {isPdf(msg.content) ? "View PDF" : "Download file"}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                {isMine && idx === messages.length - 1 && (
+                {isMine && !isCallMsg && idx === messages.length - 1 && (
                   <div className="flex justify-end pr-1 mt-0.5">
                     {msg.isRead ? (
                       <CheckCheck className="h-3 w-3 text-primary" />
@@ -921,7 +1091,6 @@ function MessagePanel({
             </div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
@@ -1002,9 +1171,7 @@ function Avatar({
         </div>
       )}
       <span
-        className={`absolute bottom-0 right-0 ${dot} rounded-full border-2 border-card ${
-          isOnline ? "bg-green-500" : "bg-muted-foreground/40"
-        }`}
+        className={`absolute bottom-0 right-0 ${dot} rounded-full border-2 border-card ${isOnline ? "bg-green-500" : "bg-muted-foreground/40"}`}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,12 +20,126 @@ import { RootState } from "../../store/store";
 import {
   useGetChatRoomsQuery,
   useInitiateChatMutation,
-  useGetMessagesQuery,
   ChatRoom,
   ChatMessage,
 } from "../../store/apis/chatApi";
 import { connectSocket, getSocket } from "../../lib/socket";
 import { useTheme } from "../../hooks/useTheme";
+import { API_BASE_URL } from "../../constants/api";
+
+const LISTING_TYPE_LABELS: Record<string, string> = {
+  house: "House",
+  car: "Car",
+  service: "Service",
+};
+
+const LISTING_TYPE_ROUTES: Record<string, string> = {
+  house: "/house-listings/",
+  car: "/car-listings/",
+  service: "/service-listings/",
+};
+
+interface ListingInfo {
+  id: string;
+  title: string;
+  price: number;
+  listingType: string;
+  images?: string[];
+  location?: any;
+}
+
+function ListingCard({ listing, t }: { listing: ListingInfo; t: any }) {
+  const router = useRouter();
+  const coverImage = listing.images?.[0];
+  const typeLabel =
+    LISTING_TYPE_LABELS[listing.listingType?.toLowerCase()] ?? "Listing";
+  const route =
+    (LISTING_TYPE_ROUTES[listing.listingType?.toLowerCase()] ?? "/listings/") +
+    listing.id;
+
+  const locationText =
+    typeof listing.location === "string"
+      ? listing.location.split(",")[0]
+      : (listing.location?.placeName ??
+        listing.location?.subCity ??
+        listing.location?.city ??
+        null);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.listingCard,
+        { backgroundColor: t.card, borderColor: t.border },
+      ]}
+      onPress={() => router.push(route as any)}
+      activeOpacity={0.8}
+    >
+      {coverImage ? (
+        <Image
+          source={{ uri: coverImage }}
+          style={styles.listingCardImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            styles.listingCardImagePlaceholder,
+            { backgroundColor: `${t.primary}15` },
+          ]}
+        >
+          <Ionicons name="home-outline" size={24} color={t.primary} />
+        </View>
+      )}
+      <View style={styles.listingCardBody}>
+        <View style={styles.listingCardTop}>
+          <View
+            style={[
+              styles.listingTypeBadge,
+              { backgroundColor: `${t.primary}15` },
+            ]}
+          >
+            <Text style={[styles.listingTypeBadgeText, { color: t.primary }]}>
+              {typeLabel}
+            </Text>
+          </View>
+          <Ionicons
+            name="open-outline"
+            size={13}
+            color={t.textMuted}
+            style={{ marginLeft: "auto" }}
+          />
+        </View>
+        <Text
+          style={[styles.listingCardTitle, { color: t.text }]}
+          numberOfLines={1}
+        >
+          {listing.title}
+        </Text>
+        <View style={styles.listingCardMeta}>
+          {locationText && (
+            <View style={styles.listingCardMetaRow}>
+              <Ionicons name="location-outline" size={11} color={t.textMuted} />
+              <Text
+                style={[styles.listingCardMetaText, { color: t.textMuted }]}
+                numberOfLines={1}
+              >
+                {locationText}
+              </Text>
+            </View>
+          )}
+          <Text style={[styles.listingCardPrice, { color: t.primary }]}>
+            {listing.price?.toLocaleString()} ETB
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Types for the enriched flat list items ───────────────────────────────────
+type MessageItem =
+  | { type: "listing"; listing: ListingInfo; id: string }
+  | { type: "message"; message: ChatMessage; id: string };
 
 export default function ChatScreen() {
   const t = useTheme();
@@ -39,113 +154,146 @@ export default function ChatScreen() {
 
   const [view, setView] = useState<"rooms" | "messages">("rooms");
   const [activeRoom, setActiveRoom] = useState<ChatRoom | null>(null);
+  const [activeListing, setActiveListing] = useState<ListingInfo | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingRooms, setTypingRooms] = useState<Record<string, boolean>>({});
   const [isTyping, setIsTyping] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
+
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flatRef = useRef<FlatList>(null);
+  const activeRoomRef = useRef<ChatRoom | null>(null);
+  const socketListenersAttached = useRef(false);
 
   const [initiateChat] = useInitiateChatMutation();
   const {
     data: roomsData,
     isLoading: roomsLoading,
-    refetch,
+    refetch: refetchRooms,
   } = useGetChatRoomsQuery({ page: 1, limit: 30 }, { skip: !token });
+
   const rooms = roomsData?.data?.rooms ?? [];
 
-  useEffect(() => {
-    if (!token) return;
-    try {
-      const socket = connectSocket(token);
-      socket.on("online_contacts", ({ userIds }: any) =>
-        setOnlineUsers(new Set(userIds)),
-      );
-      socket.on("user_online", ({ userId }: any) =>
-        setOnlineUsers((p) => new Set(p).add(userId)),
-      );
-      socket.on("user_offline", ({ userId }: any) =>
-        setOnlineUsers((p) => {
-          const n = new Set(p);
-          n.delete(userId);
-          return n;
-        }),
-      );
-      socket.on("typing_update", ({ roomId, isTyping: ty }: any) =>
-        setTypingRooms((p) => ({ ...p, [roomId]: ty })),
-      );
-      socket.on("new_message", (msg: ChatMessage) => {
-        if (msg.roomId === activeRoom?.id) {
-          setMessages((p) =>
-            p.find((m) => m.id === msg.id) ? p : [...p, msg],
-          );
-          setTimeout(
-            () => flatRef.current?.scrollToEnd({ animated: true }),
-            100,
-          );
-          try {
-            getSocket().emit("messages_read", { roomId: msg.roomId });
-          } catch {}
-        }
-        refetch();
-      });
-      return () => {
-        socket.off("online_contacts");
-        socket.off("user_online");
-        socket.off("user_offline");
-        socket.off("typing_update");
-        socket.off("new_message");
-      };
-    } catch {}
-  }, [token, activeRoom?.id]);
+  // ─── Build flat list data: inject listing card just above the first message
+  //     that references that listing, exactly like the web app does ────────────
+  const listItems: MessageItem[] = React.useMemo(() => {
+    if (!messages.length) return [];
 
-  useEffect(() => {
-    if (listingId && otherUserId) handleStartChat(listingId, otherUserId);
-  }, [listingId, otherUserId]);
+    const seenListingIds = new Set<string>();
+    // messages array is newest-first (inverted list), so we reverse to process
+    // chronologically, inject cards, then reverse back.
+    const chronological = [...messages].reverse();
+    const result: MessageItem[] = [];
 
-  const fetchRoomMessages = useCallback(async (roomId: string) => {
-    setMessagesLoading(true);
-    try {
-      const socket = getSocket();
-      socket.emit("get_messages", { roomId, limit: 50 });
-      const msgs = await new Promise<ChatMessage[]>((resolve) => {
-        socket.once("messages_history", (data: any) =>
-          resolve(data.messages ?? []),
-        );
-        setTimeout(() => resolve([]), 5000);
-      });
-      setMessages(msgs.reverse());
-    } catch {
-      setMessages([]);
-    } finally {
-      setMessagesLoading(false);
+    for (const msg of chronological) {
+      const listing: ListingInfo | undefined =
+        (msg as any).listing ?? undefined;
+
+      if (listing && !seenListingIds.has(listing.id)) {
+        seenListingIds.add(listing.id);
+        result.push({ type: "listing", listing, id: `listing-${listing.id}` });
+      }
+
+      result.push({ type: "message", message: msg, id: msg.id });
     }
-  }, []);
 
-  const handleStartChat = async (lId: string, oId: string) => {
-    try {
-      const res = await initiateChat({
-        listingId: lId,
-        otherUserId: oId,
-      }).unwrap();
-      setActiveRoom(res.data.room);
-      setMessages(res.data.messages ?? []);
-      setView("messages");
+    // Reverse so newest is first again (FlatList inverted)
+    return result.reverse();
+  }, [messages]);
+
+  const fetchMessagesViaRest = useCallback(
+    async (roomId: string) => {
+      if (!token) return;
+      setMessagesLoading(true);
       try {
-        const socket = getSocket();
-        socket.emit("join_room", { roomId: res.data.room.id });
-        socket.emit("messages_read", { roomId: res.data.room.id });
-      } catch {}
-    } catch (e: any) {
-      Alert.alert("Error", e?.data?.message ?? "Failed to open chat");
+        const res = await fetch(
+          `${API_BASE_URL}/chat/rooms/${roomId}/messages?limit=50`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        const json = await res.json();
+        const fetched: ChatMessage[] = json?.data?.messages ?? [];
+        setMessages(fetched.slice().reverse());
+
+        const firstWithListing = fetched.find((m: any) => m.listing);
+        if (firstWithListing && (firstWithListing as any).listing) {
+          setActiveListing((firstWithListing as any).listing);
+        }
+      } catch {
+        setMessages([]);
+        Alert.alert("Error", "Could not load messages.");
+      } finally {
+        setMessagesLoading(false);
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    if (!token || socketListenersAttached.current) return;
+    socketListenersAttached.current = true;
+
+    let socket: ReturnType<typeof connectSocket>;
+    try {
+      socket = connectSocket(token);
+    } catch {
+      return;
     }
-  };
+
+    socket.on("online_contacts", ({ userIds }: any) =>
+      setOnlineUsers(new Set(userIds)),
+    );
+    socket.on("user_online", ({ userId }: any) =>
+      setOnlineUsers((prev) => new Set(prev).add(userId)),
+    );
+    socket.on("user_offline", ({ userId }: any) =>
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      }),
+    );
+    socket.on("typing_update", ({ roomId, isTyping: ty }: any) =>
+      setTypingRooms((prev) => ({ ...prev, [roomId]: ty })),
+    );
+    socket.on("new_message", (msg: ChatMessage) => {
+      const currentRoom = activeRoomRef.current;
+      if (currentRoom && msg.roomId === currentRoom.id) {
+        setMessages((prev) =>
+          prev.find((m) => m.id === msg.id) ? prev : [msg, ...prev],
+        );
+        if (!activeListing && (msg as any).listing) {
+          setActiveListing((msg as any).listing);
+        }
+        try {
+          getSocket().emit("messages_read", { roomId: msg.roomId });
+        } catch {}
+      }
+      refetchRooms();
+    });
+
+    return () => {
+      socketListenersAttached.current = false;
+      socket.off("online_contacts");
+      socket.off("user_online");
+      socket.off("user_offline");
+      socket.off("typing_update");
+      socket.off("new_message");
+    };
+  }, [token]);
+
+  useEffect(() => {
+    if (listingId && otherUserId) {
+      handleStartChat(listingId, otherUserId);
+    }
+  }, [listingId, otherUserId]);
 
   const openRoom = useCallback(
     async (room: ChatRoom) => {
+      activeRoomRef.current = room;
       setActiveRoom(room);
+      setActiveListing(null);
       setMessages([]);
       setView("messages");
       try {
@@ -153,10 +301,43 @@ export default function ChatScreen() {
         socket.emit("join_room", { roomId: room.id });
         socket.emit("messages_read", { roomId: room.id });
       } catch {}
-      await fetchRoomMessages(room.id);
+      await fetchMessagesViaRest(room.id);
     },
-    [fetchRoomMessages],
+    [fetchMessagesViaRest],
   );
+
+  const handleStartChat = async (lId: string, oId: string) => {
+    try {
+      const res = await initiateChat({
+        listingId: lId,
+        otherUserId: oId,
+      }).unwrap();
+      const room: ChatRoom = res.data.room;
+      const initialMessages: ChatMessage[] = res.data.messages ?? [];
+
+      activeRoomRef.current = room;
+      setActiveRoom(room);
+      setActiveListing(null);
+      setMessages(initialMessages.slice().reverse());
+      setView("messages");
+
+      const firstWithListing = initialMessages.find((m: any) => m.listing);
+      if (firstWithListing && (firstWithListing as any).listing) {
+        setActiveListing((firstWithListing as any).listing);
+      }
+
+      try {
+        const socket = getSocket();
+        socket.emit("join_room", { roomId: room.id });
+        socket.emit("messages_read", { roomId: room.id });
+      } catch {}
+      if (initialMessages.length === 0) {
+        await fetchMessagesViaRest(room.id);
+      }
+    } catch (e: any) {
+      Alert.alert("Error", e?.data?.message ?? "Failed to open chat");
+    }
+  };
 
   const sendMessage = () => {
     if (!input.trim() || !activeRoom) return;
@@ -166,7 +347,7 @@ export default function ChatScreen() {
     try {
       getSocket().emit("send_message", {
         roomId: activeRoom.id,
-        listingId: null,
+        listingId: activeListing?.id ?? null,
         content,
         messageType: "text",
       });
@@ -187,12 +368,21 @@ export default function ChatScreen() {
   };
 
   const stopTyping = () => {
-    if (isTyping && activeRoom) {
+    if (activeRoomRef.current) {
       setIsTyping(false);
       try {
-        getSocket().emit("typing_stop", { roomId: activeRoom.id });
+        getSocket().emit("typing_stop", { roomId: activeRoomRef.current.id });
       } catch {}
     }
+  };
+
+  const goBackToRooms = () => {
+    activeRoomRef.current = null;
+    setActiveRoom(null);
+    setActiveListing(null);
+    setMessages([]);
+    setView("rooms");
+    refetchRooms();
   };
 
   const fmtTime = (d: string) => {
@@ -203,6 +393,7 @@ export default function ChatScreen() {
       : date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
+  // ─── Messages view ──────────────────────────────────────────────────────────
   if (view === "messages" && activeRoom) {
     const other = activeRoom.otherUser;
     const isOnline = onlineUsers.has(other.id);
@@ -211,14 +402,7 @@ export default function ChatScreen() {
     return (
       <SafeAreaView style={s.safe}>
         <View style={[s.chatHeader, { backgroundColor: t.primary }]}>
-          <TouchableOpacity
-            onPress={() => {
-              setView("rooms");
-              setActiveRoom(null);
-              refetch();
-            }}
-            style={s.headerBack}
-          >
+          <TouchableOpacity onPress={goBackToRooms} style={s.headerBack}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={s.chatAvatar}>
@@ -246,6 +430,7 @@ export default function ChatScreen() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
         >
           {messagesLoading ? (
             <View
@@ -263,13 +448,10 @@ export default function ChatScreen() {
           ) : (
             <FlatList
               ref={flatRef}
-              data={messages}
-              keyExtractor={(m) => m.id}
+              data={listItems}
+              inverted
+              keyExtractor={(item) => item.id}
               contentContainerStyle={s.msgList}
-              onContentSizeChange={() => {
-                if (messages.length > 0)
-                  flatRef.current?.scrollToEnd({ animated: false });
-              }}
               ListEmptyComponent={
                 <View style={s.emptyMsg}>
                   <Ionicons
@@ -282,7 +464,18 @@ export default function ChatScreen() {
                   </Text>
                 </View>
               }
-              renderItem={({ item: msg }) => {
+              renderItem={({ item }) => {
+                // ── Listing card injected inline ──────────────────────────────
+                if (item.type === "listing") {
+                  return (
+                    <View style={s.inlineListingWrapper}>
+                      <ListingCard listing={item.listing} t={t} />
+                    </View>
+                  );
+                }
+
+                // ── Normal message bubble ─────────────────────────────────────
+                const msg = item.message;
                 const mine = msg.senderId === currentUser?.id;
                 return (
                   <View
@@ -338,7 +531,7 @@ export default function ChatScreen() {
             />
           )}
 
-          {otherTyping && (
+          {otherTyping && !messagesLoading && (
             <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
               <View
                 style={[
@@ -408,6 +601,7 @@ export default function ChatScreen() {
     );
   }
 
+  // ─── Rooms list view ────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={s.safe}>
       <View style={[s.header, { borderBottomColor: t.border }]}>
@@ -418,10 +612,23 @@ export default function ChatScreen() {
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: t.text }]}>Messages</Text>
+        <TouchableOpacity
+          onPress={() => refetchRooms()}
+          style={{ marginLeft: "auto" }}
+        >
+          <Ionicons name="refresh-outline" size={22} color={t.textMuted} />
+        </TouchableOpacity>
       </View>
 
       {roomsLoading ? (
-        <ActivityIndicator color={t.primary} style={{ marginTop: 48 }} />
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <ActivityIndicator color={t.primary} />
+          <Text style={{ color: t.textMuted, marginTop: 8, fontSize: 13 }}>
+            Loading conversations...
+          </Text>
+        </View>
       ) : rooms.length === 0 ? (
         <View style={s.emptyCenter}>
           <Ionicons name="chatbubbles-outline" size={56} color={t.textMuted} />
@@ -528,6 +735,68 @@ export default function ChatScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  listingCard: {
+    flexDirection: "row",
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: 12,
+    marginHorizontal: 4,
+  },
+  listingCardImage: {
+    width: 80,
+    height: 80,
+  },
+  listingCardImagePlaceholder: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listingCardBody: {
+    flex: 1,
+    padding: 10,
+    gap: 4,
+  },
+  listingCardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  listingTypeBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  listingTypeBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  listingCardTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
+  listingCardMeta: {
+    gap: 2,
+  },
+  listingCardMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  listingCardMetaText: {
+    fontSize: 11,
+    flex: 1,
+  },
+  listingCardPrice: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+});
+
 function makeStyles(t: any) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.background },
@@ -578,6 +847,9 @@ function makeStyles(t: any) {
       flexDirection: "row",
       justifyContent: "flex-start",
       marginBottom: 4,
+    },
+    inlineListingWrapper: {
+      marginVertical: 8,
     },
     bubble: {
       maxWidth: "78%",

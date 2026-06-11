@@ -166,12 +166,16 @@ export default function ProfileScreen() {
 
   const s = makeStyles(t);
 
-  if (!currentUser)
+  if (!currentUser) {
+    useEffect(() => {
+      router.replace("/(auth)/login");
+    }, []);
     return (
-      <SafeAreaView style={s.safe}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
         <ActivityIndicator color={t.primary} style={{ marginTop: 60 }} />
       </SafeAreaView>
     );
+  }
 
   const initials =
     `${currentUser.firstName?.[0] ?? ""}${currentUser.lastName?.[0] ?? ""}`.toUpperCase();
