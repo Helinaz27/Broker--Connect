@@ -240,12 +240,11 @@ export default function HouseDetailPage() {
 
               <p className="text-3xl font-bold text-primary mb-6">
                 ETB {house.price.toLocaleString()}{" "}
-                {/* <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  {t("common.br")}
+                <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
                   {house.rentalPeriod
                     ? ` / ${trRentalPeriod(house.rentalPeriod)}`
                     : ""}
-                </span> */}
+                </span>
               </p>
 
               {hasSpecs && (

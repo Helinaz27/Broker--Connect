@@ -204,12 +204,11 @@ export default function ServiceDetailPage() {
 
               <p className="text-3xl font-bold text-primary mb-6">
                 ETB{service.price.toLocaleString()}{" "}
-                {/* <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  {t("common.br")}
+                <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
                   {service.rentalPeriod
                     ? ` / ${trRentalPeriod(service.rentalPeriod)}`
                     : ""}
-                </span> */}
+                </span>
               </p>
 
               {hasSpecs && (
