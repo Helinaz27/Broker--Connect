@@ -247,12 +247,11 @@ export default function CarDetailPage() {
 
               <p className="text-3xl font-bold text-primary mb-6">
                 ETB {car.price.toLocaleString()}{" "}
-                {/* <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  {t("common.br")}
+                <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
                   {car.rentalPeriod
                     ? ` / ${trRentalPeriod(car.rentalPeriod)}`
                     : ""}
-                </span> */}
+                </span>
               </p>
 
               {hasSpecs && (
