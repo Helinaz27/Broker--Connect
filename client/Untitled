@@ -1,0 +1,5 @@
+VITE_PUBLIC_BUILDER_KEY=__BUILDER_PUBLIC_KEY__
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+PING_MESSAGE="ping pong"
+NEXT_PUBLIC_BASE_URL=localhost:5000/api
+JWT_SECRET=your_jwt_secret_key_here
